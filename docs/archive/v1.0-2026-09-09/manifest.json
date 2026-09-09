@@ -1,0 +1,23 @@
+{
+  "版本": "1.0",
+  "说明": "审计前17份文档原样归档，未实施的历史状态不得作为当前状态。",
+  "sha256": {
+    "01-product-requirements.md": "b22128a0d5b46d9da392297d67173e6d1a70cc0e5ccb18d304b22ac414b816ea",
+    "02-user-flows-and-ui.md": "ed85865c3adec6b2d1bc6142be720d04cc8aa66021dc6c985cb778335b37a7fb",
+    "03-training-and-model-lab.md": "bce6f0e95680a918f0189c612c263cfe27307e623fa22cd0f5fe02880b0715bb",
+    "04-runtime-and-hardware.md": "f5faf9bdfa568988515736df6cd054925e7c1709cf6412cbe7c362cac1c8819a",
+    "05-data-model-and-assets.md": "414edf5236e089e74f7f916877a61c33a1ada773aa428a0660eb034a25c3678c",
+    "06-architecture-and-adapters.md": "148a5d9e32ea7f70eb1eb70093f989de27cf8f7d7dcdd5737af883387c91f253",
+    "07-api-and-task-lifecycle.md": "82926083facd08d2247d599fc9dc62c48f70e4dec6be5ed619f3af9901b61a86",
+    "08-ai-assistance-and-data-boundaries.md": "aa71626557310943bf9d3ef5acd876c94c6d9ce28aa6084d0471af44ce834bc2",
+    "09-development-roadmap.md": "a7ed5d96bfba000010d6d15dc546782401dfb1360fc7186ae8d227a28300c9d2",
+    "10-work-breakdown.md": "263adc86266c70ed68beb3ab6d360a8c91fe77c0b44bb7ebf65701840fab4374",
+    "11-testing-and-acceptance.md": "c835dff8f0be5b19af6be86d84a7a12c510b68ee0ed911b616a4b42a6cd7554e",
+    "12-operations-and-release.md": "74e97d2d7bc9c3ab9abd0223b7738b6130513ed93054881fd79da3d5093270d8",
+    "13-decisions-risks-and-questions.md": "db42f6a53426966c0e50ee51ae7ec13962666e78aa84d7765804ddcaa4e37abd",
+    "14-prototype-traceability.md": "636ea71ae04b7af1f6c49a1c963cf8fad14448e0d6d48e4885e41254a05d32f6",
+    "15-sources-and-glossary.md": "914ea474046a248150edb7df33fe38870eb0d2c639f04f33aa8de2628875c2f9",
+    "README.md": "2e091545ab3477f8b9fe89a6fc30ca3b03f1fe9aa0db394cf6580e5a48e22674",
+    "validation-report.md": "3c5da8984042050a82becc695026502bd40de1519b52cbd3970828ac893dc188"
+  }
+}
