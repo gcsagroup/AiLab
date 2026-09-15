@@ -10,6 +10,7 @@ const CONTROL_FIXTURE: &str = r#"
 import json
 import os
 import sys
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
@@ -42,7 +43,25 @@ class Handler(BaseHTTPRequestHandler):
                 return
             result = {'library': root.name, 'method': self.command, 'path': self.path,
                       'body': body, 'host_authorized': host_authorized}
-        self.send_json(result, 200)
+        if self.path in ('/api/v1/import-grants', '/api/v1/export-grants'):
+            result['grant_id'] = 'grant-from-' + root.name
+        if self.path == '/api/v1/settings':
+            result.update(revision=7, bundled_worker_available=True, bundled_media_worker_available=True, bundled_audio_worker_available=True)
+        status = 200
+        overrides = root / 'response-overrides.json'
+        if overrides.exists():
+            override = json.loads(overrides.read_text()).get(self.command + ' ' + self.path)
+            if override:
+                result, status = override['body'], override['status']
+        held = root / 'hold-response'
+        if held.exists() and held.read_text() == self.command + ' ' + self.path:
+            (root / 'response-waiting').write_text('ready')
+            deadline = time.monotonic() + 5
+            while not (root / 'release-response').exists() and time.monotonic() < deadline:
+                time.sleep(0.005)
+        self.send_json(result, status)
+        if held.exists():
+            (root / 'response-sent').write_text('sent')
 
     def send_json(self, value, status):
         content = json.dumps(value).encode('utf-8')
@@ -488,4 +507,420 @@ fn trusted_internal_requests_remain_available_during_host_switch() {
         assert_eq!(host["host_authorized"], true);
         assert_eq!(fixture.requests("a").len(), 2);
     });
+}
+
+#[test]
+fn picker_waiting_across_switch_never_grants_the_new_library() {
+    tauri::async_runtime::block_on(async {
+        for export in [false, true] {
+            let fixture = ScopeFixture::new();
+            let id = fixture.connection_id();
+            let result = select_path_grant(&fixture.state, &id, export, async {
+                fixture.switch_to("b");
+                Ok(Some(fixture.directory.path().to_path_buf()))
+            })
+            .await;
+            assert!(
+                fixture.requests("b").is_empty(),
+                "旧选择器向 B 授权：{:?}",
+                fixture.requests("b")
+            );
+            assert_eq!(
+                result.err().unwrap()["error"]["code"],
+                "CONTROL_CONNECTION_CHANGED"
+            );
+        }
+    });
+}
+
+#[test]
+fn picker_waiting_across_switch_never_updates_new_python_settings() {
+    tauri::async_runtime::block_on(async {
+        for field in ["worker_python", "media_python", "audio_python"] {
+            let fixture = ScopeFixture::new();
+            let id = fixture.connection_id();
+            let python = fixture.directory.path().join("python-fixture");
+            fs::write(&python, b"never executed").unwrap();
+            let result = select_python_environment(&fixture.state, &id, field, async {
+                fixture.switch_to("b");
+                Ok(Some(python))
+            })
+            .await;
+            assert!(
+                fixture.requests("b").is_empty(),
+                "旧选择器访问 B settings：{:?}",
+                fixture.requests("b")
+            );
+            assert_code(result.map(|v| v.unwrap()), "CONTROL_CONNECTION_CHANGED");
+        }
+    });
+}
+
+#[test]
+fn picker_queued_bundled_environment_never_updates_new_library() {
+    tauri::async_runtime::block_on(async {
+        let fixture = ScopeFixture::new();
+        let id = fixture.connection_id();
+        fixture.switch_to("b");
+        let result = use_bundled_environment(
+            &fixture.state,
+            &id,
+            "worker_python",
+            "bundled_worker_available",
+        )
+        .await;
+        assert!(
+            fixture.requests("b").is_empty(),
+            "排队旧 bundled 命令访问 B：{:?}",
+            fixture.requests("b")
+        );
+        assert_code(result, "CONTROL_CONNECTION_CHANGED");
+    });
+}
+
+#[test]
+fn picker_current_selection_cancel_error_and_all_environment_fields_work() {
+    tauri::async_runtime::block_on(async {
+        let fixture = ScopeFixture::new();
+        let id = fixture.connection_id();
+        let path = fixture.directory.path().to_path_buf();
+        for export in [false, true] {
+            let chosen = select_path_grant(&fixture.state, &id, export, async {
+                Ok(Some(path.clone()))
+            })
+            .await
+            .unwrap()
+            .unwrap();
+            assert_eq!(chosen.path, path.canonicalize().unwrap().to_string_lossy());
+            assert_eq!(chosen.grant_id, "grant-from-a");
+            assert!(
+                select_path_grant(&fixture.state, &id, export, async { Ok(None) })
+                    .await
+                    .unwrap()
+                    .is_none()
+            );
+            let failure = select_path_grant(&fixture.state, &id, export, async {
+                Err(error("FILE_DIALOG_FAILED", "夹具错误"))
+            })
+            .await;
+            assert_eq!(
+                failure.err().unwrap()["error"]["code"],
+                "FILE_DIALOG_FAILED"
+            );
+        }
+        let target = path.join("python-real");
+        fs::write(&target, b"never executed").unwrap();
+        let python = path.join("python-venv");
+        std::os::unix::fs::symlink(&target, &python).unwrap();
+        for (field, available) in [
+            ("worker_python", "bundled_worker_available"),
+            ("media_python", "bundled_media_worker_available"),
+            ("audio_python", "bundled_audio_worker_available"),
+        ] {
+            let selected = select_python_environment(&fixture.state, &id, field, async {
+                Ok(Some(python.clone()))
+            })
+            .await
+            .unwrap()
+            .unwrap();
+            assert_eq!(
+                selected["body"][field],
+                python.to_string_lossy().as_ref(),
+                "不得将虚拟环境链接改写成目标程序路径"
+            );
+            assert_eq!(selected["body"]["expected_revision"], 7);
+            assert!(!fixture.state.credential_busy.load(Ordering::SeqCst));
+            let bundled = use_bundled_environment(&fixture.state, &id, field, available)
+                .await
+                .unwrap();
+            assert_eq!(bundled["body"][field], Value::Null);
+            assert_eq!(bundled["body"]["expected_revision"], 7);
+            assert!(
+                select_python_environment(&fixture.state, &id, field, async { Ok(None) })
+                    .await
+                    .unwrap()
+                    .is_none()
+            );
+            assert!(!fixture.state.credential_busy.load(Ordering::SeqCst));
+        }
+        let requests = fixture.requests("a");
+        assert_eq!(requests.len(), 14);
+        assert_eq!(requests[0]["path"], "/api/v1/import-grants");
+        assert_eq!(requests[1]["path"], "/api/v1/export-grants");
+        for pair in requests[2..].chunks_exact(2) {
+            assert_eq!(pair[0]["method"], "GET");
+            assert_eq!(pair[1]["method"], "PATCH");
+        }
+    });
+}
+
+#[test]
+fn picker_expired_cancellation_dialog_failure_and_invalid_paths_are_discarded() {
+    tauri::async_runtime::block_on(async {
+        for outcome in 0..3 {
+            for target in 0..3 {
+                let fixture = ScopeFixture::new();
+                let id = fixture.connection_id();
+                let selection = async {
+                    fixture.switch_to("b");
+                    match outcome {
+                        0 => Ok(None),
+                        1 => Err(error("FILE_DIALOG_FAILED", "旧窗口错误")),
+                        _ => Ok(Some(fixture.directory.path().join("missing-python"))),
+                    }
+                };
+                let failure = if target == 2 {
+                    select_python_environment(&fixture.state, &id, "worker_python", selection)
+                        .await
+                        .err()
+                        .unwrap()
+                } else {
+                    select_path_grant(&fixture.state, &id, target == 1, selection)
+                        .await
+                        .err()
+                        .unwrap()
+                };
+                assert_eq!(failure["error"]["code"], "CONTROL_CONNECTION_CHANGED");
+                assert!(fixture.requests("a").is_empty() && fixture.requests("b").is_empty());
+                assert!(!fixture.state.credential_busy.load(Ordering::SeqCst));
+            }
+        }
+    });
+}
+
+#[test]
+fn picker_queued_commands_reject_before_polling_dialog_future() {
+    tauri::async_runtime::block_on(async {
+        let fixture = ScopeFixture::new();
+        let id = fixture.connection_id();
+        fixture.switch_to("b");
+        for target in 0..3 {
+            let selection = async {
+                panic!("过期 IPC 不得启动窗口 Future");
+                #[allow(unreachable_code)]
+                Ok(None)
+            };
+            let failure = if target == 2 {
+                select_python_environment(&fixture.state, &id, "worker_python", selection)
+                    .await
+                    .err()
+                    .unwrap()
+            } else {
+                select_path_grant(&fixture.state, &id, target == 1, selection)
+                    .await
+                    .err()
+                    .unwrap()
+            };
+            assert_eq!(failure["error"]["code"], "CONTROL_CONNECTION_CHANGED");
+        }
+        for (field, available) in [
+            ("worker_python", "bundled_worker_available"),
+            ("media_python", "bundled_media_worker_available"),
+            ("audio_python", "bundled_audio_worker_available"),
+        ] {
+            assert_code(
+                use_bundled_environment(&fixture.state, &id, field, available).await,
+                "CONTROL_CONNECTION_CHANGED",
+            );
+        }
+        assert!(fixture.requests("b").is_empty());
+    });
+}
+
+#[test]
+fn picker_same_library_restart_also_invalidates_selection() {
+    tauri::async_runtime::block_on(async {
+        for target in 0..3 {
+            let fixture = ScopeFixture::new();
+            let id = fixture.connection_id();
+            let selection = async {
+                let launch = fixture.state.launch.lock().unwrap().clone();
+                let mut process = fixture.state.process.lock().unwrap();
+                process.stop();
+                process.start(&launch).unwrap();
+                Ok(Some(fixture.directory.path().to_path_buf()))
+            };
+            let failure = if target == 2 {
+                select_python_environment(&fixture.state, &id, "worker_python", selection)
+                    .await
+                    .err()
+                    .unwrap()
+            } else {
+                select_path_grant(&fixture.state, &id, target == 1, selection)
+                    .await
+                    .err()
+                    .unwrap()
+            };
+            assert_ne!(id, fixture.connection_id());
+            assert_eq!(failure["error"]["code"], "CONTROL_CONNECTION_CHANGED");
+            assert!(fixture.requests("a").is_empty());
+        }
+    });
+}
+
+#[test]
+fn picker_environment_preserves_reservation_and_revision_failures() {
+    tauri::async_runtime::block_on(async {
+        let fixture = ScopeFixture::new();
+        let id = fixture.connection_id();
+        let guard = reserve_host_change(
+            &fixture.state,
+            &fixture.state.credential_busy,
+            "BUSY",
+            "夹具",
+        )
+        .unwrap();
+        assert_code(
+            use_bundled_environment(
+                &fixture.state,
+                &id,
+                "worker_python",
+                "bundled_worker_available",
+            )
+            .await,
+            "HOST_CONFIGURATION_PENDING",
+        );
+        assert!(fixture.state.credential_busy.load(Ordering::SeqCst));
+        drop(guard);
+        assert_code(
+            use_bundled_environment(&fixture.state, &id, "worker_python", "missing_available")
+                .await,
+            "ENVIRONMENT_INVALID",
+        );
+        assert!(!fixture.state.credential_busy.load(Ordering::SeqCst));
+        assert_eq!(fixture.requests("a").len(), 1);
+        assert_eq!(fixture.requests("a")[0]["method"], "GET");
+        let overrides = fixture.directory.path().join("a/response-overrides.json");
+        fs::write(&overrides, json!({"GET /api/v1/settings":{"status":200,"body":{"revision":null,"bundled_worker_available":true}}}).to_string()).unwrap();
+        assert_code(
+            use_bundled_environment(
+                &fixture.state,
+                &id,
+                "worker_python",
+                "bundled_worker_available",
+            )
+            .await,
+            "ENVIRONMENT_INVALID",
+        );
+        assert!(!fixture.state.credential_busy.load(Ordering::SeqCst));
+        assert_eq!(fixture.requests("a").len(), 2, "缺 revision 不得发送 PATCH");
+        for method in ["GET", "PATCH"] {
+            fs::write(&overrides, json!({format!("{method} /api/v1/settings"):{"status":409,"body":{"error":{"code":"REVISION_CONFLICT"}}}}).to_string()).unwrap();
+            assert_code(
+                use_bundled_environment(
+                    &fixture.state,
+                    &id,
+                    "worker_python",
+                    "bundled_worker_available",
+                )
+                .await,
+                "REVISION_CONFLICT",
+            );
+            assert!(!fixture.state.credential_busy.load(Ordering::SeqCst));
+        }
+        assert_eq!(fixture.requests("a").len(), 5);
+    });
+}
+
+fn wait_for_fixture_file(path: &Path) {
+    let deadline = Instant::now() + Duration::from_secs(3);
+    while !path.exists() {
+        assert!(Instant::now() < deadline, "夹具未产生 {}", path.display());
+        std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
+#[test]
+fn picker_late_http_results_are_discarded_and_environment_gate_stays_held() {
+    for failing_http in [false, true] {
+        for target in 0..6 {
+            let fixture = ScopeFixture::new();
+            let id = fixture.connection_id();
+            let a = fixture.directory.path().join("a");
+            let endpoint = match target {
+                0 => "POST /api/v1/import-grants",
+                1 => "POST /api/v1/export-grants",
+                2 | 3 => "GET /api/v1/settings",
+                _ => "PATCH /api/v1/settings",
+            };
+            fs::write(a.join("hold-response"), endpoint).unwrap();
+            if failing_http {
+                fs::write(
+                    a.join("response-overrides.json"),
+                    json!({endpoint:{"status":500,"body":{"error":{"code":"OLD_SERVICE_ERROR"}}}})
+                        .to_string(),
+                )
+                .unwrap();
+            }
+            let python = fixture.directory.path().join("python-fixture");
+            fs::write(&python, b"never executed").unwrap();
+            std::thread::scope(|scope| {
+                let waiting = scope.spawn(|| {
+                    tauri::async_runtime::block_on(async {
+                        if target < 2 {
+                            select_path_grant(&fixture.state, &id, target == 1, async {
+                                Ok(Some(fixture.directory.path().to_path_buf()))
+                            })
+                            .await
+                            .map(|value| value.map(|v| json!({"grant_id":v.grant_id})))
+                        } else if target % 2 == 0 {
+                            select_python_environment(&fixture.state, &id, "worker_python", async {
+                                Ok(Some(python.clone()))
+                            })
+                            .await
+                        } else {
+                            use_bundled_environment(
+                                &fixture.state,
+                                &id,
+                                "worker_python",
+                                "bundled_worker_available",
+                            )
+                            .await
+                            .map(Some)
+                        }
+                    })
+                });
+                wait_for_fixture_file(&a.join("response-waiting"));
+                if target >= 2 {
+                    assert!(fixture.state.credential_busy.load(Ordering::SeqCst));
+                    let denied = reserve_host_change(
+                        &fixture.state,
+                        &fixture.state.switching,
+                        "BUSY",
+                        "夹具",
+                    );
+                    assert_eq!(
+                        denied.err().unwrap()["error"]["code"],
+                        "CREDENTIAL_OPERATION_PENDING"
+                    );
+                }
+                // 将已发送的旧 HTTP 成功结果拦在身份复核锁外，随后换代。
+                // 环境命令的普通切库已被门禁拒绝；此处直接更换夹具子进程模拟外部崩溃重连。
+                let mut process = fixture.state.process.lock().unwrap();
+                fs::write(a.join("release-response"), b"release").unwrap();
+                wait_for_fixture_file(&a.join("response-sent"));
+                let current = fixture.state.launch.lock().unwrap().clone();
+                let mut next = current.clone();
+                next.data_dir = fixture.directory.path().join("b");
+                process
+                    .switch_library(&current, &next, &fixture.state.selection_file, b"b")
+                    .unwrap();
+                *fixture.state.launch.lock().unwrap() = next;
+                drop(process);
+                assert_code(
+                    waiting.join().unwrap().map(|v| v.unwrap()),
+                    "CONTROL_CONNECTION_CHANGED",
+                );
+            });
+            assert!(fixture.requests("b").is_empty());
+            assert!(!fixture.state.credential_busy.load(Ordering::SeqCst));
+            if target == 2 || target == 3 {
+                assert_eq!(
+                    fixture.requests("a").len(),
+                    1,
+                    "旧 GET 返回后不得继续 PATCH"
+                );
+            }
+        }
+    }
 }

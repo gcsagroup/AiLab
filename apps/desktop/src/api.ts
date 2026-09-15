@@ -85,8 +85,8 @@ export async function api<T>(method: string, path: string, body?: unknown, idemp
 export type ImportSelection = { path: string; grant_id?: string };
 export const canPickFile = () => isTauri();
 export type ImportKind = 'model' | 'dataset' | 'image-dataset' | 'material';
-export const pickImport = (kind: ImportKind | 'backup') => invoke<ImportSelection | null>('pick_import_path', { kind });
-export const pickExportDirectory = () => invoke<ImportSelection | null>('pick_export_directory');
+export const pickImport = (kind: ImportKind | 'backup') => invokeBound<ImportSelection | null>('pick_import_path', connectionId => ({ kind, connectionId }));
+export const pickExportDirectory = () => invokeBound<ImportSelection | null>('pick_export_directory', connectionId => ({ connectionId }));
 export const restartControl = () => changeNativeConnection('restart_control');
 export const recordFirstFrame = (view: 'empty_library' | 'project_home', frontend: import('./Startup').StartupPhases) => invoke('record_first_frame', { view, frontend });
 
@@ -105,10 +105,10 @@ export function mergeRecords<T extends { id: string }>(current: T[], incoming: T
 }
 
 export type EnvironmentSettings = { revision: number; worker_python: string | null; [key: string]: unknown };
-export const pickWorkerPython = () => invoke<EnvironmentSettings | null>('pick_worker_python');
-export const pickMediaPython = (engine: 'diffusers' | 'kokoro') => invoke<EnvironmentSettings | null>('pick_media_python', { engine });
-export const useBundledMedia = (engine: 'diffusers' | 'kokoro') => invoke<EnvironmentSettings>('use_bundled_media', { engine });
-export const useBundledWorker = () => invoke<EnvironmentSettings>('use_bundled_worker');
+export const pickWorkerPython = () => invokeBound<EnvironmentSettings | null>('pick_worker_python', connectionId => ({ connectionId }));
+export const pickMediaPython = (engine: 'diffusers' | 'kokoro') => invokeBound<EnvironmentSettings | null>('pick_media_python', connectionId => ({ engine, connectionId }));
+export const useBundledMedia = (engine: 'diffusers' | 'kokoro') => invokeBound<EnvironmentSettings>('use_bundled_media', connectionId => ({ engine, connectionId }));
+export const useBundledWorker = () => invokeBound<EnvironmentSettings>('use_bundled_worker', connectionId => ({ connectionId }));
 export const useRestoredLibrary = (restoreId: string) => changeNativeConnection('use_restored_library', { restoreId });
 export const configureMarketFixture = (origin: string | null) => changeNativeConnection<{ market_fixture_origin: string | null }>('configure_market_fixture', { origin });
 

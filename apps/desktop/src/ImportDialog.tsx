@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FolderOpen, ArrowRight, FileCheck2 } from 'lucide-react';
 import { api, canPickFile, errorMessage, pickImport, type ImportKind, type ImportSelection } from './api';
 import { Button, Dialog, ErrorNotice, readableSize } from './ui';
@@ -13,29 +13,38 @@ export default function ImportDialog({ kind, projectId, onClose, onImported }: {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const importKey = useRef<string | null>(null);
+  const live = useRef(true);
+  const identity = `${projectId}:${kind}`;
+  const scope = useRef({ identity });
+  if (scope.current.identity !== identity) scope.current = { identity };
+  useEffect(() => { live.current = true; return () => { live.current = false; }; }, []);
+  function capture() { const started = scope.current; return () => live.current && scope.current === started; }
   async function choose() {
+    const isCurrent = capture();
     try {
       const result = await pickImport(kind);
-      if (result) { setSelection(result); setPlan(null); setError(''); }
-    } catch (e) { setError(errorMessage(e)); }
+      if (isCurrent() && result) { setSelection(result); setPlan(null); setError(''); }
+    } catch (e) { if (isCurrent()) setError(errorMessage(e)); }
   }
   async function inspect() {
+    const isCurrent = capture();
     setBusy(true); setError('');
     try {
       const result = await api<ImportPlan>('POST', `/${endpoint}/import-plans`, { ...selection, name: name.trim() || undefined, project_id: projectId, ...(kind === 'image-dataset' ? { schema: 'image_caption_v1' } : {}) });
-      setPlan(result); importKey.current = null;
-    } catch (e) { setError(errorMessage(e)); }
-    finally { setBusy(false); }
+      if (isCurrent()) { setPlan(result); importKey.current = null; }
+    } catch (e) { if (isCurrent()) setError(errorMessage(e)); }
+    finally { if (isCurrent()) setBusy(false); }
   }
   async function confirm() {
     if (!plan) return;
+    const isCurrent = capture();
     setBusy(true); setError('');
     try {
       importKey.current ||= crypto.randomUUID();
       await api('POST', `/${endpoint}/imports`, { plan_id: plan.plan_id || plan.id, manifest_digest: plan.manifest_digest }, importKey.current);
-      onImported();
-    } catch (e) { setError(errorMessage(e)); }
-    finally { setBusy(false); }
+      if (isCurrent()) onImported();
+    } catch (e) { if (isCurrent()) setError(errorMessage(e)); }
+    finally { if (isCurrent()) setBusy(false); }
   }
   const issues = plan?.blocking || (plan?.issues || []).filter(issue => issue.severity !== 'warning');
   return <Dialog title={`导入本机${label}`} onClose={onClose} preventClose={busy}>

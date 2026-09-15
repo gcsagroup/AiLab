@@ -24,12 +24,23 @@ export function EvaluationPlanDialog({ projectId, onClose, onCreated }: { projec
   const [created, setCreated] = useState<EvaluationPlan | null>(null);
   const [busy, setBusy] = useState(false); const [error, setError] = useState('');
   const requestKey = useRef<string | null>(null);
+  const live = useRef(true);
+  const scope = useRef({ projectId });
+  if (scope.current.projectId !== projectId) scope.current = { projectId };
+  useEffect(() => { live.current = true; return () => { live.current = false; }; }, []);
+  function capture() { const started = scope.current; return () => live.current && scope.current === started; }
   function edited() { requestKey.current = null; setError(''); }
-  async function choose() { setBusy(true); try { const chosen = await pickImport('dataset'); if (chosen) { setSelection(chosen); edited(); } } catch (e) { setError(errorMessage(e)); } finally { setBusy(false); } }
+  async function choose() {
+    const isCurrent = capture(); setBusy(true);
+    try { const chosen = await pickImport('dataset'); if (isCurrent() && chosen) { setSelection(chosen); edited(); } }
+    catch (e) { if (isCurrent()) setError(errorMessage(e)); } finally { if (isCurrent()) setBusy(false); }
+  }
   async function freeze(event: React.FormEvent) {
-    event.preventDefault(); setBusy(true); setError(''); requestKey.current ||= crypto.randomUUID();
-    try { setCreated(await api<EvaluationPlan>('POST', '/evaluation-plans', { project_id: projectId, name: name.trim(), dataset_path: selection.path, dataset_grant_id: selection.grant_id, criteria }, requestKey.current)); onCreated(); }
-    catch (e) { setError(errorMessage(e)); } finally { setBusy(false); }
+    event.preventDefault(); const isCurrent = capture(); setBusy(true); setError(''); requestKey.current ||= crypto.randomUUID();
+    try {
+      const result = await api<EvaluationPlan>('POST', '/evaluation-plans', { project_id: projectId, name: name.trim(), dataset_path: selection.path, dataset_grant_id: selection.grant_id, criteria }, requestKey.current);
+      if (isCurrent()) { setCreated(result); onCreated(); }
+    } catch (e) { if (isCurrent()) setError(errorMessage(e)); } finally { if (isCurrent()) setBusy(false); }
   }
   return <Dialog title="冻结评测方案" wide onClose={onClose} preventClose={busy}>
     {created ? <><p className="export-success">评测数据与规则已保存为独立版本</p><PlanSummary plan={created} /><p className="muted">适配器需在训练前选择此方案；量化模型在首次创建评测时固定准入方案。后续更换方案只能做对照。</p><Button primary onClick={onClose}>完成</Button></> : <form className="form-stack" onSubmit={freeze}>

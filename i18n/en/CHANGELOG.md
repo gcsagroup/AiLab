@@ -10,6 +10,15 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+<a id="原生选择器连接隔离源码测试通过"></a>
+
+### Native Picker Connection Isolation (Source Tests Passed)
+
+- Connection-identity checks now cover `pick_import_path`, `pick_export_directory`, `pick_worker_python`, `pick_media_python`, `use_bundled_worker`, and `use_bundled_media` at selection start and completion, HTTP dispatch, and returned results, preventing old operations from granting path access or changing the Python environment in a new library.
+- Import and evaluation-plan dialogs invalidate old callbacks after a project switch or unmount, preventing late selections, checks, or save results from affecting the new project.
+- Passed 618 frontend tests, 61 host tests, and type checking. The 3 existing onsite tests remain ignored and are not counted as passing. Corresponding pre-fix failures and post-fix regression evidence are preserved.
+- The current company-signed candidate at the fixed path remains Ver2.4（030）; 031 has not been built, and this round's signed-package and native hands-on verification are incomplete. The historical 030／E138 acceptance boundaries remain preserved, with no advancement in full AC, M0—M6, notarization, or public-release status.
+
 <a id="工作库连接隔离构建前源码记录"></a>
 
 ### Library Connection Isolation (Pre-build Source Record)

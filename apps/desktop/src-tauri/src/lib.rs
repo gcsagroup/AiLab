@@ -569,11 +569,11 @@ fn bridge_connection(state: &HostState, connection_id: &str) -> Result<Connectio
         })
 }
 
-fn complete_bridge_request(
+fn complete_bridge_request<T>(
     state: &HostState,
     connection_id: &str,
-    result: Result<Value, Value>,
-) -> Result<Value, Value> {
+    result: Result<T, Value>,
+) -> Result<T, Value> {
     // 成功和失败都要复核，旧服务结果不能成为新工作库的状态或错误提示。
     bridge_connection(state, connection_id)?;
     result
@@ -998,6 +998,7 @@ struct ImportSelection {
 #[tauri::command]
 async fn pick_import_path(
     kind: String,
+    connection_id: String,
     app: tauri::AppHandle,
 ) -> Result<Option<ImportSelection>, Value> {
     if !matches!(
@@ -1009,98 +1010,121 @@ async fn pick_import_path(
             "请选择模型、数据集、PNG 素材或备份。",
         ));
     }
-    let selected = tauri::async_runtime::spawn_blocking(move || {
-        let dialog = rfd::FileDialog::new();
-        if kind == "model" {
-            dialog.set_title("选择要导入的本地模型目录").pick_folder()
-        } else if kind == "backup" {
-            dialog.set_title("选择完整 AI Lab 备份目录").pick_folder()
-        } else if kind == "image-dataset" {
-            dialog
-                .set_title("选择包含 dataset.json 和图片的数据目录")
+    let state = app.state::<HostState>();
+    select_path_grant(&state, &connection_id, false, async move {
+        let selected = tauri::async_runtime::spawn_blocking(move || {
+            let dialog = rfd::FileDialog::new();
+            if kind == "model" {
+                dialog.set_title("选择要导入的本地模型目录").pick_folder()
+            } else if kind == "backup" {
+                dialog.set_title("选择完整 AI Lab 备份目录").pick_folder()
+            } else if kind == "image-dataset" {
+                dialog
+                    .set_title("选择包含 dataset.json 和图片的数据目录")
+                    .pick_folder()
+            } else if kind == "material" {
+                dialog
+                    .set_title("选择 PNG 图片素材")
+                    .add_filter("PNG 图片", &["png"])
+                    .pick_file()
+            } else {
+                dialog
+                    .set_title("选择要导入的数据集文件")
+                    .add_filter("数据集", &["json", "jsonl", "csv", "txt"])
+                    .pick_file()
+            }
+        })
+        .await
+        .map_err(|_| error("FILE_DIALOG_FAILED", "无法打开文件选择窗口。"))?;
+        Ok(selected)
+    })
+    .await
+}
+
+#[tauri::command]
+async fn pick_export_directory(
+    connection_id: String,
+    app: tauri::AppHandle,
+) -> Result<Option<ImportSelection>, Value> {
+    let state = app.state::<HostState>();
+    select_path_grant(&state, &connection_id, true, async move {
+        let selected = tauri::async_runtime::spawn_blocking(|| {
+            rfd::FileDialog::new()
+                .set_title("选择文件的保存目录")
                 .pick_folder()
-        } else if kind == "material" {
-            dialog
-                .set_title("选择 PNG 图片素材")
-                .add_filter("PNG 图片", &["png"])
-                .pick_file()
+        })
+        .await
+        .map_err(|_| error("FILE_DIALOG_FAILED", "无法打开保存目录选择窗口。"))?;
+        Ok(selected)
+    })
+    .await
+}
+
+async fn select_path_grant<F>(
+    state: &HostState,
+    connection_id: &str,
+    export: bool,
+    selection: F,
+) -> Result<Option<ImportSelection>, Value>
+where
+    F: std::future::Future<Output = Result<Option<PathBuf>, Value>>,
+{
+    // 选择 Future 必须惰性创建原生窗口，身份校验先于首次轮询。
+    let connection = bridge_connection(state, connection_id)?;
+    let selected = complete_bridge_request(state, connection_id, selection.await)?;
+    let result = async {
+        let Some(selected) = selected else {
+            return Ok(None);
+        };
+        let (endpoint, path_code, grant_code) = if export {
+            (
+                "/api/v1/export-grants",
+                "EXPORT_PATH_INVALID",
+                "EXPORT_GRANT_FAILED",
+            )
         } else {
-            dialog
-                .set_title("选择要导入的数据集文件")
-                .add_filter("数据集", &["json", "jsonl", "csv", "txt"])
-                .pick_file()
+            (
+                "/api/v1/import-grants",
+                "IMPORT_PATH_INVALID",
+                "IMPORT_GRANT_FAILED",
+            )
+        };
+        let canonical = selected
+            .canonicalize()
+            .map_err(|_| error(path_code, "所选路径已不存在或不可访问。"))?;
+        if export && !canonical.is_dir() {
+            return Err(error(path_code, "请选择已有目录。"));
         }
-    })
-    .await
-    .map_err(|_| error("FILE_DIALOG_FAILED", "无法打开文件选择窗口。"))?;
-    let Some(path) = selected else {
-        return Ok(None);
-    };
-    let canonical = path
-        .canonicalize()
-        .map_err(|_| error("IMPORT_PATH_INVALID", "所选文件已不存在或不可访问。"))?;
-    let path = canonical.to_string_lossy().to_string();
-    let state = app.state::<HostState>();
-    // 授权只能由原生选择器产生，api_request 无法调用此接口。
-    let granted = proxy(
-        &state,
-        ApiRequest {
-            method: "POST".into(),
-            path: "/api/v1/import-grants".into(),
-            body: Some(json!({"path":path})),
-            idempotency_key: None,
-        },
-    )
-    .await?;
-    let grant_id = granted
-        .get("grant_id")
-        .and_then(Value::as_str)
-        .ok_or_else(|| error("IMPORT_GRANT_FAILED", "所选文件未获导入授权。"))?
-        .to_string();
-    Ok(Some(ImportSelection { path, grant_id }))
-}
-
-#[tauri::command]
-async fn pick_export_directory(app: tauri::AppHandle) -> Result<Option<ImportSelection>, Value> {
-    let selected = tauri::async_runtime::spawn_blocking(|| {
-        rfd::FileDialog::new()
-            .set_title("选择文件的保存目录")
-            .pick_folder()
-    })
-    .await
-    .map_err(|_| error("FILE_DIALOG_FAILED", "无法打开保存目录选择窗口。"))?;
-    let Some(selected) = selected else {
-        return Ok(None);
-    };
-    let canonical = selected
-        .canonicalize()
-        .map_err(|_| error("EXPORT_PATH_INVALID", "所选目录已不存在或不可访问。"))?;
-    if !canonical.is_dir() {
-        return Err(error("EXPORT_PATH_INVALID", "请选择已有目录。"));
+        let path = canonical.to_string_lossy().to_string();
+        // 授权只能由原生选择器产生，api_request 无法调用此接口。
+        let granted = native_connection_request(
+            state,
+            &connection,
+            ApiRequest {
+                method: "POST".into(),
+                path: endpoint.into(),
+                body: Some(json!({"path":path})),
+                idempotency_key: None,
+            },
+        )
+        .await?;
+        let grant_id = granted
+            .get("grant_id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| error(grant_code, "所选路径未获授权。"))?
+            .to_string();
+        Ok(Some(ImportSelection { path, grant_id }))
     }
-    let path = canonical.to_string_lossy().to_string();
-    let state = app.state::<HostState>();
-    let granted = proxy(
-        &state,
-        ApiRequest {
-            method: "POST".into(),
-            path: "/api/v1/export-grants".into(),
-            body: Some(json!({"path":path})),
-            idempotency_key: None,
-        },
-    )
-    .await?;
-    let grant_id = granted
-        .get("grant_id")
-        .and_then(Value::as_str)
-        .ok_or_else(|| error("EXPORT_GRANT_FAILED", "所选目录未获导出授权。"))?
-        .to_string();
-    Ok(Some(ImportSelection { path, grant_id }))
+    .await;
+    complete_bridge_request(state, connection_id, result)
 }
 
 #[tauri::command]
-async fn pick_worker_python(app: tauri::AppHandle) -> Result<Option<Value>, Value> {
-    select_python(app, "worker_python", "文本生成与训练").await
+async fn pick_worker_python(
+    connection_id: String,
+    app: tauri::AppHandle,
+) -> Result<Option<Value>, Value> {
+    select_python(app, connection_id, "worker_python", "文本生成与训练").await
 }
 
 fn media_environment_field(engine: &str) -> Result<(&'static str, &'static str), Value> {
@@ -1115,97 +1139,137 @@ fn media_environment_field(engine: &str) -> Result<(&'static str, &'static str),
 }
 
 #[tauri::command]
-async fn pick_media_python(engine: String, app: tauri::AppHandle) -> Result<Option<Value>, Value> {
+async fn pick_media_python(
+    engine: String,
+    connection_id: String,
+    app: tauri::AppHandle,
+) -> Result<Option<Value>, Value> {
     let (field, label) = media_environment_field(&engine)?;
-    select_python(app, field, label).await
+    select_python(app, connection_id, field, label).await
 }
 
 async fn select_python(
     app: tauri::AppHandle,
+    connection_id: String,
     field: &'static str,
     label: &'static str,
 ) -> Result<Option<Value>, Value> {
-    let window = app
-        .get_webview_window("main")
-        .ok_or_else(|| error("WINDOW_UNAVAILABLE", "应用窗口不可用。"))?;
-    let selected = tauri::async_runtime::spawn_blocking(move || {
-        let path = rfd::FileDialog::new().set_title(format!("选择已准备的{label} Python 环境")).pick_file()?;
-        let confirmation = rfd::MessageDialog::new()
-            .set_parent(&window)
-            .set_title("使用所选执行环境")
-            .set_description(format!("应用将使用下列程序执行本机{label}任务，请确认这是你准备的 Python 环境。\n\n{}\n\n本次设置不会安装依赖或自动启动计算。", path.display()))
-            .set_buttons(rfd::MessageButtons::OkCancelCustom("使用此环境".into(), "取消".into())).show();
-        if confirmation == rfd::MessageDialogResult::Custom("使用此环境".into()) { Some(path) } else { None }
-    }).await.map_err(|_| error("FILE_DIALOG_FAILED", "无法选择执行环境。"))?;
-    let Some(path) = selected else {
-        return Ok(None);
-    };
-    // Python 虚拟环境的可执行文件可能是符号链接，保留用户所选路径以维持环境身份。
-    if !path.is_absolute()
-        || !path.is_file()
-        || !path
-            .file_name()
-            .is_some_and(|name| name.to_string_lossy().starts_with("python"))
-    {
-        return Err(error(
-            "ENVIRONMENT_INVALID",
-            "请选择已准备环境中存在的 Python 可执行文件。",
-        ));
+    let handle = app.clone();
+    let state = handle.state::<HostState>();
+    select_python_environment(&state, &connection_id, field, async move {
+        let window = app
+            .get_webview_window("main")
+            .ok_or_else(|| error("WINDOW_UNAVAILABLE", "应用窗口不可用。"))?;
+        let selected = tauri::async_runtime::spawn_blocking(move || {
+            let path = rfd::FileDialog::new()
+                .set_title(format!("选择已准备的{label} Python 环境"))
+                .pick_file()?;
+            let description = format!(
+                "应用将使用下列程序执行本机{label}任务，请确认这是你准备的 Python 环境。\n\n{}\n\n本次设置不会安装依赖或自动启动计算。",
+                path.display()
+            );
+            let confirmation = rfd::MessageDialog::new()
+                .set_parent(&window)
+                .set_title("使用所选执行环境")
+                .set_description(description)
+                .set_buttons(rfd::MessageButtons::OkCancelCustom(
+                    "使用此环境".into(), "取消".into(),
+                ))
+                .show();
+            if confirmation == rfd::MessageDialogResult::Custom("使用此环境".into()) {
+                Some(path)
+            } else {
+                None
+            }
+        })
+        .await
+        .map_err(|_| error("FILE_DIALOG_FAILED", "无法选择执行环境。"))?;
+        Ok(selected)
+    })
+    .await
+}
+
+async fn select_python_environment<F>(
+    state: &HostState,
+    connection_id: &str,
+    field: &'static str,
+    selection: F,
+) -> Result<Option<Value>, Value>
+where
+    F: std::future::Future<Output = Result<Option<PathBuf>, Value>>,
+{
+    let connection = bridge_connection(state, connection_id)?;
+    let selected = complete_bridge_request(state, connection_id, selection.await)?;
+    let result = async {
+        let Some(path) = selected else {
+            return Ok(None);
+        };
+        // Python 虚拟环境的可执行文件可能是符号链接，保留用户所选路径以维持环境身份。
+        if !path.is_absolute()
+            || !path.is_file()
+            || !path
+                .file_name()
+                .is_some_and(|name| name.to_string_lossy().starts_with("python"))
+        {
+            return Err(error(
+                "ENVIRONMENT_INVALID",
+                "请选择已准备环境中存在的 Python 可执行文件。",
+            ));
+        }
+        update_environment(state, &connection, field, Some(path), None)
+            .await
+            .map(Some)
     }
-    let state = app.state::<HostState>();
-    let _guard = reserve_host_change(
-        &state,
-        &state.credential_busy,
-        "HOST_CONFIGURATION_PENDING",
-        "正在更新本地环境或连接，请完成后再设置执行环境。",
-    )?;
-    let current = proxy(
-        &state,
-        ApiRequest {
-            method: "GET".into(),
-            path: "/api/v1/settings".into(),
-            body: None,
-            idempotency_key: None,
-        },
-    )
-    .await?;
-    let revision = current
-        .get("revision")
-        .and_then(Value::as_u64)
-        .ok_or_else(|| error("ENVIRONMENT_INVALID", "无法读取当前环境版本。"))?;
-    let updated = proxy(
-        &state,
-        ApiRequest {
-            method: "PATCH".into(),
-            path: "/api/v1/settings".into(),
-            body: Some(json!({field:path.to_string_lossy(),"expected_revision":revision})),
-            idempotency_key: None,
-        },
-    )
-    .await?;
-    Ok(Some(updated))
+    .await;
+    complete_bridge_request(state, connection_id, result)
 }
 
 #[tauri::command]
-async fn use_bundled_worker(state: State<'_, HostState>) -> Result<Value, Value> {
-    use_bundled_environment(&state, "worker_python", "bundled_worker_available").await
+async fn use_bundled_worker(
+    connection_id: String,
+    state: State<'_, HostState>,
+) -> Result<Value, Value> {
+    use_bundled_environment(
+        &state,
+        &connection_id,
+        "worker_python",
+        "bundled_worker_available",
+    )
+    .await
 }
 
 #[tauri::command]
-async fn use_bundled_media(engine: String, state: State<'_, HostState>) -> Result<Value, Value> {
+async fn use_bundled_media(
+    engine: String,
+    connection_id: String,
+    state: State<'_, HostState>,
+) -> Result<Value, Value> {
     let (field, _) = media_environment_field(&engine)?;
     let availability = if engine == "diffusers" {
         "bundled_media_worker_available"
     } else {
         "bundled_audio_worker_available"
     };
-    use_bundled_environment(&state, field, availability).await
+    use_bundled_environment(&state, &connection_id, field, availability).await
 }
 
 async fn use_bundled_environment(
     state: &HostState,
+    connection_id: &str,
     field: &'static str,
     availability: &'static str,
+) -> Result<Value, Value> {
+    let connection = bridge_connection(state, connection_id)?;
+    let result = update_environment(state, &connection, field, None, Some(availability)).await;
+    complete_bridge_request(state, connection_id, result)
+}
+
+async fn update_environment(
+    state: &HostState,
+    connection: &Connection,
+    field: &'static str,
+    path: Option<PathBuf>,
+    availability: Option<&'static str>,
 ) -> Result<Value, Value> {
     let _guard = reserve_host_change(
         state,
@@ -1213,8 +1277,9 @@ async fn use_bundled_environment(
         "HOST_CONFIGURATION_PENDING",
         "正在更新本地环境或连接，请完成后再设置执行环境。",
     )?;
-    let current = proxy(
+    let current = native_connection_request(
         state,
+        connection,
         ApiRequest {
             method: "GET".into(),
             path: "/api/v1/settings".into(),
@@ -1223,7 +1288,7 @@ async fn use_bundled_environment(
         },
     )
     .await?;
-    if current.get(availability).and_then(Value::as_bool) != Some(true) {
+    if availability.is_some_and(|key| current.get(key).and_then(Value::as_bool) != Some(true)) {
         return Err(error(
             "ENVIRONMENT_INVALID",
             "内置执行环境不可用，请重新安装应用。",
@@ -1233,16 +1298,32 @@ async fn use_bundled_environment(
         .get("revision")
         .and_then(Value::as_u64)
         .ok_or_else(|| error("ENVIRONMENT_INVALID", "无法读取当前环境版本。"))?;
-    proxy(
+    native_connection_request(
         state,
+        connection,
         ApiRequest {
             method: "PATCH".into(),
             path: "/api/v1/settings".into(),
-            body: Some(json!({field:null,"expected_revision":revision})),
+            body: Some(json!({
+                field: path.map(|value| value.to_string_lossy().into_owned()),
+                "expected_revision": revision,
+            })),
             idempotency_key: None,
         },
     )
     .await
+}
+
+// 仅供宿主专用命令使用：复核身份，但始终向调用前捕获的连接发送请求。
+// 不能退回 proxy()，否则排队或原生窗口返回后会借用新工作库身份。
+async fn native_connection_request(
+    state: &HostState,
+    connection: &Connection,
+    request: ApiRequest,
+) -> Result<Value, Value> {
+    bridge_connection(state, &connection.connection_id)?;
+    let result = proxy_connection(state, request, false, connection.clone()).await;
+    complete_bridge_request(state, &connection.connection_id, result)
 }
 
 fn launch_config(app: &tauri::AppHandle) -> Result<LaunchConfig, Box<dyn std::error::Error>> {
