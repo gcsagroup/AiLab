@@ -6,6 +6,12 @@
 
 ## 未发布
 
+### Python 环境路径保留修复（构建前源码记录）
+
+- macOS Python 选择器显式设置 `setResolvesAliases(false)`，从原始文件 URL 保留用户选中的符号链接路径；原有连接身份校验与“使用此环境”确认门禁保持。
+- 66 项宿主测试通过，3 项既有现场测试保持忽略；新增 5 项 Foundation 与临时文件测试覆盖符号链接、中文空格、普通文件、取消、异常、非文件 URL 和错线程，不创建或显示真实原生面板。
+- 当前固定路径公司签名 App 仍为 Ver2.4（031），032 尚未构建。真实面板返回、确认路径、三环境保存、重开与恢复内置仍待下一候选验收；031 失败及原证据保留，完整 AC、M0—M6、公证及公开发布状态不提高。
+
 ### 原生选择器连接隔离（构建前源码记录）
 
 - 已为 `pick_import_path`、`pick_export_directory`、`pick_worker_python`、`pick_media_python`、`use_bundled_worker` 和 `use_bundled_media` 补齐调用连接身份校验，覆盖选择操作开始与完成、HTTP 派发及结果返回，防止旧操作向新库授予路径权限或更改 Python 环境。

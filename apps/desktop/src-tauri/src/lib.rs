@@ -3,6 +3,7 @@ mod connection_scope_tests;
 mod control;
 mod credentials;
 mod exit_preparation;
+mod python_picker;
 mod startup;
 
 use base64::Engine;
@@ -1161,9 +1162,12 @@ async fn select_python(
             .get_webview_window("main")
             .ok_or_else(|| error("WINDOW_UNAVAILABLE", "应用窗口不可用。"))?;
         let selected = tauri::async_runtime::spawn_blocking(move || {
-            let path = rfd::FileDialog::new()
-                .set_title(format!("选择已准备的{label} Python 环境"))
-                .pick_file()?;
+            let Some(path) = python_picker::pick_file(
+                &app,
+                format!("选择已准备的{label} Python 环境"),
+            )? else {
+                return Ok(None);
+            };
             let description = format!(
                 "应用将使用下列程序执行本机{label}任务，请确认这是你准备的 Python 环境。\n\n{}\n\n本次设置不会安装依赖或自动启动计算。",
                 path.display()
@@ -1176,15 +1180,15 @@ async fn select_python(
                     "使用此环境".into(), "取消".into(),
                 ))
                 .show();
-            if confirmation == rfd::MessageDialogResult::Custom("使用此环境".into()) {
+            Ok(if confirmation == rfd::MessageDialogResult::Custom("使用此环境".into()) {
                 Some(path)
             } else {
                 None
-            }
+            })
         })
         .await
         .map_err(|_| error("FILE_DIALOG_FAILED", "无法选择执行环境。"))?;
-        Ok(selected)
+        selected
     })
     .await
 }

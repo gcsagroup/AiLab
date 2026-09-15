@@ -10,6 +10,14 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+<a id="python-环境路径保留修复构建前源码记录"></a>
+
+### Python Environment Path Preservation Fix (Pre-build Source Record)
+
+- The macOS Python picker explicitly sets `setResolvesAliases(false)` and preserves the user-selected symlink path from the original file URL. Existing connection-identity checks and the “Use this environment” confirmation gate remain intact.
+- Passed 66 host tests; 3 existing onsite tests remain ignored. The 5 new Foundation and temporary-file tests cover symlinks, Chinese characters and spaces, ordinary files, cancellation, errors, non-file URLs, and the wrong thread, without creating or displaying a real native panel.
+- The company-signed App at the fixed path remains Ver2.4（031）; 032 has not been built. Real panel results, confirmation paths, saving all three environments, reopening, and restoring bundled environments await acceptance of the next candidate. The 031 failure and original evidence remain preserved, with no advancement in full AC, M0—M6, notarization, or public-release status.
+
 <a id="原生选择器连接隔离构建前源码记录"></a>
 
 ### Native Picker Connection Isolation (Pre-build Source Record)
