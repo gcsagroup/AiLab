@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AudioLines, Boxes, ChevronRight, Database, FlaskConical, Folder, FolderHeart, History, Image, LayoutDashboard, MessagesSquare, Play, Plus, RefreshCw, Server, Settings2, Sparkles, Video } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
-import { api, collection, mergeRecords, canPickFile, errorMessage, pickWorkerPython, pickMediaPython, restartControl, useBundledWorker, useBundledMedia } from './api';
+import { api, collection, mergeRecords, canPickFile, errorMessage, pickWorkerPython, pickMediaPython, restartControl, useBundledWorker, useBundledMedia, invalidateNativeConnection, observeNativeConnection, pendingNativeConnectionChange } from './api';
 import type { Adapter, Attempt, Candidate, Capability, Dataset, Device, Draft, Kind, Material, Model, Operation, Project, Task, Work } from './types';
 import Workbench, { kindLabels } from './Workbench';
 import { MediaPreview } from './Media';
@@ -62,7 +62,7 @@ function ProjectDialog({ onClose, onCreate }: { onClose: () => void; onCreate: (
 
 export default function App() {
   const [libraryEpoch, setLibraryEpoch] = useState(0);
-  return <LibraryView key={libraryEpoch} onLibraryChanged={() => setLibraryEpoch(value => value + 1)} />;
+  return <LibraryView key={libraryEpoch} onLibraryChanged={() => { invalidateNativeConnection(); setLibraryEpoch(value => value + 1); }} />;
 }
 
 function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
@@ -162,6 +162,7 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
     environmentEpoch.current += 1; environmentInFlight.current = false; pageEpoch.current += 1; navigationVersion.current += 1;
   }
   function failedLibrarySwitch() {
+    invalidateNativeConnection();
     librarySwitching.current = false; setLoading(false); setPageBusy({});
     if (projectId && projectResourcesReady !== projectId) setProjectResourcesError('项目内容读取已中断，请重试加载。');
     void loadEnvironment();
@@ -188,10 +189,26 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
   useEffect(() => {
     if (!canPickFile()) return;
     let disposed = false;
+    let eventVersion = 0;
     let unlisten: (() => void) | undefined;
-    void listen<{ state: string; message: string }>('host-status', event => {
+    void listen<{ state: string; message: string; connection_id?: string }>('host-status', event => {
       if (librarySwitching.current) return;
-      if (event.payload.state === 'running') { markStartup('host_running_observed'); setHostHealthy(true); reload(); }
+      const version = ++eventVersion;
+      const changed = observeNativeConnection(event.payload);
+      if (event.payload.state === 'running') {
+        if (changed) {
+          invalidateTaskEntry();
+          libraryReadEpoch.current += 1; environmentEpoch.current += 1; environmentInFlight.current = false; pageEpoch.current += 1;
+          setEnvironmentReady(false); setEnvironmentBusy(false);
+        }
+        const resume = () => {
+          if (disposed || version !== eventVersion || librarySwitching.current) return;
+          markStartup('host_running_observed'); setHostHealthy(true); reload();
+        };
+        // 宿主可能先发健康事件，再结束切换命令；命令结束前不能启动新读取。
+        const pending = pendingNativeConnectionChange();
+        if (pending) void pending.then(resume); else resume();
+      }
       else {
         markStartup('host_disconnected_observed');
         // 同批断连再连接也要同步作废旧响应，防止旧项目结果重新启用环境读取。

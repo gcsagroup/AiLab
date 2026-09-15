@@ -1,3 +1,4 @@
+import { invalidateNativeConnection } from '../../apps/desktop/src/api';
 import React from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -31,6 +32,7 @@ let saveB: ReturnType<typeof deferred<void>> | undefined;
 let acknowledgements: { requestId: number; success: boolean; saved: LibraryViews }[];
 
 beforeEach(() => {
+  invalidateNativeConnection();
   host.listeners.clear(); requests = []; writes = []; acknowledgements = [];
   getContext = undefined; modelsB = undefined; saveB = undefined;
   saved = { project_id: null, projects: {} };
@@ -44,6 +46,7 @@ beforeEach(() => {
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
   HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
   vi.mocked(invoke).mockReset().mockImplementation(async (command, args) => {
+    if (command === 'host_status') return { state: 'running', connection_id: 'fixture-a' };
     if (command === 'complete_exit_preparation') {
       acknowledgements.push({ ...(args as { requestId: number; success: boolean }), saved: structuredClone(saved) });
       return {};

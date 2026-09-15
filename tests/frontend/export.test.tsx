@@ -1,3 +1,4 @@
+import { invalidateNativeConnection } from '../../apps/desktop/src/api';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -19,6 +20,7 @@ const response = (value: unknown) => ({ ok: true, json: async () => structuredCl
 function deferred<T>() { let resolve!: (value: T) => void; let reject!: (reason: unknown) => void; const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; }
 
 beforeEach(() => {
+  invalidateNativeConnection();
   Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value: function(this: HTMLDialogElement) { this.open = true; } });
   Object.defineProperty(HTMLDialogElement.prototype, 'close', { configurable: true, value: function(this: HTMLDialogElement) { this.open = false; } });
   calls = []; intercept = undefined; localStorage.clear(); sessionStorage.clear();
@@ -287,12 +289,14 @@ it.each(['success', 'failure'])('宿主断连使工作库失效，历史导出�
   intercept = call => call.path === '/exports/export-a' ? pending.promise : undefined;
   vi.mocked(isTauri).mockReturnValue(true);
   vi.mocked(invoke).mockImplementation(async (command, args) => {
+    if (command === 'host_status') return { state: 'running', connection_id: 'fixture-a' };
     if (command !== 'api_request') return {};
     const { request } = args as { request: { path: string; method: string; body?: unknown; idempotency_key?: string } };
     const result = await fetch(request.path, { method: request.method, body: request.body === undefined ? undefined : JSON.stringify(request.body), headers: { 'Idempotency-Key': request.idempotency_key || '' } });
     const value = await result.json(); if (!result.ok) throw value; return value;
   });
   render(<App />); fireEvent.click(await screen.findByRole('button', { name: /^历史作品导出/ }));
+  await waitFor(() => expect(calls.some(call => call.path === '/exports/export-a')).toBe(true));
   await act(async () => host.listener!({ payload: { state: 'stopped', message: '本机服务连接已中断' } }));
   await act(async () => outcome === 'success' ? pending.resolve(response(record)) : pending.reject(new Error('失效工作库的导出错误')));
   expect(screen.queryByRole('dialog', { name: '导出历史作品' })).toBeNull(); expect(screen.queryByText('失效工作库的导出错误')).toBeNull();

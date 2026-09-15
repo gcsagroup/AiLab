@@ -5,10 +5,16 @@ use std::{
     net::{SocketAddr, TcpStream},
     path::PathBuf,
     process::{Child, Command, Stdio},
-    sync::mpsc,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        mpsc,
+    },
     thread,
     time::{Duration, Instant},
 };
+
+// 只标识宿主内的一次连接，不包含认证凭据；停止与回滚都不能复用旧编号。
+static CONNECTION_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone)]
 pub struct LaunchConfig {
@@ -26,6 +32,8 @@ pub struct HostStatus {
     pub pid: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub port: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub connection_id: Option<String>,
 }
 
 impl HostStatus {
@@ -35,6 +43,7 @@ impl HostStatus {
             message: message.into(),
             pid: None,
             port: None,
+            connection_id: None,
         }
     }
 }
@@ -42,6 +51,7 @@ impl HostStatus {
 // 会话令牌只留在 Rust 内存中，不能序列化到 WebView。
 #[derive(Clone)]
 pub struct Connection {
+    pub connection_id: String,
     pub port: u16,
     pub token: String,
     pub host_token: Option<String>,
@@ -152,6 +162,7 @@ impl ControlProcess {
                 message: message.clone(),
                 pid: None,
                 port: None,
+                connection_id: None,
             };
         }
         result
@@ -280,7 +291,20 @@ impl ControlProcess {
             });
         match result {
             Ok(handshake) => {
+                let sequence = match CONNECTION_SEQUENCE.fetch_update(
+                    Ordering::Relaxed,
+                    Ordering::Relaxed,
+                    |value| value.checked_add(1),
+                ) {
+                    Ok(value) => value,
+                    Err(_) => {
+                        self.stop();
+                        return Err("本地连接编号已耗尽，请重新打开应用。".into());
+                    }
+                };
+                let connection_id = sequence.to_string();
                 self.connection = Some(Connection {
+                    connection_id: connection_id.clone(),
                     port: handshake.port,
                     token: handshake.token,
                     host_token: handshake.host_token,
@@ -290,6 +314,7 @@ impl ControlProcess {
                     message: "本地控制服务已连接。".into(),
                     pid: Some(pid),
                     port: Some(handshake.port),
+                    connection_id: Some(connection_id),
                 };
                 Ok(self.status.clone())
             }
@@ -300,6 +325,7 @@ impl ControlProcess {
                     message: message.clone(),
                     pid: None,
                     port: None,
+                    connection_id: None,
                 };
                 Err(message)
             }
@@ -317,11 +343,13 @@ impl ControlProcess {
                         message: "本地服务已意外退出。任务记录已保留，可以重启服务继续。".into(),
                         pid: None,
                         port: None,
+                        connection_id: None,
                     };
                 }
                 Err(_) => {
                     self.connection = None;
                     self.status.state = "failed".into();
+                    self.status.connection_id = None;
                     self.status.message = "无法确认本地服务状态，请重启服务。".into();
                 }
                 Ok(None) => {}
@@ -440,10 +468,12 @@ mod tests {
         let mut next = current.clone();
         next.data_dir = dir.path().join("restored");
         let previous_pid = service.status().pid;
+        let previous_connection = service.status().connection_id;
         let result = service
             .switch_library(&current, &next, &selection, b"restored")
             .unwrap();
         assert_ne!(result.pid, previous_pid);
+        assert_ne!(result.connection_id, previous_connection);
         assert_eq!(fs::read(&selection).unwrap(), b"restored");
         let mut invalid = next.clone();
         invalid.executable = dir.path().join("missing-control");
@@ -452,13 +482,16 @@ mod tests {
             .unwrap_err();
         assert!(failure.contains("已恢复连接原工作库"));
         assert_eq!(service.status().state, "running");
+        assert_ne!(service.status().connection_id, result.connection_id);
         assert_eq!(fs::read(&selection).unwrap(), b"restored");
         let missing_parent = dir.path().join("missing-parent/selected.json");
+        let previous_connection = service.status().connection_id;
         let failure = service
             .switch_library(&next, &current, &missing_parent, b"unsaved")
             .unwrap_err();
         assert!(failure.contains("已恢复连接原工作库"));
         assert_eq!(service.status().state, "running");
+        assert_ne!(service.status().connection_id, previous_connection);
         assert_eq!(fs::read(&selection).unwrap(), b"restored");
         service.stop();
     }

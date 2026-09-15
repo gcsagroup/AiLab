@@ -1,10 +1,12 @@
+#[cfg(test)]
+mod connection_scope_tests;
 mod control;
 mod credentials;
 mod exit_preparation;
 mod startup;
 
 use base64::Engine;
-use control::{ControlProcess, HostStatus, LaunchConfig};
+use control::{Connection, ControlProcess, HostStatus, LaunchConfig};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
@@ -140,7 +142,21 @@ fn reserve_host_change<'a>(
     if busy.swap(true, Ordering::SeqCst) {
         return Err(error(busy_code, busy_message));
     }
-    Ok(SwitchingGuard(busy))
+    let guard = SwitchingGuard(busy);
+    // 先占本方门禁，再检查另一方；与凭据 Gate 的相同顺序配合，不能同时进入。
+    if !std::ptr::eq(busy, &state.switching) && state.switching.load(Ordering::SeqCst) {
+        return Err(error(
+            "LIBRARY_SWITCH_PENDING",
+            "正在切换工作库，请等待连接完成。",
+        ));
+    }
+    if !std::ptr::eq(busy, &state.credential_busy) && state.credential_busy.load(Ordering::SeqCst) {
+        return Err(error(
+            "CREDENTIAL_OPERATION_PENDING",
+            "正在更新连接凭据，请完成后再切换工作库。",
+        ));
+    }
+    Ok(guard)
 }
 
 fn restored_path(path: &Path, restore_id: &str) -> Result<PathBuf, Value> {
@@ -189,6 +205,13 @@ pub struct ApiRequest {
     path: String,
     body: Option<Value>,
     idempotency_key: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct BridgeApiRequest {
+    #[serde(flatten)]
+    request: ApiRequest,
+    connection_id: String,
 }
 
 fn error(code: &str, message: &str) -> Value {
@@ -434,6 +457,15 @@ async fn proxy_internal(
         .map_err(|_| error("HOST_STATE_ERROR", "无法读取本地服务状态。"))?
         .connection()
         .ok_or_else(|| error("CONTROL_UNAVAILABLE", "本地服务未连接，请重启服务。"))?;
+    proxy_connection(state, request, host_only, connection).await
+}
+
+async fn proxy_connection(
+    state: &HostState,
+    request: ApiRequest,
+    host_only: bool,
+    connection: Connection,
+) -> Result<Value, Value> {
     // 主机、端口和认证由 Rust 持有；关闭重定向，令牌不会跟随外部地址。
     let url = format!("http://127.0.0.1:{}{}", connection.port, request.path);
     let method = reqwest::Method::from_bytes(request.method.as_bytes())
@@ -500,15 +532,51 @@ async fn proxy_internal(
 }
 
 #[tauri::command]
-async fn api_request(request: ApiRequest, state: State<'_, HostState>) -> Result<Value, Value> {
-    if state.switching.load(Ordering::SeqCst) && request.method != "GET" {
+async fn api_request(
+    request: BridgeApiRequest,
+    state: State<'_, HostState>,
+) -> Result<Value, Value> {
+    bridge_request(&state, request).await
+}
+
+async fn bridge_request(state: &HostState, request: BridgeApiRequest) -> Result<Value, Value> {
+    validate_request(&request.request)?;
+    let connection = bridge_connection(state, &request.connection_id)?;
+    let result = proxy_connection(state, request.request, false, connection).await;
+    complete_bridge_request(state, &request.connection_id, result)
+}
+
+fn bridge_connection(state: &HostState, connection_id: &str) -> Result<Connection, Value> {
+    // 在进程锁内核对前端捕获的连接身份；排队到切换结束的旧 IPC 也必须拒绝。
+    let mut process = state
+        .process
+        .lock()
+        .map_err(|_| error("HOST_STATE_ERROR", "无法读取本地服务状态。"))?;
+    if state.switching.load(Ordering::SeqCst) {
         return Err(error(
             "LIBRARY_SWITCH_PENDING",
             "正在切换工作库，请等待连接完成。",
         ));
     }
-    validate_request(&request)?;
-    proxy(&state, request).await
+    process
+        .connection()
+        .filter(|connection| connection.connection_id == connection_id)
+        .ok_or_else(|| {
+            error(
+                "CONTROL_CONNECTION_CHANGED",
+                "工作库连接已变化，请重新读取后再操作。",
+            )
+        })
+}
+
+fn complete_bridge_request(
+    state: &HostState,
+    connection_id: &str,
+    result: Result<Value, Value>,
+) -> Result<Value, Value> {
+    // 成功和失败都要复核，旧服务结果不能成为新工作库的状态或错误提示。
+    bridge_connection(state, connection_id)?;
+    result
 }
 
 fn media_path(artifact_id: &str) -> Result<String, Value> {
@@ -582,22 +650,33 @@ async fn media_response(mut response: reqwest::Response, maximum: usize) -> Resu
 }
 
 #[tauri::command]
-async fn api_media(artifact_id: String, state: State<'_, HostState>) -> Result<Value, Value> {
+async fn api_media(
+    artifact_id: String,
+    connection_id: String,
+    state: State<'_, HostState>,
+) -> Result<Value, Value> {
+    bridge_media(&state, artifact_id, connection_id).await
+}
+
+async fn bridge_media(
+    state: &HostState,
+    artifact_id: String,
+    connection_id: String,
+) -> Result<Value, Value> {
     let path = media_path(&artifact_id)?;
-    let connection = state
-        .process
-        .lock()
-        .map_err(|_| error("HOST_STATE_ERROR", "无法读取本地服务状态。"))?
-        .connection()
-        .ok_or_else(|| error("CONTROL_UNAVAILABLE", "本地服务未连接，请重启服务。"))?;
-    let response = state
-        .client
-        .get(format!("http://127.0.0.1:{}{}", connection.port, path))
-        .bearer_auth(connection.token)
-        .send()
-        .await
-        .map_err(|_| error("CONTROL_UNAVAILABLE", "媒体读取失败，请检查本地服务。"))?;
-    media_response(response, 64 * 1024 * 1024).await
+    let connection = bridge_connection(state, &connection_id)?;
+    let result = async {
+        let response = state
+            .client
+            .get(format!("http://127.0.0.1:{}{}", connection.port, path))
+            .bearer_auth(connection.token)
+            .send()
+            .await
+            .map_err(|_| error("CONTROL_UNAVAILABLE", "媒体读取失败，请检查本地服务。"))?;
+        media_response(response, 64 * 1024 * 1024).await
+    }
+    .await;
+    complete_bridge_request(state, &connection_id, result)
 }
 
 #[tauri::command]
@@ -718,12 +797,6 @@ async fn use_restored_library(restore_id: String, app: tauri::AppHandle) -> Resu
         "LIBRARY_SWITCH_PENDING",
         "正在切换工作库，请稍候。",
     )?;
-    if state.credential_busy.load(Ordering::SeqCst) {
-        return Err(error(
-            "CREDENTIAL_OPERATION_PENDING",
-            "正在更新连接凭据，请完成后再切换工作库。",
-        ));
-    }
     let verified = proxy(
         &state,
         ApiRequest {

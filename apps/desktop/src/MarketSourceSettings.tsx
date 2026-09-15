@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { api, canPickFile, errorMessage } from './api';
+import { api, canPickFile, errorMessage, configureMarketFixture } from './api';
 import { Badge, Button, ErrorNotice } from './ui';
 
 type Source = { provider_id: string; origin: string; source_label: string };
@@ -21,7 +21,7 @@ export function MarketSourceSettings({ onChanged }: { onChanged: () => void }) {
   async function configure(value: string | null) {
     setBusy(true); setError('');
     try {
-      const result = await invoke<{ market_fixture_origin: string | null }>('configure_market_fixture', { origin: value });
+      const result = await configureMarketFixture(value);
       if (live.current) { setOrigin(result.market_fixture_origin); setPort(result.market_fixture_origin?.split(':').at(-1) || ''); setUnknown(false); onChanged(); }
     } catch (e) { if (live.current) { setError(errorMessage(e)); setUnknown(true); } }
     finally { if (live.current) setBusy(false); }

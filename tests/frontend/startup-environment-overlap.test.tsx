@@ -1,3 +1,4 @@
+import { configureMarketFixture, invalidateNativeConnection } from '../../apps/desktop/src/api';
 import React from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -6,7 +7,7 @@ import App from '../../apps/desktop/src/App';
 import { defaultProjectView, type LibraryViews, type ProjectView } from '../../apps/desktop/src/ProjectContext';
 
 // 保留真实 App、API 和双帧回执，只控制宿主事件、IPC 返回顺序与绘制帧。
-const host = vi.hoisted(() => ({ listener: undefined as undefined | ((event: { payload: { state: string; message: string } }) => void) }));
+const host = vi.hoisted(() => ({ listener: undefined as undefined | ((event: { payload: { state: string; message: string; connection_id?: string } }) => void) }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async (name, listener) => { if (name !== 'host-status') return () => {}; host.listener = listener; return () => { if (host.listener === listener) host.listener = undefined; }; }) }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true, invoke: vi.fn() }));
 
@@ -17,24 +18,28 @@ const project = (library: Library) => ({ id: `project-${library}`, name: library
 const capabilities = (reason = '', supported = true) => ({ items: [{ kind: 'text', operation: 'generate', supported, reason }] });
 const devices = (name: string) => ({ items: [{ id: 'apple-gpu', name, status: 'ready' }] });
 const restored = { id: 'restore-fixture', state: 'succeeded', verified: true, restored_path: '/fixture/b', file_count: 1, changes_current_library: false, message: '' };
+let connectionGeneration: number;
+const connectionId = () => `fixture-${library}${connectionGeneration ? `-${connectionGeneration}` : ''}`;
 let library: Library, requests: Request[], intercept: ((request: Request) => unknown) | undefined;
 let contexts: Record<Library, LibraryViews>;
 let switchResult: ReturnType<typeof deferred<unknown>> | undefined;
 let frames: Map<number, FrameRequestCallback>, nextFrame: number;
 const reads = (path: string, bank?: Library) => requests.filter(request => request.path === path && (!bank || request.library === bank));
 const receipts = () => vi.mocked(invoke).mock.calls.filter(([command]) => command === 'record_first_frame');
-async function emit(state: string, message = '') { await act(async () => { host.listener!({ payload: { state, message } }); }); }
+async function emit(state: string, message = '') { await act(async () => { host.listener!({ payload: { state, message, connection_id: state === 'running' ? connectionId() : undefined } }); }); }
 function frame() { const pending = [...frames.values()]; frames.clear(); act(() => pending.forEach(callback => callback(0))); }
 
 beforeEach(() => {
+  invalidateNativeConnection();
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
   HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
-  library = 'a'; requests = []; intercept = undefined; switchResult = undefined; frames = new Map(); nextFrame = 1;
+  library = 'a'; connectionGeneration = 0; requests = []; intercept = undefined; switchResult = undefined; frames = new Map(); nextFrame = 1;
   contexts = { a: { project_id: null, projects: {} }, b: { project_id: null, projects: {} } };
   vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { const id = nextFrame++; frames.set(id, callback); return id; });
   vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id));
   vi.mocked(invoke).mockReset().mockImplementation(async (command, args) => {
+    if (command === 'host_status') return { state: 'running', connection_id: connectionId() };
     if (command === 'use_restored_library') return await switchResult!.promise;
     if (command !== 'api_request') return {};
     const input = (args as { request: { path: string; method: string; body?: unknown } }).request;
@@ -84,7 +89,7 @@ it('宿主健康时环境与待决项目并行，项目和资源未齐不发回�
   const projects = deferred<unknown>(), models = deferred<unknown>();
   intercept = request => request.path === '/projects' ? projects.promise : request.path.startsWith('/models?') ? models.promise : undefined;
   render(<App />);
-  expect(reads('/projects')).toHaveLength(1); expect(reads('/capabilities')).toHaveLength(0);
+  await waitFor(() => expect(reads('/projects')).toHaveLength(1)); expect(reads('/capabilities')).toHaveLength(0);
   await emit('running');
   await waitFor(() => expect(reads('/devices')).toHaveLength(1));
   expect(reads('/capabilities')).toHaveLength(1);
@@ -178,7 +183,7 @@ it.each(['/capabilities', '/devices'])('同批断连再健康也使旧%s失效�
   await waitFor(() => expect(reads(pendingPath)).toHaveLength(1));
   await act(async () => {
     host.listener!({ payload: { state: 'stopped', message: '本轮断连' } });
-    host.listener!({ payload: { state: 'running', message: '' } });
+    host.listener!({ payload: { state: 'running', message: '', connection_id: connectionId() } });
   });
   await waitFor(() => expect(reads(pendingPath)).toHaveLength(2));
   const settings = openSettings(); await settings.findByText('甲库设备');
@@ -238,4 +243,46 @@ it.each(['成功', '失败'])('切库%s时保留原环境隔离，旧探测及�
   await currentSettings.findByText(outcome === '成功' ? '乙库设备' : '甲库设备');
   await waitFor(() => expect(currentSettings.getByRole('button', { name: '刷新环境' }).matches(':disabled')).toBe(false));
   expect((screen.getByLabelText('当前项目') as HTMLSelectElement).value).toBe(outcome === '成功' ? 'project-b' : 'project-a');
+});
+
+it('连接身份尚待决时重复同库健康事件仍能完成环境启动', async () => {
+  const status = deferred<unknown>();
+  const normal = vi.mocked(invoke).getMockImplementation()!;
+  vi.mocked(invoke).mockImplementation(async (command, args) => command === 'host_status' ? status.promise : normal(command, args));
+  render(<App />);
+  await emit('running');
+  await emit('running');
+  expect(reads('/capabilities')).toHaveLength(0);
+  await act(async () => status.resolve({ state: 'running', connection_id: 'fixture-a' }));
+  await screen.findByRole('option', { name: '甲库项目' });
+  await waitFor(() => expect(reads('/devices')).toHaveLength(1));
+  expect(reads('/capabilities')).toHaveLength(1);
+  expect(screen.queryByText('工作库连接已变化，请重新读取后再操作。')).toBeNull();
+});
+
+
+it.each(['event', 'market'] as const)('仅新连接 running 事件能恢复环境，%s 过程的旧响应不占用新检查', async mode => {
+  const old = deferred<unknown>(), command = deferred<any>();
+  let seen = 0;
+  intercept = request => request.path === '/capabilities' && ++seen === 1 ? old.promise : undefined;
+  const normal = vi.mocked(invoke).getMockImplementation()!;
+  vi.mocked(invoke).mockImplementation(async (name, args) => name === 'configure_market_fixture' ? command.promise : normal(name, args));
+  render(<App />); await emit('running');
+  await screen.findByRole('option', { name: '甲库项目' });
+  await waitFor(() => expect(reads('/capabilities')).toHaveLength(1));
+  let reconnect: Promise<unknown> | undefined;
+  if (mode === 'market') reconnect = configureMarketFixture(null);
+  connectionGeneration += 1;
+  await emit('running');
+  if (mode === 'market') {
+    expect(reads('/capabilities')).toHaveLength(1);
+    await act(async () => { command.resolve({ market_fixture_origin: null }); await reconnect; });
+  }
+  await waitFor(() => expect(reads('/capabilities')).toHaveLength(2));
+  const settings = openSettings(); await settings.findByText('甲库设备');
+  const deviceCount = reads('/devices').length;
+  await act(async () => old.resolve(capabilities('旧连接迟到能力', false)));
+  expect(settings.queryByText('旧连接迟到能力')).toBeNull();
+  expect(settings.getByRole('button', { name: '刷新环境' }).matches(':disabled')).toBe(false);
+  expect(reads('/devices')).toHaveLength(deviceCount);
 });

@@ -10,6 +10,15 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+<a id="工作库连接隔离源码"></a>
+
+### Library Connection Isolation (Source)
+
+- Ordinary API requests and media reads bind to the connection identity acquired for the call. Library switches, rollbacks, and restarts reject old requests and late responses; writes are never automatically resent using the new library identity.
+- Startup notifications for the same connection preserve valid reads. An actual reconnection invalidates old environment checks and waits for the host operation to finish before reading the new state.
+- Passed 574 frontend tests, 52 host tests, and type checking; 3 existing onsite tests remain ignored. Host tests use temporary HTTP services to verify that old-library requests do not reach the new library.
+- This is source verification; the signed App at the fixed path remains 029. Repackaging and native UI acceptance of this fix are pending. Asynchronous native file, directory, and Python environment picker operations are outside this isolation coverage.
+
 <a id="media-键盘修复2026-09-15-准备记录"></a>
 
 ### Media Keyboard Fix (Preparation Record, 2026-09-15)

@@ -1,3 +1,4 @@
+import { invalidateNativeConnection } from '../../apps/desktop/src/api';
 import React from 'react';
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -13,6 +14,7 @@ const base: ExecutionTarget = { id: `execution-target-${'b'.repeat(32)}`, projec
 let targets: ExecutionTarget[]; let calls: { method: string; path: string; body: any; key?: string }[]; let conflict: boolean;
 const response = (value: unknown, ok = true) => ({ ok, json: async () => structuredClone(value) }) as Response;
 beforeEach(() => {
+  invalidateNativeConnection();
   targets = []; calls = []; conflict = false; host.native = false; host.invoke.mockReset();
   vi.stubGlobal('fetch', vi.fn(async (input: string, init?: RequestInit) => {
     const path = String(input).replace('/api/v1', ''); const method = init?.method || 'GET'; const body = init?.body ? JSON.parse(String(init.body)) : undefined;
@@ -79,6 +81,7 @@ it('切换项目后迟到的列表响应不进入新项目', async () => {
 it('原生登记只用专用宿主命令保存凭据，通用HTTP不收到秘密', async () => {
   host.native = true;
   host.invoke.mockImplementation(async (command, args) => {
+    if (command === 'host_status') return { state: 'running', connection_id: 'fixture-a' };
     if (command === 'api_request') return { items: targets };
     if (command === 'create_execution_target') { expect(args.input.credential_token).toBe(credential); targets = [{ ...base, revision: 1 }]; return targets[0]; }
     if (command === 'connect_remote_target') { targets = targets.map(target => ({ ...target, protocol_ready: true, connection_state: 'connected' })); return targets[0]; }
@@ -91,6 +94,7 @@ it('原生登记只用专用宿主命令保存凭据，通用HTTP不收到秘密
 });
 it('原生清除凭据保留目标记录，随后显示需要凭据', async () => {
   host.native = true; targets = [base]; host.invoke.mockImplementation(async (command, args) => {
+    if (command === 'host_status') return { state: 'running', connection_id: 'fixture-a' };
     if (command === 'api_request') return { items: targets };
     if (command === 'forget_remote_target') { expect(args).toEqual({ targetId: base.id, expectedRevision: 3 }); targets = [{ ...base, credential_status: 'required', revision: 4 }]; return targets[0]; }
     throw new Error(command);
@@ -117,6 +121,7 @@ it('HTTPS 接受标准地址并提交原输入，卡片展示控制端返回的�
 it('原生 HTTPS 登记通过专用命令传输方式，并使用返回的规范地址', async () => {
   host.native = true;
   host.invoke.mockImplementation(async (command, args) => {
+    if (command === 'host_status') return { state: 'running', connection_id: 'fixture-a' };
     if (command === 'api_request') return args.request.path.endsWith('/execution-default') ? { execution_target_id: null, revision: 1 } : { items: targets };
     if (command === 'create_execution_target') {
       expect(args.input).toMatchObject({ origin: 'HTTPS://Executor.Example:443/', transport: 'https', credential_token: credential });
