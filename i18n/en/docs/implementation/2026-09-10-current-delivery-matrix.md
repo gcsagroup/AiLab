@@ -6,6 +6,10 @@
 
 # Current Implementation, Evidence, and Remaining Delivery Matrix
 
+**032 Diagnostic Directory Regression (2026-09-16, E141)**: The fixed company-signed App was not rebuilt. Actual import covered 3 trilingual samples totaling 650 bytes; directory-chooser cancellation and whole-diagnostic cancellation were verified separately. Saving to a directory with Chinese characters and a space produced a 9316-byte ZIP that passed manifest, CRC, hash, and redaction checks. After reopening the same build and library, all tables, raw database bytes, and ZIP bytes were unchanged. Both normal exits and original-data restoration passed. Automatic environment probing was nonzero; no model ran. Diagnostic success does not replace full AC27, AC22, M0—M6, or release acceptance. [Diagnostic regression and limits](2026-09-16-ver2-4-032-diagnostic-directory-regression.md)
+
+The following E140 and earlier records preserve their state at the time.
+
 **032 Python Path Progress (2026-09-16, E140)**: The fixed company-signed candidate is now Ver2.4（032）. Source tests, the single build, and root complete-bundle verification passed. Root acceptance covers the limited native subset of original symlink-path selection, cancellation and an ordinary-file control, saving all three environments, reopening the same build and library, restoring bundled environments, two normal exits, and protection restoration. Stopped-state revisions are 4/7: all three fields first preserve the exact original path, then explicitly return to null. External dependency-probe failures remain recorded; no model ran. Full AC, native races, M0—M6, and release status do not advance. [032 progress and limits](2026-09-16-ver2-4-032-python-path-preservation.md)
 
 The following 031 and earlier records preserve their state at the time.

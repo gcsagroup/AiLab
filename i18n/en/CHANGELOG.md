@@ -55,6 +55,17 @@ This record distinguishes source changes, local signed candidates, and formal re
 - Added Simplified Chinese, Traditional Chinese, and English documentation and changelogs, stating candidate status and the scope of local evidence links.
 - Completed ignore rules for generated runtimes and build files; source commits do not contain models, user libraries, or credentials.
 
+<a id="ver24032诊断目录回归--2026-09-16"></a>
+
+## Ver2.4（032） Diagnostic Directory Regression — 2026-09-16
+
+- Reused the fixed company-signed 032 App without rebuilding. Actual import covered 3 trilingual samples totaling 650 bytes; directory-chooser cancellation and whole-diagnostic cancellation were verified separately (E141).
+- Saving to a directory with Chinese characters and a space produced a 9316-byte ZIP. CRC, manifest, hash, and redaction checks passed for its 2 members. All tables, raw database bytes, and ZIP bytes remained identical after reopening the same build and library.
+- Both normal exits and original-selector restoration completed; 44 of 47 protection records were strictly unchanged. Environment records contain 3 probe and 8 environment observations, so probing was nonzero. No model ran.
+- Selection corrections and screenshot limitations remain recorded; historical diagnostic successes and Python-path records remain unchanged. Full AC27, AC22, M0—M6, and public-release status do not advance.
+
+[Diagnostic regression and limits](docs/implementation/2026-09-16-ver2-4-032-diagnostic-directory-regression.md)
+
 <a id="ver24032-2026-09-16"></a>
 
 ## Ver2.4（032）— 2026-09-16
