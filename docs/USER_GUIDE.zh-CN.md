@@ -2,9 +2,9 @@
 
 [简体中文](USER_GUIDE.zh-CN.md) · [繁體中文](../i18n/zh-TW/docs/USER_GUIDE.zh-CN.md) · [English](../i18n/en/docs/USER_GUIDE.zh-CN.md)
 
-本手册对应当前公司签名候选 Ver2.4（031）。可以继续既有任务、查看和编辑作品修订、加载更早历史，并导出明确选择的版本。正文与配音文案各支持最多 16000 字符，字幕最多 200 条。029 已接受 Media 三入口在两个既有任务中的四个原生实例、正反向 Tab、Enter／Escape 回焦、正常退出与一次停机读回的有限子集（E137）；没有执行真实导入或模型运行。028 工作台四按钮的既有有限接受保留。详见[028进度](implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md)、[Media进度](implementation/2026-09-15-media-keyboard-progress.md)和[候选范围](implementation/2026-09-10-ver2-scope.md)。
+本手册对应当前公司签名候选 Ver2.4（032）。可以继续既有任务、查看和编辑作品修订、加载更早历史，并导出明确选择的版本。正文与配音文案各支持最多 16000 字符，字幕最多 200 条。029 已接受 Media 三入口在两个既有任务中的四个原生实例、正反向 Tab、Enter／Escape 回焦、正常退出与一次停机读回的有限子集（E137）；没有执行真实导入或模型运行。028 工作台四按钮的既有有限接受保留。详见[028进度](implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md)、[Media进度](implementation/2026-09-15-media-keyboard-progress.md)和[候选范围](implementation/2026-09-10-ver2-scope.md)。
 
-031 的原生文件导入已用 3 条 JSONL 实际验证，但 Python 环境选择存在已知问题：选中 venv 的 Python 后，确认框可能显示基础解释器路径。若显示路径与所选环境不一致，请取消，不要确认保存。本轮已取消且未更改环境，三环境保存、同号重开、恢复内置及诊断导出尚未完成。[031 进度与负例](implementation/2026-09-16-ver2-4-031-native-picker-progress.md)
+032 已验证 Python 符号链接原路径选择、三环境保存、同号同库重开及恢复内置。保存前仍须核对确认框与所选环境路径一致；不一致时请取消。外部环境保存成功不等于依赖齐备或模型可运行，本轮外部探测失败保留，恢复内置后显示就绪；本轮未执行模型或诊断导出。031 的原路径失败保留历史记录。 [032 进度与边界](implementation/2026-09-16-ver2-4-032-python-path-preservation.md)
 
 030 的工作库连接隔离修复已通过源码、签名包和两项包内真实控制服务测试。切换或重启时，旧连接的普通 API 请求和媒体读取会失效，写入不会自动向新库重发；请等待当前连接恢复后再操作。原生备份、目标库启动失败回滚、成功切库、分别保存项目及同号重开的有限子集已获根接受；文件、目录和 Python 环境选择器的异步竞态未覆盖。[030 进度](implementation/2026-09-16-ver2-4-030-connection-isolation.md)
 

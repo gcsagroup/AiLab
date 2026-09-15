@@ -4,6 +4,10 @@
 
 [简体中文](../../../docs/README.md) · [繁體中文](../../zh-TW/docs/README.md) · [English](README.md)
 
+**032 Python Path Progress (2026-09-16, E140)**: The fixed company-signed candidate is now Ver2.4（032）. Source tests, the single build, and root complete-bundle verification passed. Root acceptance covers the limited native subset of original symlink-path selection, cancellation and an ordinary-file control, saving all three environments, reopening the same build and library, restoring bundled environments, two normal exits, and protection restoration. Stopped-state revisions are 4/7: all three fields first preserve the exact original path, then explicitly return to null. External dependency-probe failures remain recorded; no model ran. Full AC, native races, M0—M6, and release status do not advance. [032 progress and limits](implementation/2026-09-16-ver2-4-032-python-path-preservation.md)
+
+The following 031 and earlier records preserve their state at the time.
+
 **031 native-picker progress (2026-09-16, E139)**: The fixed company-signed candidate is now Ver2.4（031）; source tests, the single build, and root complete-bundle verification passed. The native UI imported 3 JSONL samples totaling 509 bytes and exercised file-selection and Python-confirmation cancellation. However, selecting the venv Python made the confirmation display the base interpreter path, so it was cancelled without saving environment settings. Saving all three environments, reopening, restoring bundled environments, and diagnostic export remain incomplete; native race coverage, full AC, M0—M6, and release status do not advance. [031 progress and failure record](implementation/2026-09-16-ver2-4-031-native-picker-progress.md)
 
 The 030 and earlier records below retain their status at the time of recording.

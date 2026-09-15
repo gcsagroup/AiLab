@@ -1,10 +1,10 @@
 # 三语文档目录 · 三語文件目錄 · Trilingual documentation
 
-全部 83 份正式文档均提供简体中文、繁体中文和英文，包括 README、CHANGELOG、用户指南、设计规范、实现记录及历史归档。原文保留在原目录，译文按相同路径镜像。
+全部 84 份正式文档均提供简体中文、繁体中文和英文，包括 README、CHANGELOG、用户指南、设计规范、实现记录及历史归档。原文保留在原目录，译文按相同路径镜像。
 
-全部 83 份正式文件均提供簡體中文、繁體中文和英文，包括 README、CHANGELOG、使用指南、設計規範、實作記錄及歷史歸檔。原文保留在原目錄，譯文按相同路徑鏡像。
+全部 84 份正式文件均提供簡體中文、繁體中文和英文，包括 README、CHANGELOG、使用指南、設計規範、實作記錄及歷史歸檔。原文保留在原目錄，譯文按相同路徑鏡像。
 
-All 83 formal documents are available in Simplified Chinese, Traditional Chinese, and English, including README, CHANGELOG, user guides, design specifications, implementation records, and historical archives. Originals retain their paths; translations mirror the same directory structure.
+All 84 formal documents are available in Simplified Chinese, Traditional Chinese, and English, including README, CHANGELOG, user guides, design specifications, implementation records, and historical archives. Originals retain their paths; translations mirror the same directory structure.
 
 简体中文是维护原文。历史状态不会因翻译变成当前能力；命令、代码示例、技术标识及原始界面引文保留原值。指向 `.artifacts` 或绝对本机路径的证据只在相应本机目录可用，不随源码仓库上传。
 
@@ -94,6 +94,7 @@ Simplified Chinese is the maintained source. Translation does not turn historica
 | docs/implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md | [阅读](../docs/implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md) | [閱讀](zh-TW/docs/implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md) | [Read](en/docs/implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md) |
 | docs/implementation/2026-09-16-ver2-4-030-connection-isolation.md | [阅读](../docs/implementation/2026-09-16-ver2-4-030-connection-isolation.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-030-connection-isolation.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-030-connection-isolation.md) |
 | docs/implementation/2026-09-16-ver2-4-031-native-picker-progress.md | [阅读](../docs/implementation/2026-09-16-ver2-4-031-native-picker-progress.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-031-native-picker-progress.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-031-native-picker-progress.md) |
+| docs/implementation/2026-09-16-ver2-4-032-python-path-preservation.md | [阅读](../docs/implementation/2026-09-16-ver2-4-032-python-path-preservation.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-032-python-path-preservation.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-032-python-path-preservation.md) |
 | docs/validation-report.md | [阅读](../docs/validation-report.md) | [閱讀](zh-TW/docs/validation-report.md) | [Read](en/docs/validation-report.md) |
 | packages/contracts/bootstrap.md | [阅读](../packages/contracts/bootstrap.md) | [閱讀](zh-TW/packages/contracts/bootstrap.md) | [Read](en/packages/contracts/bootstrap.md) |
 | prototype/reference-2026-09-09/README.md | [阅读](../prototype/reference-2026-09-09/README.md) | [閱讀](zh-TW/prototype/reference-2026-09-09/README.md) | [Read](en/prototype/reference-2026-09-09/README.md) |

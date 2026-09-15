@@ -55,6 +55,17 @@ This record distinguishes source changes, local signed candidates, and formal re
 - Added Simplified Chinese, Traditional Chinese, and English documentation and changelogs, stating candidate status and the scope of local evidence links.
 - Completed ignore rules for generated runtimes and build files; source commits do not contain models, user libraries, or credentials.
 
+<a id="ver24032-2026-09-16"></a>
+
+## Ver2.4（032）— 2026-09-16
+
+- The Python symlink-path preservation fix is included in the company-signed package at the fixed path. Passed 66 host tests; 3 existing onsite tests remain ignored. The single build and root complete-bundle verification passed (E140).
+- Root acceptance covers the limited subset of native panel selection, cancellation and an ordinary-file control, exact saving of all three environments, reopening the same build and library, and restoring bundled environments. Stopped-state revisions are 4/7, with all three fields first holding the original venv path and then explicit null. Both normal exits and protection restoration passed.
+- External dependency-probe failures remain recorded; all four categories showed readiness after restoring bundled environments. No model ran. Screenshot-format and size anomalies, two root-readback parsing failures, and their corrections remain recorded without lowering the original gates.
+- The 031 path failure and historical text remain preserved. Native cross-library races, diagnostic export, full AC, M0—M6, notarization, and public release remain incomplete.
+
+[032 progress and limits](docs/implementation/2026-09-16-ver2-4-032-python-path-preservation.md)
+
 <a id="ver24031-2026-09-16"></a>
 
 ## Ver2.4（031）— 2026-09-16
