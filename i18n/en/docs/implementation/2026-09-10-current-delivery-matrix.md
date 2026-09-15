@@ -6,6 +6,10 @@
 
 # Current Implementation, Evidence, and Remaining Delivery Matrix
 
+**031 native-picker progress (2026-09-16, E139)**: The fixed company-signed candidate is now Ver2.4（031）; source tests, the single build, and root complete-bundle verification passed. The native UI imported 3 JSONL samples totaling 509 bytes and exercised file-selection and Python-confirmation cancellation. However, selecting the venv Python made the confirmation display the base interpreter path, so it was cancelled without saving environment settings. Saving all three environments, reopening, restoring bundled environments, and diagnostic export remain incomplete; native race coverage, full AC, M0—M6, and release status do not advance. [031 progress and failure record](2026-09-16-ver2-4-031-native-picker-progress.md)
+
+The 030 and earlier records below retain their status at the time of recording.
+
 **Latest connection-isolation progress (2026-09-16, E138)**: The fixed company-signed candidate is now Ver2.4（030）. Source regressions, the single signed build, root verification of the complete bundle, and two packaged real-control tests covering restart authentication and migration-failure rollback passed. Root acceptance covers the limited native subset of full backup, rollback after target-library startup failure, successful switching, separate project saves, and reopening the same build. Stopped-state readback and restoration of the original-library selection passed. Asynchronous races in native file, directory, and Python environment pickers remain outside this scope; full AC, M0—M6, notarization, and public release are incomplete. [030 progress and boundaries](2026-09-16-ver2-4-030-connection-isolation.md)
 
 The historical snapshots below retain their status at the time of recording; they do not mean that the current candidate remains on an older version.

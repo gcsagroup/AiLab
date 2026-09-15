@@ -2,19 +2,19 @@
   "documents": [
     {
       "source": "CHANGELOG.md",
-      "source_sha256": "9bef25cc904808b392ba134b665a64054afb685dd944af14f1a998c47627f066",
+      "source_sha256": "5beaee7ce77944afd270c32e68ec6f86b7d5894428533c61d695677a8a7a9fd1",
       "en": "i18n/en/CHANGELOG.md",
       "zh-TW": "i18n/zh-TW/CHANGELOG.md",
-      "zh-TW_sha256": "1f9605f45f4ead902a83a7cdbd7fa2a82ecbff3b287d1b001fa8958299d4c36b",
-      "en_sha256": "8ce71d850e6775bd3caa73f1ac3740e781e2ae080c44f54326eb824d4d3f38ca"
+      "zh-TW_sha256": "de99a8ebdd8deb28180d6e31be5fad1b5342dff31866a49e1965ce16f9a08496",
+      "en_sha256": "16ed53e405d3ea021089dcfbfc65e69f9d20711a9e634ec12ca9c63286eee298"
     },
     {
       "source": "README.md",
-      "source_sha256": "cd3b7b9dc2056c9ce8e14e7f00ace1409c9d666d933d65434f450f2763a4731c",
+      "source_sha256": "819d4983adacfccf82d3ee1f64928bfd56dc581c5bc0eb93ff6056fd0c323b87",
       "en": "i18n/en/README.md",
       "zh-TW": "i18n/zh-TW/README.md",
-      "zh-TW_sha256": "38dab47e644235dab18c3ce1c7c3527d6f48d89c457ccd8fea66d34895d4bc7f",
-      "en_sha256": "dcc33428e0c5f2c7aee6ad0a9a4940be600fbff3662a4d2dd3bc3b78ef29ea2b"
+      "zh-TW_sha256": "3c25f107ac02e432a4874fc45f5b06bc46a5c162af92cd82ba9d9657cdcf772e",
+      "en_sha256": "f4f2555259cd8792edfe3499c3eec2ed1c15a278f71a36d6ada3a64837f1d5d7"
     },
     {
       "source": "adapters/media/ACCEPTANCE.md",
@@ -202,19 +202,19 @@
     },
     {
       "source": "docs/README.md",
-      "source_sha256": "94af7804a4368744b1248a2a71d4590dc37d19c8fe34c4891234bd3620b74f87",
+      "source_sha256": "d321606ea986d055536e218c4735e492d62e83f020419758c33068fdcb16d80e",
       "en": "i18n/en/docs/README.md",
       "zh-TW": "i18n/zh-TW/docs/README.md",
-      "zh-TW_sha256": "a07d26fd8adef5fa733d363c5f151be26cecfc563d40a185650e817747452277",
-      "en_sha256": "b753cb612bfa852eb8b41e3ac904ba32acc248091e3a9dd4c1ac67c53c6b53d2"
+      "zh-TW_sha256": "f3f4841f4af9d6d48c23fa933f4b8fa11ec4d3f2ced22d0bd3ff801f69e88a44",
+      "en_sha256": "154cfd0a5e04031042b876dd77cd8dbdc16b64a6d823dcaceb88faa2da79d7be"
     },
     {
       "source": "docs/USER_GUIDE.zh-CN.md",
-      "source_sha256": "18f6325e78e8ccd496aac4dfdd4770bba9b2b91c2bba7ca8fead0d0bd7291686",
+      "source_sha256": "5ee1c8d50d090a10ba8f9250233d8cafb9c49e4591be14670b1401c9b8d96c56",
       "en": "i18n/en/docs/USER_GUIDE.zh-CN.md",
       "zh-TW": "i18n/zh-TW/docs/USER_GUIDE.zh-CN.md",
-      "zh-TW_sha256": "8c21401ab389666a03ce96e837f8dd4e173db54bdd215191cb301896853d0199",
-      "en_sha256": "975f707d2fa95d6a68cc7db501405bceb95344ccbfbe70b89fc212a07d88e2ff"
+      "zh-TW_sha256": "67a4da060861fbeef3c35c35d9a1e681cf93d7c2da40f0709f9eb335145885fd",
+      "en_sha256": "cb07609dedf1c0adab3f5fd0cbb78277c570c7d4e8c4101edbe473a8f3313aea"
     },
     {
       "source": "docs/archive/v1.0-2026-09-09/01-product-requirements.md",
@@ -362,19 +362,19 @@
     },
     {
       "source": "docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "source_sha256": "19cfa12fb119624208ffd13b77836946c3ac179fb7a2b396baec88699c2c2ed1",
+      "source_sha256": "2847a8d4bbcd9c5bb3f7d9aeca969483474b964546ca81586bf593866ba991c0",
       "en": "i18n/en/docs/implementation/2026-09-10-current-delivery-matrix.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "zh-TW_sha256": "0731cc7463aa3a931533a097710af55aafcfa7ec2dedfff44a3c614dc3e184dd",
-      "en_sha256": "e26fb77174510e978765641c04f902e2a4e630a8a7ed15230c842199a58b2d5a"
+      "zh-TW_sha256": "3565f06ca948ce36298987bff0aa22205278cb2277a8bf226a9123efd33235f9",
+      "en_sha256": "6ae7017ea8e4e510a963dcf1971fcefad46a8f8d322ab73d82f8383d52cc0645"
     },
     {
       "source": "docs/implementation/2026-09-10-execution-board.md",
-      "source_sha256": "23fa9dea8d80b6d4fd0173f853f772c611e543c3ad85d26612394a6891cb3d8b",
+      "source_sha256": "b4bfb0fdcada4c132b0b446f64a5684852a37665733d01ef5015652418644405",
       "en": "i18n/en/docs/implementation/2026-09-10-execution-board.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-execution-board.md",
-      "zh-TW_sha256": "2cb0fbbf3407f36ed50db7bee1cac66708501c374f054e6146aa73671fbe557d",
-      "en_sha256": "fe22e03165b153f4f3983cd0783e5f103dc2d101b53cf544a56e1f05dfe91c3b"
+      "zh-TW_sha256": "a73ccd37bbeafa696065058c57a62d9b7ebb0c4d3202a407c303b30821fe3e46",
+      "en_sha256": "66a31e94e888834394ad90f566f9f86c095843d3dc3163c24e75a2f9c1a1c96c"
     },
     {
       "source": "docs/implementation/2026-09-10-remote-nvidia-evidence.md",
@@ -617,6 +617,14 @@
       "en_sha256": "7ea1728cfc5f90991bee44c7a130ba4ddce953b1f260a5760285420a911276b4"
     },
     {
+      "source": "docs/implementation/2026-09-16-ver2-4-031-native-picker-progress.md",
+      "en": "i18n/en/docs/implementation/2026-09-16-ver2-4-031-native-picker-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-16-ver2-4-031-native-picker-progress.md",
+      "source_sha256": "b212b621126134eeccb6216a80b65dd83c367f7d033c72db97ff8b8d347322b9",
+      "zh-TW_sha256": "926f37a5c7dfd17baf46eb1c5cdf0ab1447f2d2a240c335885ad7f6c75990d8b",
+      "en_sha256": "523bb91a5436b72ff74fc5258bb780e32e170afdc58c5fa6ab76354bec7260a3"
+    },
+    {
       "source": "docs/validation-report.md",
       "source_sha256": "028a913c1638b9d73b0d1db13819fc1d7dbffc39f8c296ca0e94af0563fa1038",
       "en": "i18n/en/docs/validation-report.md",
@@ -666,5 +674,5 @@
   ],
   "source_language": "zh-CN",
   "index": "i18n/README.md",
-  "index_sha256": "3a00c5f0b4b6769c2c785b56eb18e991040360334c07f1963f600cb887f9489c"
+  "index_sha256": "06de224f0e854a82766ecd6ec935ea0a838b028f8e41eaa60a4d753e81dfdcd6"
 }

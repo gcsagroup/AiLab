@@ -10,9 +10,9 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
-<a id="原生选择器连接隔离源码测试通过"></a>
+<a id="原生选择器连接隔离构建前源码记录"></a>
 
-### Native Picker Connection Isolation (Source Tests Passed)
+### Native Picker Connection Isolation (Pre-build Source Record)
 
 - Connection-identity checks now cover `pick_import_path`, `pick_export_directory`, `pick_worker_python`, `pick_media_python`, `use_bundled_worker`, and `use_bundled_media` at selection start and completion, HTTP dispatch, and returned results, preventing old operations from granting path access or changing the Python environment in a new library.
 - Import and evaluation-plan dialogs invalidate old callbacks after a project switch or unmount, preventing late selections, checks, or save results from affecting the new project.
@@ -46,6 +46,17 @@ This record distinguishes source changes, local signed candidates, and formal re
 - Organized product source, tests, build scripts, and formal documentation in one repository while retaining the prototype and historical design archive.
 - Added Simplified Chinese, Traditional Chinese, and English documentation and changelogs, stating candidate status and the scope of local evidence links.
 - Completed ignore rules for generated runtimes and build files; source commits do not contain models, user libraries, or credentials.
+
+<a id="ver24031-2026-09-16"></a>
+
+## Ver2.4（031）— 2026-09-16
+
+- The native-picker connection-isolation fix is included in the company-signed package at the fixed path. Passed 618 frontend tests, 61 host tests, and type checking; 3 existing onsite tests remain ignored. The single build and root complete-bundle verification passed (E139).
+- The native UI imported 3 JSONL samples totaling 509 bytes and exercised cancellation of dataset selection, Python file selection, and Python confirmation. One normal exit returned 0; the original selector was restored, with 44 existing protection records strictly unchanged.
+- Selecting the venv Python made the confirmation display the base interpreter path, so it was cancelled without saving. The three-field check failed because environment setup was incomplete, and that original failure is preserved. Saving all three environments, reopening, restoring bundled environments, diagnostic export, and native connection-race verification remain incomplete.
+- The root-cause chain for the path returned by NSOpenPanel has been identified, but a subsequent fix has not been implemented or accepted. Source-helper tests with injected paths do not exercise the real native panel. Full AC, M0—M6, notarization, and release status do not advance.
+
+[031 progress and failure evidence](docs/implementation/2026-09-16-ver2-4-031-native-picker-progress.md)
 
 <a id="ver24030-2026-09-16"></a>
 

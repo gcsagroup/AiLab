@@ -10,7 +10,9 @@ A local-first desktop workbench for model training and inference. Organize model
 
 ## Current status
 
-The current fixed company-signed candidate is **Ver2.4（030）**, signed by **Global Cybersecurity Alliance Limited**. It is a development candidate; full M0—M6, clean installation, notarization, and formal distribution acceptance remain incomplete.
+The current fixed company-signed candidate is **Ver2.4（031）**, signed by **Global Cybersecurity Alliance Limited**. It is a development candidate; full M0—M6, clean installation, notarization, and formal distribution acceptance remain incomplete.
+
+031 passed source and signed-package verification for native-picker isolation, but actual selection of the venv Python made the confirmation display the base interpreter path. The operation was cancelled and the failure preserved. Actual import of 3 JSONL samples and cancellation actions are recorded; saving all three environments, reopening, restoring bundled environments, and diagnostic export remain incomplete. [031 progress and failure record](docs/implementation/2026-09-16-ver2-4-031-native-picker-progress.md)
 
 030 includes the library connection-isolation fix in the signed package. Source regressions, complete-bundle verification, and two packaged real-control tests passed; root acceptance covers the limited native subset of backup, rollback after target-library startup failure, successful switching, and reopening the same build, with stopped-state readback passed. Old requests after a switch, rollback, or restart are not automatically resent with the new library identity. Asynchronous native-picker races remain uncovered. [030 progress](docs/implementation/2026-09-16-ver2-4-030-connection-isolation.md)
 
