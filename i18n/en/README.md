@@ -10,7 +10,9 @@ A local-first desktop workbench for model training and inference. Organize model
 
 ## Current status
 
-The current fixed company-signed candidate is **Ver2.4（029）**, signed by **Global Cybersecurity Alliance Limited**. It is a development candidate; full M0—M6, clean installation, notarization, and formal distribution acceptance remain incomplete.
+The current fixed company-signed candidate is **Ver2.4（030）**, signed by **Global Cybersecurity Alliance Limited**. It is a development candidate; full M0—M6, clean installation, notarization, and formal distribution acceptance remain incomplete.
+
+030 includes the library connection-isolation fix in the signed package. Source regressions, complete-bundle verification, and two packaged real-control tests passed; root acceptance covers the limited native subset of backup, rollback after target-library startup failure, successful switching, and reopening the same build, with stopped-state readback passed. Old requests after a switch, rollback, or restart are not automatically resent with the new library identity. Asynchronous native-picker races remain uncovered. [030 progress](docs/implementation/2026-09-16-ver2-4-030-connection-isolation.md)
 
 Evidence covers the source fix for the three Media import entries, related tests, and Safari verification. Root acceptance now covers the 029 company-signed package and the limited subset of four native entry instances in two existing tasks, normal exit, and one stopped-state readback (E137). No real import or model run occurred. The existing limited acceptances for the four Workbench buttons in 028 and keyboard-only original-text export and reopening the same task in 027 remain in place. See the [current delivery matrix](docs/implementation/2026-09-10-current-delivery-matrix.md) and [changelog](CHANGELOG.md).
 

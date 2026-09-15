@@ -4,7 +4,9 @@
 
 [簡體中文](../../../docs/USER_GUIDE.zh-CN.md) · [繁體中文](USER_GUIDE.zh-CN.md) · [English](../../en/docs/USER_GUIDE.zh-CN.md)
 
-本手冊對應當前公司簽名候選 Ver2.4（029）。可以繼續既有任務、查看和編輯作品修訂、載入更早歷史，並導出明確選擇的版本。正文與配音文案各支援最多 16000 字元，字幕最多 200 條。029 已接受 Media 三入口在兩個既有任務中的四個原生實例、正反向 Tab、Enter／Escape 回焦、正常退出與一次停機讀回的有限子集（E137）；沒有執行真實導入或模型運行。028 工作台四按鈕的既有的有限接受保留。詳見[028進度](implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md)、[Media進度](implementation/2026-09-15-media-keyboard-progress.md)和[候選範圍](implementation/2026-09-10-ver2-scope.md)。
+本手冊對應當前公司簽名候選 Ver2.4（030）。可以繼續既有任務、查看和編輯作品修訂、載入更早歷史，並導出明確選擇的版本。正文與配音文案各支援最多 16000 字元，字幕最多 200 條。029 已接受 Media 三入口在兩個既有任務中的四個原生實例、正反向 Tab、Enter／Escape 回焦、正常退出與一次停機讀回的有限子集（E137）；沒有執行真實導入或模型運行。028 工作台四按鈕的既有的有限接受保留。詳見[028進度](implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md)、[Media進度](implementation/2026-09-15-media-keyboard-progress.md)和[候選範圍](implementation/2026-09-10-ver2-scope.md)。
+
+030 的工作庫連線隔離修復已通過原始碼、簽章包和兩項包內真實控制服務測試。切換或重新啟動時，舊連線的一般 API 請求和媒體讀取會失效，寫入不會自動向新庫重送；請等待目前連線恢復後再操作。原生備份、目標庫啟動失敗復原、成功切庫、分別儲存專案及同號重新開啟的有限子集已獲根接受；檔案、目錄和 Python 環境選擇器的非同步競態未涵蓋。[030 進度](implementation/2026-09-16-ver2-4-030-connection-isolation.md)
 
 可以使用 Tab、Shift-Tab、Return 和 Escape 操作已覆蓋的鍵盤路徑。027 的文字原作品純鍵盤導出與同號重開、028 的工作台四按鈕原生路徑均為有限驗收，不代表所有頁面和任務已經完成鍵盤驗收。011 曾在開啓 macOS“鍵盤導航”後檢查彈窗焦點並恢復原設置，該條件僅屬於[011歷史記錄](implementation/2026-09-13-ver2-2-011-progress.md)。
 

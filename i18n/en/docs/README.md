@@ -4,6 +4,10 @@
 
 [简体中文](../../../docs/README.md) · [繁體中文](../../zh-TW/docs/README.md) · [English](README.md)
 
+**Latest connection-isolation progress (2026-09-16, E138)**: The fixed company-signed candidate is now Ver2.4（030）. Source regressions, the single signed build, root verification of the complete bundle, and two packaged real-control tests covering restart authentication and migration-failure rollback passed. Root acceptance covers the limited native subset of full backup, rollback after target-library startup failure, successful switching, separate project saves, and reopening the same build. Stopped-state readback and restoration of the original-library selection passed. Asynchronous races in native file, directory, and Python environment pickers remain outside this scope; full AC, M0—M6, notarization, and public release are incomplete. [030 progress and boundaries](implementation/2026-09-16-ver2-4-030-connection-isolation.md)
+
+The historical snapshots below retain their status at the time of recording; they do not mean that the current candidate remains on an older version.
+
 **Latest Media keyboard progress (2026-09-16, E137)**: The fixed company-signed candidate is now Ver2.4（029）. Root acceptance covers the single build and the limited native subset: four instances of the three entries across two existing tasks, forward and reverse Tab, Enter to open, Escape to close and return focus, normal exit, and one stopped-state readback. The 523 resources, 673 events, 3 commands, and all business records remain unchanged; only four expected page-setting leaves changed. No real import or model run occurred. The existing limited acceptances for 028 and 027 remain in place; full AC, M0—M6, notarization, and public release remain incomplete.[Progress for this change](implementation/2026-09-15-media-keyboard-progress.md)
 
 The E136 and earlier records below retain their original wording from 2026-09-15; insufficient capacity and the unbuilt candidate describe the historical state.

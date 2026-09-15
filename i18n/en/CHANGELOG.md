@@ -10,9 +10,9 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
-<a id="工作库连接隔离源码"></a>
+<a id="工作库连接隔离构建前源码记录"></a>
 
-### Library Connection Isolation (Source)
+### Library Connection Isolation (Pre-build Source Record)
 
 - Ordinary API requests and media reads bind to the connection identity acquired for the call. Library switches, rollbacks, and restarts reject old requests and late responses; writes are never automatically resent using the new library identity.
 - Startup notifications for the same connection preserve valid reads. An actual reconnection invalidates old environment checks and waits for the host operation to finish before reading the new state.
@@ -37,6 +37,17 @@ This record distinguishes source changes, local signed candidates, and formal re
 - Organized product source, tests, build scripts, and formal documentation in one repository while retaining the prototype and historical design archive.
 - Added Simplified Chinese, Traditional Chinese, and English documentation and changelogs, stating candidate status and the scope of local evidence links.
 - Completed ignore rules for generated runtimes and build files; source commits do not contain models, user libraries, or credentials.
+
+<a id="ver24030-2026-09-16"></a>
+
+## Ver2.4（030）— 2026-09-16
+
+- The library connection-isolation fix is included in the company-signed package at the fixed path. The single build, complete-bundle review, and checks of 7 signed targets passed (E138).
+- Passed 574 frontend tests, 52 ordinary host tests, and type checking. Two additional tests actually used the current packaged control service to verify restart authentication and migration-failure rollback; both passed. The onsite Keychain test remains unexecuted.
+- Root acceptance covers the limited native subset of full backup, rollback after target-library startup failure, successful switching, separate project saves, and reopening the same build. Both normal exits and stopped-state readback passed. Migration failure and queued old-request races were not reproduced in the native UI.
+- The 029 archive and existing acceptances remain preserved. Asynchronous native-picker races, full AC, M0—M6, notarization, and public release remain incomplete.
+
+[030 connection-isolation progress](docs/implementation/2026-09-16-ver2-4-030-connection-isolation.md)
 
 <a id="ver24029-2026-09-16"></a>
 
