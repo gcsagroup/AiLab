@@ -1,4 +1,24 @@
-# Media 三入口键盘进度：E136
+# Media 三入口键盘进度：E136—E137
+
+**最新 Media 键盘进展（2026-09-16，E137）**：固定公司签名候选已更新为 Ver2.4（029）。唯一构建、三入口在两个既有任务中的四个原生实例、正反向 Tab、Enter 打开、Escape 关闭回焦、正常退出及一次停机读回的有限子集已获根接受。523 资源／673 事件／3 命令及全部业务记录保持，仅四个预期页面设置叶子变化；没有真实导入或模型运行。028 与 027 的既有有限接受保留，完整 AC、M0—M6、公证及公开发布未完成。
+
+## E137：029 签名包与原生有限接受
+
+### 包与构建证据
+
+本次执行前容量约 117.39 GiB，高于原 40 GiB 门槛；没有清理或降低门槛。028 回滚归档成功，26 项构建门槛合成测试、8 项根验包器测试及 12 项版本同步测试通过。唯一 029 构建耗时 496.86 秒、退出 0，构建自动更新四个版本文件；160 项生产来源、210 项冻结输入、90 项应用输入及 21966 个普通文件／48 个符号链接／4003 个目录一致，7 个公司签名目标通过根复核。正式构建前相对 028 的生产源码变更仅为 Media 三处键盘属性。[028 归档接受](../../.artifacts/integration-ver2-4-029-v1/archive-tool-receipt.json)、[构建门槛测试](../../.artifacts/integration-ver2-4-029-v1/root-script-acceptance.json)、[根验包器测试](../../.artifacts/integration-ver2-4-029-v1/root-verifier-acceptance.json)、[版本同步测试](../../.artifacts/media-keyboard-ver2-4-next-v1/resume-20260916-001/version-tests.json)、[029 包接受](../../.artifacts/integration-ver2-4-029-v1/root-bundle-acceptance.json)
+
+### 原生界面与停机数据证据
+
+同一次 029 App 在两个既有任务中验证四个入口实例：图片训练的模型／图片数据，以及视频运行的模型／图片素材。正向 Tab 与反向 Shift-Tab 均可达，Enter 打开正确弹窗，Escape 关闭并回到同一入口；19 张截图与 19 份 AX 共 38 文件获根接受。Cmd+Q 后 CUA 曾短暂返回 pipe closed，随后重读同一 App 的退出确认框并点击退出；没有重启，唯一启动正常退出 0。[原生焦点接受](../../.artifacts/media-keyboard-ver2-4-next-v1/native-run-001/root-focus-acceptance.json)、[正常退出记录](../../.artifacts/media-keyboard-ver2-4-next-v1/native-run-001/run/result.json)
+
+停机后实际仅建立一次 immutable 只读连接，读回退出 0 并关闭连接。523 资源／673 事件／3 命令及全部业务记录严格保持，两个任务草稿版本仍为 2／3，`module_tab=train` 与原文字最近任务保持。差异恰好为四个页面设置叶子：`kind`、`task_id`、`recent_tasks/image:train`、`recent_tasks/video:generate`。库选择已恢复，选择文件内容与 inode 保持但时间变化；旧库、旧导出包和既有远程进程保护保持。[停机读回根接受](../../.artifacts/media-keyboard-ver2-4-next-v1/native-run-001/root-readback.json)
+
+本次根接受仅覆盖上述有限子集，没有真实文件导入、业务保存或模型运行；独审已接受上述有限子集；截图与 AX 为保存状态，不代替逐键事件日志。[原生独审](../../.artifacts/media-keyboard-ver2-4-next-v1/native-review-001/review.md)。028／027 既有成果保留，完整键盘、完整 AC／M0—M6、NVIDIA、跨端、干净安装、五名首次用户、旧质量失败与预算、旧 020 空白及首显／完整就绪缺口、公证和公开发布均不因此完成。包回执中的“尚未启动原生”及以下旧记录保留形成时含义。
+
+## 2026-09-15 历史准备记录
+
+以下 E136 及更早记录保留 2026-09-15 形成时原文；其中容量不足与尚未构建描述属于历史状态。
 
 当前固定公司签名候选仍为 Ver2.4（028）。Media 三个导入入口的源码修复、56 项相关前端测试及真实 Safari 键盘子集已接受，独审已由根关闭；029 尚未归档、打包或原生验证。容量低于原 40 GiB 门槛，缓存清理仍待用户确认，没有执行删除。028 的既有接受保留，完整 AC 和 M0—M6 不提高。[028 历史进度](2026-09-15-ver2-4-028-workbench-keyboard-progress.md)
 

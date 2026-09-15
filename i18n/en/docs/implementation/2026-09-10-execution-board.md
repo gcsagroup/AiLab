@@ -6,6 +6,10 @@
 
 # Development Execution and Acceptance Records
 
+**Latest Media keyboard progress (2026-09-16, E137)**: The fixed company-signed candidate is now Ver2.4（029）. Root acceptance covers the single build and the limited native subset: four instances of the three entries across two existing tasks, forward and reverse Tab, Enter to open, Escape to close and return focus, normal exit, and one stopped-state readback. The 523 resources, 673 events, 3 commands, and all business records remain unchanged; only four expected page-setting leaves changed. No real import or model run occurred. The existing limited acceptances for 028 and 027 remain in place; full AC, M0—M6, notarization, and public release remain incomplete.[Progress for this change](2026-09-15-media-keyboard-progress.md)
+
+The E136 and earlier records below retain their original wording from 2026-09-15; insufficient capacity and the unbuilt candidate describe the historical state.
+
 **Latest Media keyboard progress (2026-09-15)**: The current fixed company-signed candidate remains Ver2.4 (028). The minimal attribute fix for Media's three entries—Import Model / Import Image Data / Import Image Material—56 related frontend tests, type checking, and the real Safari subset covering forward/reverse focus and Enter/Escape focus return have been accepted; the independent-review follow-up is closed (E136). 029 has not been archived, packaged, or natively validated; capacity is below the original 40 GiB threshold, and debug-cache cleanup awaits user confirmation and has not been performed. Full AC and M0—M6 are not advanced. [Progress for this round](2026-09-15-media-keyboard-progress.md)
 
 The E134/E135 and earlier records below retain their wording from when they were created.
@@ -71,6 +75,14 @@ Each agent modifies only its assigned files. After delivery, the lead reads the 
 <a id="当前状态"></a>
 
 ## Current Status
+
+<a id="029-mediae137签名包原生键盘与停机读回"></a>
+
+### 029 Media: E137; Signed Package, Native Keyboard, and Stopped-State Readback
+
+E137: The 029 company-signed package at the fixed path has root acceptance. All four Media entry instances in two existing tasks completed forward and reverse Tab, Enter to open, and Escape to close and return focus, followed by normal exit. One stopped-state readback confirmed that the 523 resources, 673 events, 3 commands, and all business records remain unchanged; only four expected page-setting leaves changed. No real import or model run occurred, and full AC/M0—M6 are not advanced. [Progress and evidence](2026-09-15-media-keyboard-progress.md)
+
+The following is the historical preparation record from 2026-09-15.
 
 <a id="media-三入口e136029-待打包与原生验证"></a>
 

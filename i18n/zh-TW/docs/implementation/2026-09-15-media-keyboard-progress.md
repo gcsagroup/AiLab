@@ -2,9 +2,37 @@
 [简体中文](../../../../docs/implementation/2026-09-15-media-keyboard-progress.md) · [繁體中文](2026-09-15-media-keyboard-progress.md) · [English](../../../en/docs/implementation/2026-09-15-media-keyboard-progress.md)
 <!-- translation-navigation:end -->
 
-<a id="media-三入口键盘进度e136"></a>
+<a id="media-三入口键盘进度e136e137"></a>
 
-# Media 三入口鍵盤進度：E136
+# Media 三入口鍵盤進度：E136—E137
+
+**最新 Media 鍵盤進展（2026-09-16，E137）**：固定公司簽名候選已更新為 Ver2.4（029）。唯一構建、三入口在兩個既有任務中的四個原生實例、正反向 Tab、Enter 打開、Escape 關閉回焦、正常退出及一次停機讀回的有限子集已獲根接受。523 資源／673 事件／3 命令及全部業務記錄保持，僅四個預期頁面設定葉子變化；沒有真實導入或模型運行。028 與 027 的既有的有限接受保留，完整 AC、M0—M6、公證及公開發佈未完成。
+
+<a id="e137029-签名包与原生有限接受"></a>
+
+## E137：029 簽名包與原生有限接受
+
+<a id="包与构建证据"></a>
+
+### 包與構建證據
+
+本次執行前容量約 117.39 GiB，高於原 40 GiB 門檻；沒有清理或降低門檻。028 回滾歸檔成功，26 項構建門檻合成測試、8 項根驗包器測試及 12 項版本同步測試通過。唯一 029 構建耗時 496.86 秒、退出 0，構建自動更新四個版本檔案；160 項生產來源、210 項凍結輸入、90 項應用輸入及 21966 個普通檔案／48 個符號連結／4003 個目錄一致，7 個公司簽名目標通過根複核。正式構建前相對 028 的生產源碼變更僅為 Media 三處鍵盤屬性。[028 歸檔接受](../../../../.artifacts/integration-ver2-4-029-v1/archive-tool-receipt.json)、[構建門檻測試](../../../../.artifacts/integration-ver2-4-029-v1/root-script-acceptance.json)、[根驗包器測試](../../../../.artifacts/integration-ver2-4-029-v1/root-verifier-acceptance.json)、[版本同步測試](../../../../.artifacts/media-keyboard-ver2-4-next-v1/resume-20260916-001/version-tests.json)、[029 包接受](../../../../.artifacts/integration-ver2-4-029-v1/root-bundle-acceptance.json)
+
+<a id="原生界面与停机数据证据"></a>
+
+### 原生介面與停機資料證據
+
+同一次 029 App 在兩個既有任務中驗證四個入口實例：圖片訓練的模型／圖片數據，以及視頻運行的模型／圖片素材。正向 Tab 與反向 Shift-Tab 均可達，Enter 打開正確彈窗，Escape 關閉並回到同一入口；19 張截圖與 19 份 AX 共 38 檔案獲根接受。Cmd+Q 後 CUA 曾短暫返回 pipe closed，隨後重讀同一 App 的退出確認框並點擊退出；沒有重啟，唯一啟動正常退出 0。[原生焦點接受](../../../../.artifacts/media-keyboard-ver2-4-next-v1/native-run-001/root-focus-acceptance.json)、[正常退出記錄](../../../../.artifacts/media-keyboard-ver2-4-next-v1/native-run-001/run/result.json)
+
+停機後實際僅建立一次 immutable 唯讀連線，讀回退出 0 並關閉連線。523 資源／673 事件／3 命令及全部業務記錄嚴格保持，兩個任務草稿版本仍為 2／3，`module_tab=train` 與原文字最近任務保持。差異恰好為四個頁面設定葉子：`kind`、`task_id`、`recent_tasks/image:train`、`recent_tasks/video:generate`。庫選擇已恢復，選擇檔案內容與 inode 保持但時間變化；舊庫、舊導出包和既有遠端程序保護保持。[停機讀回根接受](../../../../.artifacts/media-keyboard-ver2-4-next-v1/native-run-001/root-readback.json)
+
+本次根接受僅覆蓋上述有限子集，沒有真實檔案導入、業務儲存或模型運行；獨審已接受上述有限子集；截圖與 AX 為保存狀態，不代替逐鍵事件日誌。[原生獨審](../../../../.artifacts/media-keyboard-ver2-4-next-v1/native-review-001/review.md)。028／027 既有成果保留，完整鍵盤、完整 AC／M0—M6、NVIDIA、跨端、乾淨安裝、五名首次用戶、舊品質失敗與預算、舊 020 空白及首顯／完整就緒缺口、公證和公開發佈均不因此完成。包回執中的“尚未啟動原生”及以下舊記錄保留形成時含義。
+
+<a id="2026-09-15-历史准备记录"></a>
+
+## 2026-09-15 歷史準備記錄
+
+以下 E136 及更早記錄保留 2026-09-15 形成時原文；其中容量不足與尚未構建描述屬於歷史狀態。
 
 當前固定公司簽名候選仍為 Ver2.4（028）。Media 三個導入入口的源碼修復、56 項相關前端測試及真實 Safari 鍵盤子集已接受，獨審已由根關閉；029 尚未歸檔、打包或原生驗證。容量低於原 40 GiB 門檻，緩存清理仍待用戶確認，沒有執行刪除。028 的既有接受保留，完整 AC 和 M0—M6 不提高。[028 歷史進度](2026-09-15-ver2-4-028-workbench-keyboard-progress.md)
 

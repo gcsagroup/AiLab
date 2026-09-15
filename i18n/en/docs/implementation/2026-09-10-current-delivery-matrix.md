@@ -6,6 +6,10 @@
 
 # Current Implementation, Evidence, and Remaining Delivery Matrix
 
+**Latest Media keyboard progress (2026-09-16, E137)**: The fixed company-signed candidate is now Ver2.4（029）. Root acceptance covers the single build and the limited native subset: four instances of the three entries across two existing tasks, forward and reverse Tab, Enter to open, Escape to close and return focus, normal exit, and one stopped-state readback. The 523 resources, 673 events, 3 commands, and all business records remain unchanged; only four expected page-setting leaves changed. No real import or model run occurred. The existing limited acceptances for 028 and 027 remain in place; full AC, M0—M6, notarization, and public release remain incomplete.[Progress for this change](2026-09-15-media-keyboard-progress.md)
+
+The E136 and earlier records below retain their original wording from 2026-09-15; insufficient capacity and the unbuilt candidate describe the historical state.
+
 **Latest Media keyboard progress (2026-09-15)**: The current candidate at the fixed path with the company signature remains Ver2.4（028）. The minimal attribute fix for Media's three “Import model / Import image dataset / Import image material” entry points, 56 related frontend tests, type checking, and the real Safari subset covering forward/reverse focus and Enter/Escape focus restoration have been accepted; the outstanding independent review is closed (E136). 029 has not been archived, packaged, or validated natively; available capacity is below the original 40 GiB threshold, and debug-cache cleanup is awaiting user confirmation and has not been performed. Full AC and M0—M6 status is not upgraded. [Progress for this batch](2026-09-15-media-keyboard-progress.md)
 
 E134/E135 and earlier records below retain their wording as of their creation.
@@ -648,6 +652,12 @@ The current remaining items are governed by this added summary: E131 completed t
 ### Y. Media Three-Entry Source and Safari Keyboard Subset
 
 E136: Only the three import buttons in Media.tsx gained `tabIndex={0}`. The 56 related frontend tests, type checking, 3 fixture tests, and real Safari before/after comparison passed; root closed the independent review. All 26 before-fix files remain; after-fix evidence from two empty-resource branches comprises 58 files/76 events. Four Enter actions opened the correct dialogs, and Escape returned to each respective entry point, with 0 API requests/errors/draft changes. The current signed App remains 028;029 archiving, packaging, and native validation are pending, available capacity is below 40 GiB, and debug-cache cleanup has neither been confirmed nor performed. No model capability is added and full AC/M0—M6 status is not upgraded. [Progress and boundaries](2026-09-15-media-keyboard-progress.md), [root closure of independent review](../../../../.artifacts/media-keyboard-ver2-4-next-v1/root-review-closure.json)
+
+<a id="z-029-media-原生键盘与停机数据子集"></a>
+
+### Z. 029 Media Native Keyboard and Stopped-State Data Subset
+
+E137: The 029 company-signed package at the fixed path has root acceptance. All four Media entry instances in two existing tasks completed forward and reverse Tab, Enter to open, and Escape to close and return focus, followed by normal exit. One stopped-state readback confirmed that the 523 resources, 673 events, 3 commands, and all business records remain unchanged; only four expected page-setting leaves changed. No real import or model run occurred, and full AC/M0—M6 are not advanced. [Progress and evidence](2026-09-15-media-keyboard-progress.md)
 
 <a id="三wp-01wp-30-当前覆盖"></a>
 

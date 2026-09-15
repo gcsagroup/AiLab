@@ -2,7 +2,7 @@
 
 [简体中文](USER_GUIDE.zh-CN.md) · [繁體中文](../i18n/zh-TW/docs/USER_GUIDE.zh-CN.md) · [English](../i18n/en/docs/USER_GUIDE.zh-CN.md)
 
-本手册对应当前公司签名候选 Ver2.4（028）。可以继续既有任务、查看和编辑作品修订、加载更早历史，并导出明确选择的版本。正文与配音文案各支持最多 16000 字符，字幕最多 200 条。028 已接受工作台四按钮的原生键盘与停机数据有限子集；Media 三入口的 029 源码修复和 Safari 验证已完成，但尚未构建或原生验收。详见[028进度](implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md)、[Media进度](implementation/2026-09-15-media-keyboard-progress.md)和[候选范围](implementation/2026-09-10-ver2-scope.md)。
+本手册对应当前公司签名候选 Ver2.4（029）。可以继续既有任务、查看和编辑作品修订、加载更早历史，并导出明确选择的版本。正文与配音文案各支持最多 16000 字符，字幕最多 200 条。029 已接受 Media 三入口在两个既有任务中的四个原生实例、正反向 Tab、Enter／Escape 回焦、正常退出与一次停机读回的有限子集（E137）；没有执行真实导入或模型运行。028 工作台四按钮的既有有限接受保留。详见[028进度](implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md)、[Media进度](implementation/2026-09-15-media-keyboard-progress.md)和[候选范围](implementation/2026-09-10-ver2-scope.md)。
 
 可以使用 Tab、Shift-Tab、Return 和 Escape 操作已覆盖的键盘路径。027 的文字原作品纯键盘导出与同号重开、028 的工作台四按钮原生路径均为有限验收，不代表所有页面和任务已经完成键盘验收。011 曾在开启 macOS“键盘导航”后检查弹窗焦点并恢复原设置，该条件仅属于[011历史记录](implementation/2026-09-13-ver2-2-011-progress.md)。
 

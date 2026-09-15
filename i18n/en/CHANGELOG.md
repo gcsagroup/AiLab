@@ -10,9 +10,9 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
-<a id="media-键盘修复"></a>
+<a id="media-键盘修复2026-09-15-准备记录"></a>
 
-### Media keyboard fixes
+### Media Keyboard Fix (Preparation Record, 2026-09-15)
 
 - Added explicit keyboard-focus attributes to the model, image-dataset, and image-material import entry points.
 - Passed 56 related frontend tests, type checking, and the real Safari subset covering forward/reverse Tab, opening with Enter, closing with Escape, and returning focus.
@@ -28,6 +28,17 @@ This record distinguishes source changes, local signed candidates, and formal re
 - Organized product source, tests, build scripts, and formal documentation in one repository while retaining the prototype and historical design archive.
 - Added Simplified Chinese, Traditional Chinese, and English documentation and changelogs, stating candidate status and the scope of local evidence links.
 - Completed ignore rules for generated runtimes and build files; source commits do not contain models, user libraries, or credentials.
+
+<a id="ver24029-2026-09-16"></a>
+
+## Ver2.4（029）— 2026-09-16
+
+- The fix for the three Media entries is included in the company-signed package at the fixed path; the single build and root verification of the full package passed (E137).
+- All four entry instances in two existing tasks passed forward and reverse Tab, Enter to open, and Escape to close and return focus, followed by normal exit; no real import or model run occurred.
+- One stopped-state readback confirmed that the 523 resources, 673 events, 3 commands, and all business records remain unchanged; only four expected page-setting leaves changed.
+- The 028 archive is retained; no cleanup occurred and the capacity threshold was not lowered. Full AC, M0—M6, notarization, and public release remain incomplete.
+
+[029 Media progress](docs/implementation/2026-09-15-media-keyboard-progress.md)
 
 <a id="ver24028-2026-09-15"></a>
 

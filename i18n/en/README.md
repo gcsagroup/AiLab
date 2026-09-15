@@ -10,9 +10,9 @@ A local-first desktop workbench for model training and inference. Organize model
 
 ## Current status
 
-The current fixed-path, company-signed candidate is **Ver2.4（028）**, signed by **Global Cybersecurity Alliance Limited**. This is a development candidate. Full M0—M6 acceptance, clean installation, notarization, and formal distribution acceptance are not complete.
+The current fixed company-signed candidate is **Ver2.4（029）**, signed by **Global Cybersecurity Alliance Limited**. It is a development candidate; full M0—M6, clean installation, notarization, and formal distribution acceptance remain incomplete.
 
-Keyboard fixes for the three Media import entry points are present in the source and have passed related tests and Safari component verification; **029 has not been built or accepted through native testing**. Acceptance of the four Workbench buttons in 028, and keyboard-only export of an original text work followed by reopening the same record in 027, is limited to the scope of each record. See the [current delivery matrix](docs/implementation/2026-09-10-current-delivery-matrix.md) and [changelog](CHANGELOG.md).
+Evidence covers the source fix for the three Media import entries, related tests, and Safari verification. Root acceptance now covers the 029 company-signed package and the limited subset of four native entry instances in two existing tasks, normal exit, and one stopped-state readback (E137). No real import or model run occurred. The existing limited acceptances for the four Workbench buttons in 028 and keyboard-only original-text export and reopening the same task in 027 remain in place. See the [current delivery matrix](docs/implementation/2026-09-10-current-delivery-matrix.md) and [changelog](CHANGELOG.md).
 
 <a id="功能与范围"></a>
 

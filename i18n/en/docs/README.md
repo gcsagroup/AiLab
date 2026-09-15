@@ -4,6 +4,10 @@
 
 [简体中文](../../../docs/README.md) · [繁體中文](../../zh-TW/docs/README.md) · [English](README.md)
 
+**Latest Media keyboard progress (2026-09-16, E137)**: The fixed company-signed candidate is now Ver2.4（029）. Root acceptance covers the single build and the limited native subset: four instances of the three entries across two existing tasks, forward and reverse Tab, Enter to open, Escape to close and return focus, normal exit, and one stopped-state readback. The 523 resources, 673 events, 3 commands, and all business records remain unchanged; only four expected page-setting leaves changed. No real import or model run occurred. The existing limited acceptances for 028 and 027 remain in place; full AC, M0—M6, notarization, and public release remain incomplete.[Progress for this change](implementation/2026-09-15-media-keyboard-progress.md)
+
+The E136 and earlier records below retain their original wording from 2026-09-15; insufficient capacity and the unbuilt candidate describe the historical state.
+
 **Latest Media keyboard progress (2026-09-15)**: the current fixed-path company-signed candidate remains Ver2.4（028）. The minimal attribute fixes for the Media model/image-dataset/image-material import entry points, 56 related frontend tests, type checking, and the real Safari subset covering forward/reverse focus and Enter/Escape focus return have been accepted; independent-review follow-ups are closed (E136). 029 has not been archived, built, or verified natively. Capacity is below the original 40 GiB threshold; debug-cache cleanup awaits user confirmation and has not run. Full AC and M0—M6 status is unchanged. [Current progress](implementation/2026-09-15-media-keyboard-progress.md)
 
 E134/E135 and earlier records below retain their original wording and historical context.

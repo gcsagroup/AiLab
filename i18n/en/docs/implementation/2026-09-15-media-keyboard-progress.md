@@ -2,9 +2,37 @@
 [简体中文](../../../../docs/implementation/2026-09-15-media-keyboard-progress.md) · [繁體中文](../../../zh-TW/docs/implementation/2026-09-15-media-keyboard-progress.md) · [English](2026-09-15-media-keyboard-progress.md)
 <!-- translation-navigation:end -->
 
-<a id="media-三入口键盘进度e136"></a>
+<a id="media-三入口键盘进度e136e137"></a>
 
-# Media Three-Entry Keyboard Progress: E136
+# Media Three-Entry Keyboard Progress: E136—E137
+
+**Latest Media keyboard progress (2026-09-16, E137)**: The fixed company-signed candidate is now Ver2.4（029）. Root acceptance covers the single build and the limited native subset: four instances of the three entries across two existing tasks, forward and reverse Tab, Enter to open, Escape to close and return focus, normal exit, and one stopped-state readback. The 523 resources, 673 events, 3 commands, and all business records remain unchanged; only four expected page-setting leaves changed. No real import or model run occurred. The existing limited acceptances for 028 and 027 remain in place; full AC, M0—M6, notarization, and public release remain incomplete.
+
+<a id="e137029-签名包与原生有限接受"></a>
+
+## E137: 029 Signed Package and Limited Native Acceptance
+
+<a id="包与构建证据"></a>
+
+### Package and Build Evidence
+
+Available capacity before this execution was approximately 117.39 GiB, above the original 40 GiB threshold; no cleanup occurred and the threshold was not lowered. The 028 rollback archive succeeded, and 26 synthetic build-gate tests, 8 root package-verifier tests, and 12 version-synchronization tests passed. The single 029 build took 496.86 seconds and exited 0, automatically updating four version files. The 160 production sources, 210 frozen inputs, 90 application inputs, and 21966 regular files/48 symbolic links/4003 directories matched, and root verification accepted 7 company-signed targets. Before the formal build, the only production source changes relative to 028 were the three Media keyboard attributes. [028 archive acceptance](../../../../.artifacts/integration-ver2-4-029-v1/archive-tool-receipt.json), [Build-gate tests](../../../../.artifacts/integration-ver2-4-029-v1/root-script-acceptance.json), [Root package-verifier tests](../../../../.artifacts/integration-ver2-4-029-v1/root-verifier-acceptance.json), [Version-synchronization tests](../../../../.artifacts/media-keyboard-ver2-4-next-v1/resume-20260916-001/version-tests.json), [029 package acceptance](../../../../.artifacts/integration-ver2-4-029-v1/root-bundle-acceptance.json)
+
+<a id="原生界面与停机数据证据"></a>
+
+### Native UI and Stopped-State Data Evidence
+
+The same 029 App run verified four entry instances across two existing tasks: model/image data for image training and model/image material for video execution. Forward Tab and reverse Shift-Tab reached each entry, Enter opened the correct dialog, and Escape closed it and returned focus to the same entry. Root acceptance covers 19 screenshots and 19 AX records, totaling 38 files. After Cmd+Q, CUA briefly returned pipe closed; the exit confirmation was then reread from the same App and Exit was clicked. There was no restart; the single launch ended normally with exit 0. [Native focus acceptance](../../../../.artifacts/media-keyboard-ver2-4-next-v1/native-run-001/root-focus-acceptance.json), [Normal exit record](../../../../.artifacts/media-keyboard-ver2-4-next-v1/native-run-001/run/result.json)
+
+After shutdown, exactly one immutable read-only connection was opened; readback exited 0 and the connection was closed. The 523 resources, 673 events, 3 commands, and all business records remained strictly unchanged. The two task draft revisions remained 2/3, and `module_tab=train` and the original recent text task were preserved. Exactly four page-setting leaves differed: `kind`, `task_id`, `recent_tasks/image:train`, and `recent_tasks/video:generate`. Library selection was restored; the selection file retained its contents and inode, while its timestamps changed. Protection of the old databases, old export packages, and existing remote process remained in place. [Root acceptance of stopped-state readback](../../../../.artifacts/media-keyboard-ver2-4-next-v1/native-run-001/root-readback.json)
+
+This root acceptance covers only the limited subset above; no real file import, business save, or model run occurred. Independent review has accepted this limited subset; screenshots and AX capture saved states and do not replace per-keystroke event logs. [Native independent review](../../../../.artifacts/media-keyboard-ver2-4-next-v1/native-review-001/review.md). The existing 028/027 results remain in place. Complete keyboard coverage, full AC/M0—M6, NVIDIA, cross-platform execution, clean installation, five first-time users, old quality failures and budgets, the old 020 blank-window and initial-display/full-readiness gaps, notarization, and public release are not completed by this work. The package receipt’s statement that native acceptance had not started, and the older records below, retain their meaning at creation time.
+
+<a id="2026-09-15-历史准备记录"></a>
+
+## Historical Preparation Record: 2026-09-15
+
+The E136 and earlier records below retain their original wording from 2026-09-15; insufficient capacity and the unbuilt candidate describe the historical state.
 
 The current fixed company-signed candidate remains Ver2.4（028）. The source fix for the three Media import entries, 56 related frontend tests, and the real Safari keyboard subset have been accepted, and the root agent has closed the independent review. 029 has not yet been archived, built, or natively verified. Capacity is below the original 40 GiB threshold; cache cleanup still awaits user confirmation, and no deletion has been performed. The existing acceptance of 028 remains in place; full AC and M0—M6 are not advanced. [028 historical progress](2026-09-15-ver2-4-028-workbench-keyboard-progress.md)
 

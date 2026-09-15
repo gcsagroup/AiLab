@@ -10,9 +10,9 @@
 
 ## 當前狀態
 
-當前固定公司簽名候選為 **Ver2.4（028）**，簽名組織為 **Global Cybersecurity Alliance Limited**。這是開發候選，完整 M0—M6、乾淨安裝、公證及正式分發驗收尚未完成。
+當前固定公司簽名候選為 **Ver2.4（029）**，簽名組織為 **Global Cybersecurity Alliance Limited**。這是開發候選，完整 M0—M6、乾淨安裝、公證及正式分發驗收尚未完成。
 
-Media 三個導入入口的鍵盤修復已進入源碼，並通過相關測試和 Safari 組件驗證；**029 尚未構建或原生驗收**。028 的工作台四按鈕、027 的文字原作品純鍵盤導出與同號重開，均只接受各自記錄覆蓋的範圍。詳細狀態見[當前交付矩陣](docs/implementation/2026-09-10-current-delivery-matrix.md)和[更新記錄](CHANGELOG.md)。
+Media 三個導入入口的源碼修復、相關測試與 Safari 驗證已有證據；029 公司簽名包、兩個既有任務中的四個原生入口實例、正常退出及一次停機讀回的有限子集已獲根接受（E137）。未執行真實導入或模型運行。028 工作台四按鈕、027 文字原作品純鍵盤導出與同號重開的既有的有限接受保留。詳細狀態見[當前交付矩陣](docs/implementation/2026-09-10-current-delivery-matrix.md)和[更新記錄](CHANGELOG.md)。
 
 <a id="功能与范围"></a>
 
