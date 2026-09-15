@@ -1,0 +1,128 @@
+<a id="更新记录"></a>
+
+# Changelog
+
+[简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md)
+
+This record distinguishes source changes, local signed candidates, and formal releases. The versions below are development candidates or historical development records. They do not establish public release, notarization, or complete M0—M6 acceptance. Refer to the corresponding stage documents for detailed procedures, failures, and evidence boundaries.
+
+<a id="未发布"></a>
+
+## Unreleased
+
+<a id="media-键盘修复"></a>
+
+### Media keyboard fixes
+
+- Added explicit keyboard-focus attributes to the model, image-dataset, and image-material import entry points.
+- Passed 56 related frontend tests, type checking, and the real Safari subset covering forward/reverse Tab, opening with Enter, closing with Escape, and returning focus.
+- Prepared the 029 native supervisor, stopped-state readback, and comparison scripts; completed 35 synthetic tests and two independent reviews.
+- 029 has not been archived, built, or accepted through native testing; the current App remains 028.
+
+[Media progress](docs/implementation/2026-09-15-media-keyboard-progress.md)
+
+<a id="仓库与文档"></a>
+
+### Repository and documentation
+
+- Organized product source, tests, build scripts, and formal documentation in one repository while retaining the prototype and historical design archive.
+- Added Simplified Chinese, Traditional Chinese, and English documentation and changelogs, stating candidate status and the scope of local evidence links.
+- Completed ignore rules for generated runtimes and build files; source commits do not contain models, user libraries, or credentials.
+
+<a id="ver24028-2026-09-15"></a>
+
+## Ver2.4（028）— 2026-09-15
+
+- Fixed keyboard focus for the Workbench back, import-model, import-data, and new-evaluation-plan buttons.
+- Passed 59 related frontend tests, type checking, and Safari component verification.
+- Accepted the fixed-path company-signed package, forward/reverse native focus for the four buttons, normal exit, and a stopped-state data subset; business records were unchanged, with only three page-selection changes.
+- Full keyboard paths, all AC items, and M0—M6 have not been signed off.
+
+[028 progress](docs/implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md)
+
+<a id="ver24027-2026-09-15"></a>
+
+## Ver2.4（027）— 2026-09-15
+
+- Added keyboard-focus attributes for task-related buttons; 75 related frontend tests and a Safari subset passed.
+- Exported an original text work using only the keyboard in the native App, then reopened the same record from the queue; stopped-state readback accepted the corresponding limited subset.
+
+[027 progress](docs/implementation/2026-09-15-ver2-4-027-keyboard-progress.md)
+
+<a id="ver24026-2026-09-14"></a>
+
+## Ver2.4（026）— 2026-09-14
+
+- Fixed focus on the first read of work revisions; 41 related regression tests, a Safari comparison, and the company-signed package passed.
+- Accepted a limited native subset covering first-open/reopen focus, return to the entry point on close, and reading saved subtitles.
+- A complete export package for existing text revision 3 displayed a neutral pending-verification state after registration failed, then registered successfully under the same identifier after verification.
+
+[026 progress](docs/implementation/2026-09-14-ver2-4-026-progress.md) · [Export recovery](docs/implementation/2026-09-14-ver2-4-026-export-recovery-progress.md)
+
+<a id="ver24025-2026-09-14"></a>
+
+## Ver2.4（025）— 2026-09-14
+
+- Fixed focus returning to the manual-revision entry point after closing.
+- Retained the first restore-source error; a subsequent formal independent restore enabled limited native verification of existing subtitle version 4 / parent version 3, 200 cues / 16000 characters, and exit from temporary editing.
+
+[025 progress](docs/implementation/2026-09-14-ver2-4-025-progress.md)
+
+<a id="ver24024-2026-09-14"></a>
+
+## Ver2.4（024）— 2026-09-14
+
+- Added a static import index for startup dependencies while retaining integrity and environment checks.
+- Related tests, the signed package, and one native diagnostics subset passed; a single full-readiness duration is not treated as a 20-run initial-visibility acceptance result.
+- The Safari long-subtitle comparison did not reproduce the historical 020 blank display; the original issue remains open.
+
+[024 progress](docs/implementation/2026-09-14-ver2-4-024-progress.md) · [Long-subtitle diagnosis](docs/implementation/2026-09-14-subtitle-scroll-diagnosis.md)
+
+<a id="ver24014023-2026-09-13-至-2026-09-14"></a>
+
+## Ver2.4（014—023）— 2026-09-13 to 2026-09-14
+
+- Improved work-recipe viewing/loading, existing revision layout, historical-version pagination, preservation of the selected revision during export, and neutral recovery messages.
+- Added Chinese-character and subtitle-limit checks, scroll-boundary isolation, local focus fixes, and startup-phase diagnostics.
+- Actual saving, playback, export, and project-switching subsets remain attributed to their respective versions; later limited passes do not close the intermittent 020 blank display or uncovered paths.
+
+[Complete per-version records](docs/implementation/2026-09-10-execution-board.md)
+
+<a id="ver23013-2026-09-13"></a>
+
+## Ver2.3（013）— 2026-09-13
+
+- Improved continuation within a category, reopening a specified historical task, project ownership, and draft restoration.
+- Limited native verification covered continuation through six entry points in the same library and ownership of a newly saved generation; missing running-stage samples and remaining checks are retained.
+
+[013 progress](docs/implementation/2026-09-13-ver2-3-013-progress.md)
+
+<a id="ver22006012-2026-09-11-至-2026-09-13"></a>
+
+## Ver2.2（006—012）— 2026-09-11 to 2026-09-13
+
+- Added source-group checking, preview, and explicit application of training/validation splits, together with backup, restore, and export relationships for v4 libraries.
+- Improved native restore, reconnection after failure, diagnostics, and continuation of drafts across projects.
+- In 011, initial main-window visibility met the target in 20/20 runs with an existing environment and representative data scale; variation in full readiness remains a separate historical result.
+
+[006 source-group workflow](docs/USER_GUIDE.zh-CN.md) · [011 progress](docs/implementation/2026-09-13-ver2-2-011-progress.md) · [012 progress](docs/implementation/2026-09-13-ver2-2-012-progress.md)
+
+<a id="ver20ver21001005-2026-09-10-至-2026-09-11"></a>
+
+## Ver2.0／Ver2.1（001—005）— 2026-09-10 to 2026-09-11
+
+- Established fixed-path desktop candidates, company signing, self-contained runtimes, local candidate update and rollback, full backup/restore, and object exports.
+- Integrated language and media execution, evaluation admission, the independent execution protocol, and the HTTPS-target interface.
+- Actual training, quantization, and rejection gates produced independent evidence; historical quality failures remain failures, and loopback/CPU component verification does not establish NVIDIA or cross-host acceptance.
+
+[Historical delivery and evidence matrix](docs/implementation/2026-09-10-current-delivery-matrix.md)
+
+<a id="设计基线-11--2026-09-09"></a>
+
+## Design baseline 1.1 — 2026-09-09
+
+- Fixed requirements, interaction, architecture, M0—M6, work breakdown, and acceptance relationships.
+- Retained the 1.0 documentation archive and prototype reference; added 14 audit-remediation items and 5 enhancement decisions.
+- Recorded design delivery, prototype behavior, and subsequent real product implementation separately.
+
+[Design baseline](docs/README.md) · [1.0 archive](docs/archive/v1.0-2026-09-09/README.md)

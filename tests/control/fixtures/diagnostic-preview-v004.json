@@ -1,0 +1,81 @@
+{
+  "source_sha256": "b392c26a87e8dc385e617c5cc0083697c8a1738ff60f4122ec2d9da67eda43ed",
+  "origin": "由封存004诊断源码在全新隔离CPU库生成；未读取已有用户库。",
+  "record": {
+    "archive_bytes": 1866,
+    "archive_sha256": "8127e075ef5ab16ab538b737eb1cd8ab0faea9bd421e4fb29d3345a545d71409",
+    "created_at": "2026-09-10T22:09:39.350899+00:00",
+    "data_sha256": "b8dc88cba065c76aa21626e4fb8be3c496be03805a69c5a77d4d42e174230f34",
+    "diagnostics": {
+      "application": {
+        "architecture": "arm64",
+        "build": 4,
+        "control_python": "3.13.9",
+        "name": "GCSA AI Lab",
+        "system": "Darwin",
+        "system_version": "26.6.2",
+        "version": "2.1.0",
+        "version_label": "Ver2.1(004)"
+      },
+      "attempt_state_counts": {},
+      "captured_at": "2026-09-10T22:09:39.350899+00:00",
+      "dependency_observations": [],
+      "dependency_observations_omitted": 0,
+      "dependency_scope": "仅已有缓存和本范围最近 20 次运行保存的版本；可能过时，本次未重新探测。",
+      "known_error_code_counts": {},
+      "resource_counts": {
+        "adapter": 0,
+        "ai-proposal": 0,
+        "ai-request": 0,
+        "attempt": 0,
+        "dataset": 0,
+        "material": 0,
+        "model": 0,
+        "task": 0,
+        "work": 0,
+        "work-revision": 0,
+        "workflow": 0,
+        "workflow-run": 0
+      },
+      "schema_version": "ailab-diagnostics-v1",
+      "scope": {
+        "project_count": 0,
+        "selected_attempt_count": 0
+      },
+      "selected_attempts": [],
+      "unknown_error_code_count": 0
+    },
+    "excluded": [
+      "模型、数据集、图片、音频、视频与缓存内容",
+      "提示词、生成结果、AI 问题、任务名称与项目名称",
+      "个人文件路径、主机名、令牌、环境变量、授权信息",
+      "服务日志、执行原始日志、错误正文与未知扩展字段"
+    ],
+    "files": [
+      {
+        "path": "diagnostics.json",
+        "sha256": "b8dc88cba065c76aa21626e4fb8be3c496be03805a69c5a77d4d42e174230f34",
+        "size": 807
+      },
+      {
+        "path": "manifest.json",
+        "sha256": "e83328562741d94b051d94bd9d006bb8938da52f025e06a3407e1473369edd4a",
+        "size": 827
+      }
+    ],
+    "id": "diagnostic-preview-b56abadcbf684867aedacb4a78030240",
+    "included": [
+      "应用与本机系统版本（不含主机名）",
+      "项目范围内的资源数量、运行状态与已知错误代码计数",
+      "最多 20 次指定运行的状态摘要",
+      "已保存的依赖版本摘要；不重新探测环境"
+    ],
+    "preview_digest": "0724c94ab6d4c55384f6767d4247f2795794c5c7cfb2933708b075ac9c0c0764",
+    "scope": {
+      "attempt_ids": [],
+      "project_id": null
+    },
+    "status": "ready",
+    "total_bytes": 1634
+  }
+}

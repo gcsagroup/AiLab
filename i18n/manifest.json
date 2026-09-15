@@ -1,0 +1,662 @@
+{
+  "documents": [
+    {
+      "source": "CHANGELOG.md",
+      "source_sha256": "743570ffec3532fc4fd732fffa9ebc3b331b6505c42dba2a99cd06eddd55b42e",
+      "en": "i18n/en/CHANGELOG.md",
+      "zh-TW": "i18n/zh-TW/CHANGELOG.md",
+      "zh-TW_sha256": "f2eeaa07f8f2726c546ac6413cb53991a84c57ccb2b78e80ac555212b98b2f6f",
+      "en_sha256": "8dde23a334b2b9da3ff2d0b5b14d4bb89220c9dd8b3fcdb73834bcf7e45eb21b"
+    },
+    {
+      "source": "README.md",
+      "source_sha256": "ae15eefe29d15ca2c98df121a8fe5d9be3c0d93fb6a5b522871e485bd3bde108",
+      "en": "i18n/en/README.md",
+      "zh-TW": "i18n/zh-TW/README.md",
+      "zh-TW_sha256": "201302ffe8e20ebffd0bfc1d4bb42e2834cfbe683dfe05e4c960287cdcd05402",
+      "en_sha256": "79c5ea09d4e213ec74032afbeb99f8bfc0a9d44da6b0c71b6b046c55a98e6559"
+    },
+    {
+      "source": "adapters/media/ACCEPTANCE.md",
+      "source_sha256": "c6509690939fce30fc8e9f9f5790ad0438ebe51cb7ad5e9bb837bd504bda5b7c",
+      "en": "i18n/en/adapters/media/ACCEPTANCE.md",
+      "zh-TW": "i18n/zh-TW/adapters/media/ACCEPTANCE.md",
+      "zh-TW_sha256": "005dfa51fd988d1d127eea1bf83712cf6f102b66adc402ffee8dd1785f58dd5e",
+      "en_sha256": "ad1c97c7ea901d97e41606729da937cb2d4b57cb45679ff1acded84dc476de1a"
+    },
+    {
+      "source": "adapters/media/README.md",
+      "source_sha256": "743a704a18cf3833092e05532977dbf53875f3677e4665c88a4f072f2d9b700c",
+      "en": "i18n/en/adapters/media/README.md",
+      "zh-TW": "i18n/zh-TW/adapters/media/README.md",
+      "zh-TW_sha256": "bb4f6b35fff5a1a6804a10c510d961a34631d2d80324637e77687cbf60461790",
+      "en_sha256": "a162af18736079d92d3b82a86114cd9d9b562cfa544f3b62d4e1feff0a39820f"
+    },
+    {
+      "source": "adapters/mlx_text/GENERATION_ACCEPTANCE.md",
+      "source_sha256": "fd0cf0bdf00157dd8bb2702eb270900cb2db1cdd0608d4d34bdc62710b4570f9",
+      "en": "i18n/en/adapters/mlx_text/GENERATION_ACCEPTANCE.md",
+      "zh-TW": "i18n/zh-TW/adapters/mlx_text/GENERATION_ACCEPTANCE.md",
+      "zh-TW_sha256": "4dc17b01e9349a20f2d664aba0b7ec8d8723270937182724512549eb2100930d",
+      "en_sha256": "953816cc278607e8be790a5b3e3730c900867ed75d9350b1067b94eddbaf9ff5"
+    },
+    {
+      "source": "adapters/mlx_text/MODEL_QUALITY_ACCEPTANCE.md",
+      "source_sha256": "4f90d50785f58de82eaf39fc5cbc2c5a374a5d8b53f42d1e898d336cbe5d06c8",
+      "en": "i18n/en/adapters/mlx_text/MODEL_QUALITY_ACCEPTANCE.md",
+      "zh-TW": "i18n/zh-TW/adapters/mlx_text/MODEL_QUALITY_ACCEPTANCE.md",
+      "zh-TW_sha256": "257d0306a90c353ba34baf94645e10535c02f57ef18da3e8b319f62d2a240b4e",
+      "en_sha256": "4e749c7c8fd31a73a5e9ddde4959491ccd5f51bccb3b16d3c196b6771c1b5cc2"
+    },
+    {
+      "source": "adapters/mlx_text/PRESETS_ACCEPTANCE.md",
+      "source_sha256": "fe0fbfcc86c9680f441ce3ee174f47ed24e36262db64118b6b7dcef5742ba62d",
+      "en": "i18n/en/adapters/mlx_text/PRESETS_ACCEPTANCE.md",
+      "zh-TW": "i18n/zh-TW/adapters/mlx_text/PRESETS_ACCEPTANCE.md",
+      "zh-TW_sha256": "331ac752e5eee31c33a4ee7fcfb3972d36dc40cc3ba93b5f57b6a01f3dc5c486",
+      "en_sha256": "8bf96b628a3a1d7ddc383d3976e90f6f53cdafc68e39c40153c34e1bb1eaf0ee"
+    },
+    {
+      "source": "adapters/mlx_text/PRESETS_PLAN.md",
+      "source_sha256": "8439033cdb9978cf373f9065ed1ba6dff983a6dbc268836335807441007d7fb0",
+      "en": "i18n/en/adapters/mlx_text/PRESETS_PLAN.md",
+      "zh-TW": "i18n/zh-TW/adapters/mlx_text/PRESETS_PLAN.md",
+      "zh-TW_sha256": "8360b24ff94cd9cf6c52f858978405700aefc3b660441a9421ab5f6c449e82f8",
+      "en_sha256": "2907f71ed53ce1a15cd6733e054adb01c60489981a517ff41bef3dcccc68ed15"
+    },
+    {
+      "source": "adapters/mlx_text/README.md",
+      "source_sha256": "e7bbe6a9bcd604d3ca5ab65310223a908a705a0b565cd148b2d789df019e98ec",
+      "en": "i18n/en/adapters/mlx_text/README.md",
+      "zh-TW": "i18n/zh-TW/adapters/mlx_text/README.md",
+      "zh-TW_sha256": "610882b6724fec95dd285629e14d616069e6f4c1cbe4d42ab42bcef76005afff",
+      "en_sha256": "80e2ec40c2082195997fcddd232dfcc8ddaac11e30b415ab2237d7ed10f4716a"
+    },
+    {
+      "source": "docs/01-product-requirements.md",
+      "source_sha256": "04d2bc67f6244f2cd9dc233c1491b99d6257eb1d0e6a77c09171579c9b24f184",
+      "en": "i18n/en/docs/01-product-requirements.md",
+      "zh-TW": "i18n/zh-TW/docs/01-product-requirements.md",
+      "zh-TW_sha256": "f3839d5944f11ae21dd4f84130f05622a80b98659df179013c9ca8324cf54323",
+      "en_sha256": "00d17bf8d62ed6d04ef792bdd995508228a848089a0517255f6541b90078f92e"
+    },
+    {
+      "source": "docs/02-user-flows-and-ui.md",
+      "source_sha256": "78a1dd3f62f40234f944125490e74ef0da0b485284f9b4440e1211fa5d2a2249",
+      "en": "i18n/en/docs/02-user-flows-and-ui.md",
+      "zh-TW": "i18n/zh-TW/docs/02-user-flows-and-ui.md",
+      "zh-TW_sha256": "41d4c1eeceed421a18e7fca5d16210f875ca689aa04429f362a6936662905d10",
+      "en_sha256": "f4f8fb5bb4035a573d06078826c2d654f35928aadb5a9e8cbe1c1e80f699fb9c"
+    },
+    {
+      "source": "docs/03-training-and-model-lab.md",
+      "source_sha256": "e5f5a83460a3986998ca381816a7c91cb975da86395e10922d2a931ca80ece1b",
+      "en": "i18n/en/docs/03-training-and-model-lab.md",
+      "zh-TW": "i18n/zh-TW/docs/03-training-and-model-lab.md",
+      "zh-TW_sha256": "b08cb43caae538d4cc4363fe561b0afa6c112e3fad47e171dee46ccda06335f5",
+      "en_sha256": "97bde9aa3d3a0f79a837ff5b827d6770a9b653d30adddc87d5721e55ab1689cc"
+    },
+    {
+      "source": "docs/04-runtime-and-hardware.md",
+      "source_sha256": "a0de1f53a30a3934ab53e3fedb616967472edca888c166de3642170c21bc26a0",
+      "en": "i18n/en/docs/04-runtime-and-hardware.md",
+      "zh-TW": "i18n/zh-TW/docs/04-runtime-and-hardware.md",
+      "zh-TW_sha256": "612a6a410e53c0709d37f04ac5a3ed93537537cbe8d54fc3bfa8e1a146497d93",
+      "en_sha256": "2ca6377e3d1bcf79388c62a661235889af4ab9e6783b6742da0fb02e43113ed4"
+    },
+    {
+      "source": "docs/05-data-model-and-assets.md",
+      "source_sha256": "0b4c211478cda34e0f14a2fa385ffe88804c3eab9a7c2bee97cc739ad34ae828",
+      "en": "i18n/en/docs/05-data-model-and-assets.md",
+      "zh-TW": "i18n/zh-TW/docs/05-data-model-and-assets.md",
+      "zh-TW_sha256": "8b96a08b069d01fdc570685782090cfa7d82e19124cf5c48fabf1e6ba7683193",
+      "en_sha256": "b54ceb27e52e2025354f90f77088bf13e92bcf7e643c37c4dbfb3a10c923dba2"
+    },
+    {
+      "source": "docs/06-architecture-and-adapters.md",
+      "source_sha256": "b309cd76a1825281057af0df592325abfdf1b5630d578a55fa1ba8628abc0190",
+      "en": "i18n/en/docs/06-architecture-and-adapters.md",
+      "zh-TW": "i18n/zh-TW/docs/06-architecture-and-adapters.md",
+      "zh-TW_sha256": "adf0fffc23a0ffee9b01b848dad6110836c2179cc565fe8ab314ba1df0a46f96",
+      "en_sha256": "affac2de3bf7887ea90785bb571e3ea8ef20fdd205d4b95ae4ae3ab754d5a2b7"
+    },
+    {
+      "source": "docs/07-api-and-task-lifecycle.md",
+      "source_sha256": "d485a53f2260d0f6f9c0852229a3fab13a22549d6d3c4d4a7e08201cbfa1f76d",
+      "en": "i18n/en/docs/07-api-and-task-lifecycle.md",
+      "zh-TW": "i18n/zh-TW/docs/07-api-and-task-lifecycle.md",
+      "zh-TW_sha256": "c388d818af0b27d000467e02ba5d9e5123146800d1e05f4e95ce872d4f5fd8d0",
+      "en_sha256": "7026ed9b6025e0bae64c03ed37f1849a30c8aa546fb84b42212de0eaa5c497cd"
+    },
+    {
+      "source": "docs/08-ai-assistance-and-data-boundaries.md",
+      "source_sha256": "2d282a4176fd6b9e10d7542310e8ea3279ade296995560e1f6c47881943bb6fb",
+      "en": "i18n/en/docs/08-ai-assistance-and-data-boundaries.md",
+      "zh-TW": "i18n/zh-TW/docs/08-ai-assistance-and-data-boundaries.md",
+      "zh-TW_sha256": "358a8df6bc38b33652d144124e6c2234c9c1f4b873a190bdfec4abf71aed5ea0",
+      "en_sha256": "d63d9c34841c79884fe18eb44eebf25f94e51611249d1efa16f20682e37aecce"
+    },
+    {
+      "source": "docs/09-development-roadmap.md",
+      "source_sha256": "b1694f58e31e7f0585ee0fec9ebfaed747a0c4132a2da034fb13f29a756995a7",
+      "en": "i18n/en/docs/09-development-roadmap.md",
+      "zh-TW": "i18n/zh-TW/docs/09-development-roadmap.md",
+      "zh-TW_sha256": "d9d420bde02677d61438b20c87fbe7f2248b14187f630c9e37df82665b140092",
+      "en_sha256": "1f5c662cacdb5b591a2d8eee627c7ef761f71d238bc793d73e63d334391fb39c"
+    },
+    {
+      "source": "docs/10-work-breakdown.md",
+      "source_sha256": "190146099bc1f37a90cde9f9313a2ea3820943a4844ad7597c6856768e5fc5c0",
+      "en": "i18n/en/docs/10-work-breakdown.md",
+      "zh-TW": "i18n/zh-TW/docs/10-work-breakdown.md",
+      "zh-TW_sha256": "98c2c673aec5b6a0deb1352ba095a82657e0c753b37e3fc3bcb59a514a97252f",
+      "en_sha256": "b5b4c2dee0e7a5beb37b3af2a89f18905a3173ab80e6a92834ca135138df1e8f"
+    },
+    {
+      "source": "docs/11-testing-and-acceptance.md",
+      "source_sha256": "198e2682998a4faa520ac296ec484ad028f1fb1b0638a9d2f562d28506004433",
+      "en": "i18n/en/docs/11-testing-and-acceptance.md",
+      "zh-TW": "i18n/zh-TW/docs/11-testing-and-acceptance.md",
+      "zh-TW_sha256": "d0831fa9daf8f3cdd8d7890685ba4bc519e0d8cd332c1e00f89e5756886951eb",
+      "en_sha256": "d22ef3f709e8a25776f3e5992ff20a962e16979df0c02902e052478fcb474bfd"
+    },
+    {
+      "source": "docs/12-operations-and-release.md",
+      "source_sha256": "ba186244cf3d5a458819011da78b53c0ca41b2141f2c126e0733ab3b8828ecae",
+      "en": "i18n/en/docs/12-operations-and-release.md",
+      "zh-TW": "i18n/zh-TW/docs/12-operations-and-release.md",
+      "zh-TW_sha256": "3d038df9e13a60d9e571afe7e62e03a228fbedf79814ef54fb61d0139e3f7a80",
+      "en_sha256": "56e6bff2871fce4af24d7a299ccc0c2eb44ed305c382f5629503cced3792abc6"
+    },
+    {
+      "source": "docs/13-decisions-risks-and-questions.md",
+      "source_sha256": "c3f7790edbedd1bd604b17d21e1cde090730f3e262cf6f2a07f6ee9d960cadaa",
+      "en": "i18n/en/docs/13-decisions-risks-and-questions.md",
+      "zh-TW": "i18n/zh-TW/docs/13-decisions-risks-and-questions.md",
+      "zh-TW_sha256": "3f2d93a55bd523ccbf9c5721cf509362860525fccf15e8f42f8860c020eaa1ea",
+      "en_sha256": "6343a936a2965afbb5491cc56874c0213da60f3bb4aeba00df6339bc0a19061a"
+    },
+    {
+      "source": "docs/14-prototype-traceability.md",
+      "source_sha256": "29d0a88b917d509c88726be3ebdf40339c4d6142fd1c6afd3f6c094a7e5dc4cb",
+      "en": "i18n/en/docs/14-prototype-traceability.md",
+      "zh-TW": "i18n/zh-TW/docs/14-prototype-traceability.md",
+      "zh-TW_sha256": "3c8f33ce4a2b726a59206e4b85557a60f8555902230d87f8927940413b3b43dc",
+      "en_sha256": "11711118974666384a97a463b2fe94716c269c11a31f7e82fa0e34f56aff05ae"
+    },
+    {
+      "source": "docs/15-sources-and-glossary.md",
+      "source_sha256": "22a5b52ce5a57c848fa0a3c7f33e027004de5e5a78396dbbc178b9a26a740084",
+      "en": "i18n/en/docs/15-sources-and-glossary.md",
+      "zh-TW": "i18n/zh-TW/docs/15-sources-and-glossary.md",
+      "zh-TW_sha256": "080ff320df000adfeb55ecfb219eedc38d4245427fb937c91759704e60bfe6a9",
+      "en_sha256": "157f7c1d873a2c910ee2c57a6c91e711c453b9f953df3365589ba8ba76718ec7"
+    },
+    {
+      "source": "docs/16-audit-remediation-plan.md",
+      "source_sha256": "7ea9236af9bb2ed348785aa7d585ea782bca8284176a3e69a7ffabd6e49fa0c6",
+      "en": "i18n/en/docs/16-audit-remediation-plan.md",
+      "zh-TW": "i18n/zh-TW/docs/16-audit-remediation-plan.md",
+      "zh-TW_sha256": "883e55f1c9d1c4f24ba273167a3f09c2415d8b21d550db54b06aba3fa5b505b1",
+      "en_sha256": "4d7c2fb2391272c260ef8eb3391263e0e06c23dd527ad9044d8268f2ebc4d831"
+    },
+    {
+      "source": "docs/README.md",
+      "source_sha256": "2c4a6648bfe54070b9414a78d21382199854d3baf1d3ad5e6e4a682669d59e7e",
+      "en": "i18n/en/docs/README.md",
+      "zh-TW": "i18n/zh-TW/docs/README.md",
+      "zh-TW_sha256": "883b31aa08b8f9587312991abf94bad0bbdd5466e7b57de5e61636d14c078770",
+      "en_sha256": "d6deb707dd8d3eb3bac5d3e0b09b445c18debaa02b440eef248d9b72b9dbaec3"
+    },
+    {
+      "source": "docs/USER_GUIDE.zh-CN.md",
+      "source_sha256": "bf0b274a4015486d9e9a46497af0a817262938090b0d74def58f4b1c060b3dca",
+      "en": "i18n/en/docs/USER_GUIDE.zh-CN.md",
+      "zh-TW": "i18n/zh-TW/docs/USER_GUIDE.zh-CN.md",
+      "zh-TW_sha256": "198bda882a13fd9b16c05b756d94bedbf21bdeceb5a2ced3ba70264525f98f3b",
+      "en_sha256": "5a74453700d543f7bbdac68b8ed25f709d4801bded85fd1dcd65813cf416c8df"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/01-product-requirements.md",
+      "source_sha256": "b22128a0d5b46d9da392297d67173e6d1a70cc0e5ccb18d304b22ac414b816ea",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/01-product-requirements.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/01-product-requirements.md",
+      "zh-TW_sha256": "1dc92a86ef835987d61b14e95eac46c81b80a127b2a994f7a34828debc493abd",
+      "en_sha256": "205ef6864daacb1cecce8cb98b0aefea94d2bf06cce0fc5fbe19bac308862b04"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/02-user-flows-and-ui.md",
+      "source_sha256": "ed85865c3adec6b2d1bc6142be720d04cc8aa66021dc6c985cb778335b37a7fb",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/02-user-flows-and-ui.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/02-user-flows-and-ui.md",
+      "zh-TW_sha256": "aff1cd94d9dd47c2acd0ecb11c54544ab637f38583d9c93ddc10d50786552d1d",
+      "en_sha256": "cc22f9fe8f9a25dc8e43cd9d754b3810fdebf7344999009e9719bdf30ae4874b"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/03-training-and-model-lab.md",
+      "source_sha256": "bce6f0e95680a918f0189c612c263cfe27307e623fa22cd0f5fe02880b0715bb",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/03-training-and-model-lab.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/03-training-and-model-lab.md",
+      "zh-TW_sha256": "7b0cc6f6a47618787ef89f50a0d176e2eec6313d656feb621d6adea782698124",
+      "en_sha256": "4fe491082061b284e08cda44037915aaa2aef238603d0838abc6b81c4c61e3be"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/04-runtime-and-hardware.md",
+      "source_sha256": "f5faf9bdfa568988515736df6cd054925e7c1709cf6412cbe7c362cac1c8819a",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/04-runtime-and-hardware.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/04-runtime-and-hardware.md",
+      "zh-TW_sha256": "876ecfd3a252a6e12f4819405c4e1cf47b0eff554f34e9e7e8956cda19eeda2b",
+      "en_sha256": "941617241789c6100f53c73f5983aa9af80f8cbc155b219d553348c7e5340349"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/05-data-model-and-assets.md",
+      "source_sha256": "414edf5236e089e74f7f916877a61c33a1ada773aa428a0660eb034a25c3678c",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/05-data-model-and-assets.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/05-data-model-and-assets.md",
+      "zh-TW_sha256": "b4a0b2b2ff1cc2c48faf19a22a9756c10afdadd93fc138ccff4e52c0beb94467",
+      "en_sha256": "2a8ff750f9f1a912a6729bc106300affa78179cf2a25a8305aff4a90cb9fc0cb"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/06-architecture-and-adapters.md",
+      "source_sha256": "148a5d9e32ea7f70eb1eb70093f989de27cf8f7d7dcdd5737af883387c91f253",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/06-architecture-and-adapters.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/06-architecture-and-adapters.md",
+      "zh-TW_sha256": "9fc7c366515c554e61c40b37473dff1845ce57d62638f71643103b9c17b3ff99",
+      "en_sha256": "e6aa17a2177040f8cb2c7d0e41593ce24e79b5e0baecef4f9da1075792fdbf29"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/07-api-and-task-lifecycle.md",
+      "source_sha256": "82926083facd08d2247d599fc9dc62c48f70e4dec6be5ed619f3af9901b61a86",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/07-api-and-task-lifecycle.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/07-api-and-task-lifecycle.md",
+      "zh-TW_sha256": "e375ace3d0393ae884997b91e2b10c5eb2c91f7eeb907c5ed8dd1c36b3f34307",
+      "en_sha256": "3e63e05c42129898c973b7c2f68b7beb357ace3ad63c352b735f09fd92f37b8a"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/08-ai-assistance-and-data-boundaries.md",
+      "source_sha256": "aa71626557310943bf9d3ef5acd876c94c6d9ce28aa6084d0471af44ce834bc2",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/08-ai-assistance-and-data-boundaries.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/08-ai-assistance-and-data-boundaries.md",
+      "zh-TW_sha256": "b829eb752777fccf2de133ba7e9300091c735681e769eb7b55d2c95609b7da69",
+      "en_sha256": "970f5342a6027ef0c5884800082bc16a957eb7be555e001566ef73f42aa9e57e"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/09-development-roadmap.md",
+      "source_sha256": "a7ed5d96bfba000010d6d15dc546782401dfb1360fc7186ae8d227a28300c9d2",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/09-development-roadmap.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/09-development-roadmap.md",
+      "zh-TW_sha256": "6a65e02078c9926b567966b21ac80b4bd81871f4636c183e2bbdaf3568d64582",
+      "en_sha256": "4edb686407c0fe307856c1a960ca01d8164967688c78bb81bb3335909ea4ae9d"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/10-work-breakdown.md",
+      "source_sha256": "263adc86266c70ed68beb3ab6d360a8c91fe77c0b44bb7ebf65701840fab4374",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/10-work-breakdown.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/10-work-breakdown.md",
+      "zh-TW_sha256": "61dc500d47bcf64a3534a1e9c236e87c1a786335dd2815e43e3a9fc1bdae9807",
+      "en_sha256": "9de86ba0ebc2e3c8c796760a2f48abdf7990e57b1f1fa3bef6c9297ca95c251c"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/11-testing-and-acceptance.md",
+      "source_sha256": "c835dff8f0be5b19af6be86d84a7a12c510b68ee0ed911b616a4b42a6cd7554e",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/11-testing-and-acceptance.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/11-testing-and-acceptance.md",
+      "zh-TW_sha256": "d80f3c4a71a9880554d6e852b6497317e2434d3e9a2f71d20dc1fa5d04280744",
+      "en_sha256": "c23be6807eeed48883b1ff7cdd4bac90c3c3e8d57374abc0eca0354b734fcb49"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/12-operations-and-release.md",
+      "source_sha256": "74e97d2d7bc9c3ab9abd0223b7738b6130513ed93054881fd79da3d5093270d8",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/12-operations-and-release.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/12-operations-and-release.md",
+      "zh-TW_sha256": "09e898acd32ef214f2d2db7e97386111219c224cfdb4f23695a1720fa852d182",
+      "en_sha256": "c43bee8425028c3b7caf40662249165c5987fd4369c6ca8145f7307f81b57c0b"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/13-decisions-risks-and-questions.md",
+      "source_sha256": "db42f6a53426966c0e50ee51ae7ec13962666e78aa84d7765804ddcaa4e37abd",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/13-decisions-risks-and-questions.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/13-decisions-risks-and-questions.md",
+      "zh-TW_sha256": "0c9760c12f1aeecdca7acd071074e774d5dc25d39a04816899498c937ad04968",
+      "en_sha256": "5de472d7ffa78d45f9b08c84d8ad4c469b325ff154596d849444e8ca7c5c4893"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/14-prototype-traceability.md",
+      "source_sha256": "636ea71ae04b7af1f6c49a1c963cf8fad14448e0d6d48e4885e41254a05d32f6",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/14-prototype-traceability.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/14-prototype-traceability.md",
+      "zh-TW_sha256": "aa946fd9cbdc47a0d292c48dfbd8f2544123cbfcd35c0e38c67ce1b820c65323",
+      "en_sha256": "7743aff55c70de8fc1fe8f85a6970a5f6d7743e8b89ba85486396fe606ad0894"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/15-sources-and-glossary.md",
+      "source_sha256": "914ea474046a248150edb7df33fe38870eb0d2c639f04f33aa8de2628875c2f9",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/15-sources-and-glossary.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/15-sources-and-glossary.md",
+      "zh-TW_sha256": "a0e10894836024093fc9e6830b7990d17344028f8791d407987f45976c9bb272",
+      "en_sha256": "a55f84f697ac161819a9cfb1f1a2c256b511188e7429516f2c8387297c0234b6"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/README.md",
+      "source_sha256": "2e091545ab3477f8b9fe89a6fc30ca3b03f1fe9aa0db394cf6580e5a48e22674",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/README.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/README.md",
+      "zh-TW_sha256": "943379d760f6c734862e02fad5b592a90b5db5edc388339e1caefeb30deb6441",
+      "en_sha256": "effb49655341059b143b03b3a579469b39ffb7d7c09c303efe10da213a5514eb"
+    },
+    {
+      "source": "docs/archive/v1.0-2026-09-09/validation-report.md",
+      "source_sha256": "3c5da8984042050a82becc695026502bd40de1519b52cbd3970828ac893dc188",
+      "en": "i18n/en/docs/archive/v1.0-2026-09-09/validation-report.md",
+      "zh-TW": "i18n/zh-TW/docs/archive/v1.0-2026-09-09/validation-report.md",
+      "zh-TW_sha256": "c5c81196e950186865d890d681a8f867d5034ca6832e28b7f1fe92ff221df267",
+      "en_sha256": "4a90f05c7bbed50608888a7a6f0885b2c3e36abb2f94c30cc2c52433617463f1"
+    },
+    {
+      "source": "docs/audits/2026-09-09-demo-docs-audit.md",
+      "source_sha256": "52503d7e56e1d8897cbb78d202bcb8577d3b565b06cef8ad49c688de05899286",
+      "en": "i18n/en/docs/audits/2026-09-09-demo-docs-audit.md",
+      "zh-TW": "i18n/zh-TW/docs/audits/2026-09-09-demo-docs-audit.md",
+      "zh-TW_sha256": "ea2359eb904ca1f4fba10e1b9ff066ac08ee91213c9018173cde06dfbd792db8",
+      "en_sha256": "19b1de4085e054091baa892127f887c817c9787fc30409562daf77a994aaef92"
+    },
+    {
+      "source": "docs/implementation/2026-09-10-current-delivery-matrix.md",
+      "source_sha256": "a923778c225ade79c7c85ec32667ee2510806fa6b905f282c2363d0536ae8333",
+      "en": "i18n/en/docs/implementation/2026-09-10-current-delivery-matrix.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-current-delivery-matrix.md",
+      "zh-TW_sha256": "d26a06efaa442393947f10d212323f3279fc934de21991378f90f0d992c46102",
+      "en_sha256": "8ec5216a2e9d34bf276989ceebb7d7752f50fad22154bc8906634a6a55f10a4e"
+    },
+    {
+      "source": "docs/implementation/2026-09-10-execution-board.md",
+      "source_sha256": "39bc986145ab93467553edfd5957736d002d2af5284181c433a48ea535726c7f",
+      "en": "i18n/en/docs/implementation/2026-09-10-execution-board.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-execution-board.md",
+      "zh-TW_sha256": "8c2667bb11c7103a979d93e48c39e477dbc87f5a182ae195fad3a4fdefee234e",
+      "en_sha256": "7d8c6b52975c6723c7db160d24e0ac375e2e97807395bdfad3179aec420c9771"
+    },
+    {
+      "source": "docs/implementation/2026-09-10-remote-nvidia-evidence.md",
+      "source_sha256": "4cc67a01895e73d5eeab61c8e8eb15ef3bd9c7a25a70d66e227f4e301305f8dc",
+      "en": "i18n/en/docs/implementation/2026-09-10-remote-nvidia-evidence.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-remote-nvidia-evidence.md",
+      "zh-TW_sha256": "cd25ee2baedea8baa0ff2887eb9343d1b64620c38e43038c6522f3af758a63ab",
+      "en_sha256": "f8722c2aac0c48088ba7a5e9522f7bdef44b9f3477b8e8e16fb8b31592d81a17"
+    },
+    {
+      "source": "docs/implementation/2026-09-10-ver2-scope.md",
+      "source_sha256": "3b778f24015ca3dc7c142e4cf4a658b1cd10f63bac0175eb8ce43d234b7bfa96",
+      "en": "i18n/en/docs/implementation/2026-09-10-ver2-scope.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-ver2-scope.md",
+      "zh-TW_sha256": "26ea9bef1df979ecd8151246b7fcdea262040ea5cfeea53c3790b6d8003d4d54",
+      "en_sha256": "e6a90c8950844004d5a00e258b53a80b56d30029a83d3c375e57ac838334d9dc"
+    },
+    {
+      "source": "docs/implementation/2026-09-10-wp08-wp10-minimum-plan.md",
+      "source_sha256": "f60e737a0f4f4e11e86bb7ccb57210f6abdd8848ea0324ed786bad2db6a546ef",
+      "en": "i18n/en/docs/implementation/2026-09-10-wp08-wp10-minimum-plan.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-wp08-wp10-minimum-plan.md",
+      "zh-TW_sha256": "f447ddd6e960090b0fbafb9e890a71ffb515071b1b96eb988b2226b2dcb0bf83",
+      "en_sha256": "fc47fd3fde9b5bbd22aee82141b485b3da1e73bbbcfb4b215fa198323c0442da"
+    },
+    {
+      "source": "docs/implementation/2026-09-11-first-user-acceptance-kit.md",
+      "source_sha256": "67ca4414b8611d1951b5cbd7a68b3376f7ae7d36811a385634f6b7a318ae8672",
+      "en": "i18n/en/docs/implementation/2026-09-11-first-user-acceptance-kit.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-11-first-user-acceptance-kit.md",
+      "zh-TW_sha256": "3b322ea8d056357f2ea781a360d267d67d0d9663f83057b9c5605284c9ec95f2",
+      "en_sha256": "57fcf3c6764dbb42ab57e1818ff1f630b9049a140a3420a6760497550bdae6e6"
+    },
+    {
+      "source": "docs/implementation/2026-09-11-ver2-2-007-progress.md",
+      "source_sha256": "dd3e246f491a8bb8cae9e08d07d1fdb7256aa473d709c4a8e3dbac949b0fc7a7",
+      "en": "i18n/en/docs/implementation/2026-09-11-ver2-2-007-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-11-ver2-2-007-progress.md",
+      "zh-TW_sha256": "c1fba75b29bd2908fcc3442979c7afb669743ca3d22d6526f26aa36467b4a496",
+      "en_sha256": "94053b5cd72cee7bc9b44ab3acc1bc2dda54fa387794beff27296d296ab46e23"
+    },
+    {
+      "source": "docs/implementation/2026-09-12-ver2-2-008-progress.md",
+      "source_sha256": "d8a349c378baf7bb3cee78f04e5a36cda4a171f865f3b4a710f2defc8d1e80d4",
+      "en": "i18n/en/docs/implementation/2026-09-12-ver2-2-008-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-12-ver2-2-008-progress.md",
+      "zh-TW_sha256": "56f071c32e89b05175f9ec94f063cbee5aaf7565e5f3329681d62ef5f286f139",
+      "en_sha256": "68d93b195593231050247da567584e7ed3736d94b07c596035098a913c103736"
+    },
+    {
+      "source": "docs/implementation/2026-09-12-ver2-2-009-progress.md",
+      "source_sha256": "c618bacc3d42bea87f374d1987290b89c8cf82b743f9c914b4659cfefe70b91b",
+      "en": "i18n/en/docs/implementation/2026-09-12-ver2-2-009-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-12-ver2-2-009-progress.md",
+      "zh-TW_sha256": "42cc7222871bae63f3ec6a0d418e197320eb6b1b78eee26dfd3c11dcb0302f04",
+      "en_sha256": "bd2df50b63aeaf42a9cf15afa18495c4c49c981963a7f16b699803f37aa0bac5"
+    },
+    {
+      "source": "docs/implementation/2026-09-12-ver2-2-010-progress.md",
+      "source_sha256": "8e8ec89d8ff0f34dc4305bca4f361c5805bb953439fac296472eb0d7c0942ba0",
+      "en": "i18n/en/docs/implementation/2026-09-12-ver2-2-010-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-12-ver2-2-010-progress.md",
+      "zh-TW_sha256": "a97712cf8f09ae27b995f9d2c3f0993e487242fcff8e03d30277e40eba249a81",
+      "en_sha256": "3152ca9043a4069369936bc32f9fded5589274be20d0b08e0edf8ba2e45472c5"
+    },
+    {
+      "source": "docs/implementation/2026-09-13-ver2-2-011-progress.md",
+      "source_sha256": "a8b4ac0bf2085ca9eed45d918dacf401077fef57d4bfcb78aabda0d8db6ab65c",
+      "en": "i18n/en/docs/implementation/2026-09-13-ver2-2-011-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-13-ver2-2-011-progress.md",
+      "zh-TW_sha256": "1fe9c36b71d31fa46f0accf9af03439979dd688daca02e9d72dca63670e92edb",
+      "en_sha256": "087e10f5c5963a7c79c1ef1781ca5a5c58c2768905e4f877c3036731bcc29380"
+    },
+    {
+      "source": "docs/implementation/2026-09-13-ver2-2-012-progress.md",
+      "source_sha256": "34db335b350bfcb01d5c6b235d88828ed766410eac14ba2ca516ada52decb4c5",
+      "en": "i18n/en/docs/implementation/2026-09-13-ver2-2-012-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-13-ver2-2-012-progress.md",
+      "zh-TW_sha256": "42cd88ba587d634f8fd3244a15d3acce75ad106beea0a900e2debf31c000cea1",
+      "en_sha256": "3e227a7586f89432da7b728474ea65762e3211b445d25f07fa081b8e216751bc"
+    },
+    {
+      "source": "docs/implementation/2026-09-13-ver2-3-013-progress.md",
+      "source_sha256": "62ea575fa371041dc63b14390c74d8b45cd9009e6b229b801488733608fb6c07",
+      "en": "i18n/en/docs/implementation/2026-09-13-ver2-3-013-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-13-ver2-3-013-progress.md",
+      "zh-TW_sha256": "1b82ae6321d8e5d8137bab2fe079de65bebf717995fbc872fcf3cf0289c6bd05",
+      "en_sha256": "502c7213d77a66fef0f4c4656ee738418ed1ded5ab2b63a340a7f4c494788e68"
+    },
+    {
+      "source": "docs/implementation/2026-09-13-ver2-4-014-progress.md",
+      "source_sha256": "35bf7b4520f4d148f9950c3cb5cdfdeaf783ff737ff865524aa0b431f3fdd5f3",
+      "en": "i18n/en/docs/implementation/2026-09-13-ver2-4-014-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-13-ver2-4-014-progress.md",
+      "zh-TW_sha256": "1481cbca8c3dbb2ee1fe7a4fa1eb0653d5371d11121c4f008a6fccd907812ef3",
+      "en_sha256": "0c4241a8a9c815525b1d74978ea15cce972f8640fc2f0b02886b28390cc565ea"
+    },
+    {
+      "source": "docs/implementation/2026-09-13-ver2-4-015-progress.md",
+      "source_sha256": "14ccb48ea97843e05977e58224dcd3fee01cb56754f46c37fa7d6d473d097ade",
+      "en": "i18n/en/docs/implementation/2026-09-13-ver2-4-015-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-13-ver2-4-015-progress.md",
+      "zh-TW_sha256": "75070f5d58b82a6bc8f7a00743d1df1a8aad04337dcb020456aeb7e48dea5c22",
+      "en_sha256": "73f19f07a9e0b46158de8593b6c5fe054e816ccea4789303860dc60e60a2c446"
+    },
+    {
+      "source": "docs/implementation/2026-09-13-ver2-4-016-progress.md",
+      "source_sha256": "41ac7e34bf59b6a313fd24bdb64114e85ef7d24b72e9268c081f54d8f34c8f25",
+      "en": "i18n/en/docs/implementation/2026-09-13-ver2-4-016-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-13-ver2-4-016-progress.md",
+      "zh-TW_sha256": "2d1d7edb8e6ff73d8eadd050cbcc2e4b74f4c5cd777e589f0842533c66c9c0e5",
+      "en_sha256": "7b8138bf4aa44334d658b1b194c87c430ad96b13d018eb2cd882c142312dac7d"
+    },
+    {
+      "source": "docs/implementation/2026-09-13-ver2-4-017-progress.md",
+      "source_sha256": "97499324b96f1e57ebeaa0f8c262e1ffc15f6ab27fd45c804d832832de383f6c",
+      "en": "i18n/en/docs/implementation/2026-09-13-ver2-4-017-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-13-ver2-4-017-progress.md",
+      "zh-TW_sha256": "a1abcc1bb5a28fd967c951566eea546ed3f5915b6387ee98b9396dbd9ab87dda",
+      "en_sha256": "557e56f2d280bd64ed90bf828bc908f1eef5e2e2c52c66af74ffce553a12e311"
+    },
+    {
+      "source": "docs/implementation/2026-09-13-ver2-4-018-progress.md",
+      "source_sha256": "dd8779117f64b2f43eeabb7e47f7c16fa726fd6261561aa70634782bdf6904ca",
+      "en": "i18n/en/docs/implementation/2026-09-13-ver2-4-018-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-13-ver2-4-018-progress.md",
+      "zh-TW_sha256": "79c354b91d6569325e23adc34d60585b0d120cb24fe6e610a7c212916a35c75c",
+      "en_sha256": "4a97dd8872502fdf2955f667f33a14ce8cfa1c78c41bb14b054c4f2a59f8a67d"
+    },
+    {
+      "source": "docs/implementation/2026-09-13-ver2-4-019-progress.md",
+      "source_sha256": "a9bd7e057c251b35ab4795864822652fad9ceff3fd423bbd836a870ab0d7988d",
+      "en": "i18n/en/docs/implementation/2026-09-13-ver2-4-019-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-13-ver2-4-019-progress.md",
+      "zh-TW_sha256": "77709a669599c679c64b52b36cda692bd88755f19b1cdf59da37a23a7f4b4d60",
+      "en_sha256": "6a799317779e47b890c680f05aa97287ab0a8287a775096d404355c1c46666e9"
+    },
+    {
+      "source": "docs/implementation/2026-09-13-ver2-4-020-progress.md",
+      "source_sha256": "a9ea6f0d6d2c893b6093d7d6a61fc6dc89b4351601c59331efc7010555070521",
+      "en": "i18n/en/docs/implementation/2026-09-13-ver2-4-020-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-13-ver2-4-020-progress.md",
+      "zh-TW_sha256": "99d2895c9b0ebf86b9a3bc4e3def32a57c4f8b8da031d23885f9ec5cb056c59d",
+      "en_sha256": "d3b0aee380b6988569ebb489981c82f006b7cb2bff9b7d6b5fcb8830056635a6"
+    },
+    {
+      "source": "docs/implementation/2026-09-14-subtitle-scroll-diagnosis.md",
+      "source_sha256": "1b995206d02001d0de4bdfc81a1bbd44f85699b97cb40cdead485d3d85870205",
+      "en": "i18n/en/docs/implementation/2026-09-14-subtitle-scroll-diagnosis.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-14-subtitle-scroll-diagnosis.md",
+      "zh-TW_sha256": "d1f54d8836005fcce177ca9037c7375762e62e2eacd3b2ff168bec0aaaf2035a",
+      "en_sha256": "86e3423ad58852da703675371934d1d0cdad05a99887bd41f82a8419f88032b5"
+    },
+    {
+      "source": "docs/implementation/2026-09-14-ver2-4-021-progress.md",
+      "source_sha256": "b0ef3238413b73e29fad583fc1c44758895f7bf981ac4b6961ad73c0162e2c2a",
+      "en": "i18n/en/docs/implementation/2026-09-14-ver2-4-021-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-14-ver2-4-021-progress.md",
+      "zh-TW_sha256": "c2c48c3430f6293d7d0e798f3b66db95e3ef395dee8ea03cafe4e42e3240e9e2",
+      "en_sha256": "24501483b6ef85a01eb4e3b3e4617dbd4f0ee7a142cd34d24b6aea1b30ecccbf"
+    },
+    {
+      "source": "docs/implementation/2026-09-14-ver2-4-022-progress.md",
+      "source_sha256": "0dbcf1963e750f6197f9f614eb5c45b040d5ab0e392e0d8d6406836133c80971",
+      "en": "i18n/en/docs/implementation/2026-09-14-ver2-4-022-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-14-ver2-4-022-progress.md",
+      "zh-TW_sha256": "5a482e9382a19a059574eac7a35f5b56961bd7b2b20a0894424cd10b394d723d",
+      "en_sha256": "23991e33d93ad764e8bacce55a4de88f564c2450903bde8322eedaed924efaef"
+    },
+    {
+      "source": "docs/implementation/2026-09-14-ver2-4-023-progress.md",
+      "source_sha256": "abe162ed7f8f13e40a2a9e7613e15bdf7a47be4e69e91e7c243604b65128883f",
+      "en": "i18n/en/docs/implementation/2026-09-14-ver2-4-023-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-14-ver2-4-023-progress.md",
+      "zh-TW_sha256": "fb3fda1b61dc4cfdf6736f84246be720e300659a14ea0fe14a52b711f2bf18a8",
+      "en_sha256": "70f73d612176266fe96929f6f99a1232ca6a8ce08e72211ded492014bada1ea0"
+    },
+    {
+      "source": "docs/implementation/2026-09-14-ver2-4-024-progress.md",
+      "source_sha256": "974571389e2f6f2af8d4311f8ba688410fc8a37d150773915c85d511ff6896fb",
+      "en": "i18n/en/docs/implementation/2026-09-14-ver2-4-024-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-14-ver2-4-024-progress.md",
+      "zh-TW_sha256": "363ea597b08ab21dc5ebd252279305449080fb622776ce1994c059ed75fc863a",
+      "en_sha256": "7a124a50cae677f777c0114c736bbfa700cc174689b968160fc3407d11fb6f50"
+    },
+    {
+      "source": "docs/implementation/2026-09-14-ver2-4-025-progress.md",
+      "source_sha256": "8cf5aced3a309427e0442b1f7cdee83913b9cdfca4910304613230f903915324",
+      "en": "i18n/en/docs/implementation/2026-09-14-ver2-4-025-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-14-ver2-4-025-progress.md",
+      "zh-TW_sha256": "11bd29635e74327964488e11f892ec928e230c39d7b1121ad0734b593b3e2504",
+      "en_sha256": "6eb50361733549668fcdbac3c09dcdc6da58e4f46a322f49a1d5351a461ab64d"
+    },
+    {
+      "source": "docs/implementation/2026-09-14-ver2-4-026-export-recovery-progress.md",
+      "source_sha256": "d41864314ba9f1440024dd03858ffcd1afbe78af505a5a72031fbbe0ec507856",
+      "en": "i18n/en/docs/implementation/2026-09-14-ver2-4-026-export-recovery-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-14-ver2-4-026-export-recovery-progress.md",
+      "zh-TW_sha256": "3e4d2947e845a2d16ad2abc5401359b0d6dce20e136bf8339f35a44794326d61",
+      "en_sha256": "cad152b10d2089b6575114fa8b5b1448913f463009c840819d1f7eef96a97b6f"
+    },
+    {
+      "source": "docs/implementation/2026-09-14-ver2-4-026-progress.md",
+      "source_sha256": "a4efd564f297d6bcb4ccccb5db025780c681afaa7e7bc8ce2bf887a473d0a9b0",
+      "en": "i18n/en/docs/implementation/2026-09-14-ver2-4-026-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-14-ver2-4-026-progress.md",
+      "zh-TW_sha256": "61e8bae31e346356ac26ed90ccc3de62b322405fa5b88262df0aec0fdc12dcc3",
+      "en_sha256": "50702753a495ad36b3dd2fbeb1bb2bc3c5e298841b6c4b883dfabe55f2c6cbe1"
+    },
+    {
+      "source": "docs/implementation/2026-09-15-media-keyboard-progress.md",
+      "source_sha256": "2a72119ce741155d2f576c44ddba4b234d4900dd129c4c14342b0cd368065688",
+      "en": "i18n/en/docs/implementation/2026-09-15-media-keyboard-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-15-media-keyboard-progress.md",
+      "zh-TW_sha256": "696a23c24807dc0afe7b273901ecef89b703c4f9ad51801eb8ae921e75444a5c",
+      "en_sha256": "bca152adb66b67bbec3e44887366778c5bf7d5684e6570e4de84af73c80059fe"
+    },
+    {
+      "source": "docs/implementation/2026-09-15-ver2-4-027-keyboard-progress.md",
+      "source_sha256": "d656848b70cd5dac622ea7a782a150ca9af7d265873c24cd2305eb4adb96a2ab",
+      "en": "i18n/en/docs/implementation/2026-09-15-ver2-4-027-keyboard-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-15-ver2-4-027-keyboard-progress.md",
+      "zh-TW_sha256": "2594b658726f783160841ba026ae669b9647d3105acc15cea2a877f3f57aebe3",
+      "en_sha256": "4509f9e0138ad76a8db0a448765f6a51a2b0f2b241451bcb52f093765c5c506f"
+    },
+    {
+      "source": "docs/implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md",
+      "source_sha256": "2b8a203cae25746e3426fe58477c6a59e088c0cbc284a4dcca01a53f2f4287fd",
+      "en": "i18n/en/docs/implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md",
+      "zh-TW_sha256": "3e6aca7acbe7078851ef4e38a58ac3b97c3bf80556994a0d42c26e42c664a5e1",
+      "en_sha256": "d982a2ae7d19d6449b822ad1675107655c05c43677b5a55beb5a59da62e03382"
+    },
+    {
+      "source": "docs/validation-report.md",
+      "source_sha256": "028a913c1638b9d73b0d1db13819fc1d7dbffc39f8c296ca0e94af0563fa1038",
+      "en": "i18n/en/docs/validation-report.md",
+      "zh-TW": "i18n/zh-TW/docs/validation-report.md",
+      "zh-TW_sha256": "b8a5d31fc3787972c912116feef86df22b73d3b3fa3c0d36dd47030a9944b159",
+      "en_sha256": "3605a999fab9109544b1e9d6ce2b798a50b168841e0daf67596aac166464a1b0"
+    },
+    {
+      "source": "packages/contracts/bootstrap.md",
+      "source_sha256": "edf913f78d1531f48acea1e1aaf5dbf4047f651f03a77e395fb576ce70938e3d",
+      "en": "i18n/en/packages/contracts/bootstrap.md",
+      "zh-TW": "i18n/zh-TW/packages/contracts/bootstrap.md",
+      "zh-TW_sha256": "554d4d388b779cc1a37029a9a35c8c1b444323badbe248c464a1680df8c6fabb",
+      "en_sha256": "2699ad0c1566f85df37c19c630435acab46a7765129374316de38685ece74ca9"
+    },
+    {
+      "source": "prototype/reference-2026-09-09/README.md",
+      "source_sha256": "22f908c9d52345fd71a5c67abe0d59803bde848a239bb5939a72dc0192f257c6",
+      "en": "i18n/en/prototype/reference-2026-09-09/README.md",
+      "zh-TW": "i18n/zh-TW/prototype/reference-2026-09-09/README.md",
+      "zh-TW_sha256": "2573be36a85a75fcafad0fa0b97324fe793907dba00d629578954220e70f64be",
+      "en_sha256": "bbf304f9998557eb05d3fb2f5f08c5fec9aa6a1ab1f1032c59bf8eb7ab1d59b5"
+    },
+    {
+      "source": "scripts/desktop/MEDIA_RUNTIME_PLAN.md",
+      "source_sha256": "5d04bd573027a2e5d415090fcf4ba472564336a4752a1ede632dad36bb763e39",
+      "en": "i18n/en/scripts/desktop/MEDIA_RUNTIME_PLAN.md",
+      "zh-TW": "i18n/zh-TW/scripts/desktop/MEDIA_RUNTIME_PLAN.md",
+      "zh-TW_sha256": "8b4718a427f9f48408246e86976e9175638e9965e4b1c3604446521c3e63c3a6",
+      "en_sha256": "6fbe4dd9ae50c1957b0e71f4e9f14e9dc96412c8002fbd633c3530e627f9227f"
+    },
+    {
+      "source": "scripts/desktop/README.md",
+      "source_sha256": "f482c178f087f16a4ab267deff09c3ec280961315760a0911454ffeea5a054a5",
+      "en": "i18n/en/scripts/desktop/README.md",
+      "zh-TW": "i18n/zh-TW/scripts/desktop/README.md",
+      "zh-TW_sha256": "dde504f3020ac3df4eae3756efd1fd8a44f67ef3f060bad37db6097df54e23a2",
+      "en_sha256": "e3a19ef54b764961596a3ba404d4344a75818fbbaf31287378bedffc7de17fe0"
+    }
+  ],
+  "source_count": 81,
+  "schema_version": 1,
+  "languages": [
+    "zh-CN",
+    "zh-TW",
+    "en"
+  ],
+  "source_language": "zh-CN",
+  "index": "i18n/README.md",
+  "index_sha256": "8c5ddc4b12f898c9e30d4a365404b1b8541e6465151289a1fb50cddbdf3ada9f"
+}

@@ -22,6 +22,16 @@ class DocumentationValidationTests(unittest.TestCase):
         cls.baseline = Path(cls.baseline_temp.name) / "docs"
         cls.original_hashes = cls.hashes(DOCS_ROOT)
         shutil.copytree(DOCS_ROOT, cls.baseline, ignore=shutil.ignore_patterns("__pycache__"))
+        # 使用手册引用仓库内的脚本说明，临时副本也保留该真实链接目标。
+        script_docs = cls.baseline.parent / "scripts" / "desktop"
+        script_docs.mkdir(parents=True)
+        shutil.copy2(DOCS_ROOT.parent / "scripts" / "desktop" / "README.md", script_docs)
+        # 語言切換連結也使用真實譯文，不放寬連結存在性檢查。
+        for language in ("zh-TW", "en"):
+            translated_docs = cls.baseline.parent / "i18n" / language / "docs"
+            translated_docs.mkdir(parents=True)
+            for filename in ("README.md", "USER_GUIDE.zh-CN.md"):
+                shutil.copy2(DOCS_ROOT.parent / "i18n" / language / "docs" / filename, translated_docs)
 
     @staticmethod
     def hashes(root: Path) -> dict[str, str]:
@@ -38,6 +48,8 @@ class DocumentationValidationTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory(prefix="ailab-docs-case-")
         self.root = Path(self.temporary.name) / "docs"
         shutil.copytree(self.baseline, self.root)
+        shutil.copytree(self.baseline.parent / "scripts", self.root.parent / "scripts")
+        shutil.copytree(self.baseline.parent / "i18n", self.root.parent / "i18n")
 
     def tearDown(self) -> None:
         self.temporary.cleanup()

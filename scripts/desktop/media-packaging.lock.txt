@@ -1,0 +1,5 @@
+# 媒体打包工具版本；安装在各 profile 的专用构建环境。
+altgraph==0.17.5 --hash=sha256:f3a22400bce1b0c701683820ac4f3b159cd301acab067c51c653e06961600597
+macholib==1.16.4 --hash=sha256:da1a3fa8266e30f0ce7e97c6a54eefaae8edd1e5f86f3eb8b95457cae90265ea
+pyinstaller==6.16.0 --hash=sha256:7fd1c785219a87ca747c21fa92f561b0d2926a7edc06d0a0fe37f3736e00bd7a
+pyinstaller-hooks-contrib==2026.7 --hash=sha256:24257a04c7a5a7a034cf28e39dcee20fbeeb9f043076729480f2e1b69904408a

@@ -1,0 +1,56 @@
+# GCSA AI Lab
+
+[简体中文](README.md) · [繁體中文](i18n/zh-TW/README.md) · [English](i18n/en/README.md)
+
+本地优先的模型训练与运行桌面工作台。围绕项目管理模型、数据、训练任务、评测和作品，提供语言、图片、视频及配音的工作流程。
+
+## 当前状态
+
+当前固定公司签名候选为 **Ver2.4（028）**，签名组织为 **Global Cybersecurity Alliance Limited**。这是开发候选，完整 M0—M6、干净安装、公证及正式分发验收尚未完成。
+
+Media 三个导入入口的键盘修复已进入源码，并通过相关测试和 Safari 组件验证；**029 尚未构建或原生验收**。028 的工作台四按钮、027 的文字原作品纯键盘导出与同号重开，均只接受各自记录覆盖的范围。详细状态见[当前交付矩阵](docs/implementation/2026-09-10-current-delivery-matrix.md)和[更新记录](CHANGELOG.md)。
+
+## 功能与范围
+
+- **语言模型**：固定 Qwen2.5-0.5B-Instruct / Apple MLX 组合的生成、SFT + LoRA、检查点、评测和候选准入。
+- **媒体工作流**：图片生成与 Tiny-SD LoRA、固定 SVD 视频生成、Kokoro 中文配音，以及分步保存和明确复用。
+- **项目与数据**：任务草稿、来源组训练／验证划分、版本记录、作品修订、导出、完整备份与恢复。
+- **执行管理**：本机执行、独立执行服务协议、传输核验和中断恢复。指定 NVIDIA 与同份产物跨端仍待实机验收。
+
+视频与音频训练尚未开放；媒体工作流分别保存作品，尚不合成为一条配音成片。既有 LoRA 和量化候选质量失败仍保留，不能把训练完成或文件可读取等同质量通过。精确组合和未开放范围见[候选范围](docs/implementation/2026-09-10-ver2-scope.md)。
+
+## 开发与验证
+
+前端使用 React / TypeScript，桌面宿主使用 Tauri / Rust，本机控制服务使用 Python。依赖版本固定在仓库的锁文件中。
+
+    npm ci
+    npm test
+    npm run check:docs
+    npm run test:docs
+
+TypeScript 检查与控制服务测试：
+
+    ./node_modules/.bin/tsc --noEmit -p apps/desktop/tsconfig.json
+    services/control/.venv/bin/python -B -m pytest tests/control -q
+
+控制服务命令需要先准备对应的 Python 3.13 环境及依赖。完整构建、各运行时环境、签名和启动步骤见[桌面开发与构建说明](scripts/desktop/README.md)。当前候选的系统范围为 Apple Silicon / macOS 26 及以上，仍需最终候选复验。
+
+开发、原生测试和本机候选运行共用：
+
+    apps/desktop/src-tauri/target/release/bundle/macos/GCSA AI Lab.app
+
+每次实际 App 构建递增构建编号。提交源码或修改文档不会生成新 App 版本。
+
+## 文档
+
+- [用户操作手册](docs/USER_GUIDE.zh-CN.md)
+- [文档中心与 1.1 设计基线](docs/README.md)
+- [完整三语文档目录](i18n/README.md)
+- [更新记录](CHANGELOG.md)
+- [原型参考](prototype/reference-2026-09-09/README.md)
+
+仓库收录源码、测试、构建脚本、用户手册、设计规范和历史验收记录。文档中指向 .artifacts/ 的链接属于本地证据索引，需在保留相应目录的工作区查看；GitHub 上可直接阅读结论和范围说明。运行库、App 构建产物、模型、用户资料库和本地凭据由各自环境管理。
+
+## 交付边界
+
+完整交付仍需指定 NVIDIA、受信 HTTPS 跨主机、同份产物跨端、干净安装、五名首次用户、达标质量与人工评审等证据。旧字幕长列表偶发空白和其余未覆盖原生路径保持待验。原型、历史失败和设计基线保留各自形成时的结论。

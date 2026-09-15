@@ -1,0 +1,272 @@
+{
+  "items": [
+    {
+      "schema_version": "ailab-training-contract-v1",
+      "id": "qwen25-mlx-sft-lora-v1",
+      "kind": "text",
+      "operation": "train",
+      "engine": "mlx",
+      "device_id": "apple-gpu",
+      "execution_scope": "local",
+      "model_constraint": "Qwen2.5-0.5B-Instruct 原权重；不支持量化基座训练",
+      "training_type": "sft",
+      "update_method": "lora",
+      "recipe_id": "qwen25-assistant-only-v1",
+      "source": {
+        "id": "qwen25-mlx-sft-lora-v1",
+        "label": "内置 Apple MLX SFT LoRA 配方",
+        "default_source": "versioned_control_schema",
+        "constraint_source": "control_and_worker_intersection"
+      },
+      "parameters": {
+        "steps": {
+          "type": "integer",
+          "default": 4,
+          "minimum": 1,
+          "maximum": 200,
+          "unit": "updates",
+          "editable": true
+        },
+        "learning_rate": {
+          "type": "number",
+          "default": 0.0001,
+          "minimum": 1e-07,
+          "maximum": 0.01,
+          "unit": "learning_rate",
+          "editable": true
+        },
+        "max_seq_length": {
+          "type": "integer",
+          "default": 512,
+          "minimum": 32,
+          "maximum": 2048,
+          "unit": "tokens",
+          "editable": true
+        },
+        "lora_rank": {
+          "type": "integer",
+          "default": 4,
+          "minimum": 1,
+          "maximum": 32,
+          "unit": "rank",
+          "editable": true
+        },
+        "lora_alpha": {
+          "type": "number",
+          "default": 8,
+          "minimum": 1,
+          "maximum": 64,
+          "unit": "scale",
+          "editable": true
+        },
+        "num_layers": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 24,
+          "unit": "layers",
+          "editable": true
+        },
+        "seed": {
+          "type": "integer",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 4294967295,
+          "unit": "seed",
+          "editable": true
+        },
+        "batch_size": {
+          "type": "integer",
+          "default": 1,
+          "minimum": 1,
+          "maximum": 1,
+          "unit": "samples",
+          "editable": false
+        },
+        "gradient_accumulation": {
+          "type": "integer",
+          "default": 1,
+          "minimum": 1,
+          "maximum": 1,
+          "unit": "micro_batches",
+          "editable": false
+        },
+        "optimizer": {
+          "type": "string",
+          "default": "adamw",
+          "enum": [
+            "adamw"
+          ],
+          "unit": "optimizer",
+          "editable": false
+        },
+        "weight_decay": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "unit": "ratio",
+          "editable": false
+        },
+        "lora_dropout": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "unit": "ratio",
+          "editable": false
+        }
+      },
+      "application_policy": {
+        "applies_to": "next_run",
+        "restart_required": false,
+        "saved_values": "preserve_and_validate",
+        "conflicts": []
+      },
+      "stopping": {
+        "mode": "steps",
+        "sample_order": "file_cycle",
+        "data_parallel_devices": 1,
+        "effective_batch_size": 1
+      },
+      "verification": {
+        "device_execution": "requires_preflight",
+        "quality": "not_implied"
+      }
+    },
+    {
+      "schema_version": "ailab-training-contract-v1",
+      "id": "qwen25-nvidia-sft-lora-v1",
+      "kind": "text",
+      "operation": "train",
+      "engine": "transformers",
+      "device_id": "cuda:0",
+      "execution_scope": "remote",
+      "model_constraint": "Qwen2.5-0.5B-Instruct 原权重；不支持量化基座训练",
+      "training_type": "sft",
+      "update_method": "lora",
+      "recipe_id": "qwen25-assistant-only-v1",
+      "source": {
+        "id": "qwen25-nvidia-sft-lora-v1",
+        "label": "内置 NVIDIA SFT LoRA 配方",
+        "default_source": "versioned_control_schema",
+        "constraint_source": "control_and_worker_intersection"
+      },
+      "parameters": {
+        "steps": {
+          "type": "integer",
+          "default": 4,
+          "minimum": 1,
+          "maximum": 200,
+          "unit": "updates",
+          "editable": true
+        },
+        "learning_rate": {
+          "type": "number",
+          "default": 0.0001,
+          "minimum": 1e-06,
+          "maximum": 0.01,
+          "unit": "learning_rate",
+          "editable": true
+        },
+        "max_seq_length": {
+          "type": "integer",
+          "default": 512,
+          "minimum": 32,
+          "maximum": 2048,
+          "unit": "tokens",
+          "editable": true
+        },
+        "lora_rank": {
+          "type": "integer",
+          "default": 4,
+          "minimum": 1,
+          "maximum": 32,
+          "unit": "rank",
+          "editable": true
+        },
+        "lora_alpha": {
+          "type": "integer",
+          "default": 8,
+          "minimum": 1,
+          "maximum": 64,
+          "unit": "scale",
+          "editable": true
+        },
+        "num_layers": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 24,
+          "unit": "layers",
+          "editable": true
+        },
+        "seed": {
+          "type": "integer",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 4294967295,
+          "unit": "seed",
+          "editable": true
+        },
+        "batch_size": {
+          "type": "integer",
+          "default": 1,
+          "minimum": 1,
+          "maximum": 1,
+          "unit": "samples",
+          "editable": false
+        },
+        "gradient_accumulation": {
+          "type": "integer",
+          "default": 1,
+          "minimum": 1,
+          "maximum": 1,
+          "unit": "micro_batches",
+          "editable": false
+        },
+        "optimizer": {
+          "type": "string",
+          "default": "adamw",
+          "enum": [
+            "adamw"
+          ],
+          "unit": "optimizer",
+          "editable": false
+        },
+        "weight_decay": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "unit": "ratio",
+          "editable": false
+        },
+        "lora_dropout": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "unit": "ratio",
+          "editable": false
+        }
+      },
+      "application_policy": {
+        "applies_to": "next_run",
+        "restart_required": false,
+        "saved_values": "preserve_and_validate",
+        "conflicts": []
+      },
+      "stopping": {
+        "mode": "steps",
+        "sample_order": "file_cycle",
+        "data_parallel_devices": 1,
+        "effective_batch_size": 1
+      },
+      "verification": {
+        "device_execution": "requires_preflight",
+        "quality": "not_implied"
+      }
+    }
+  ]
+}

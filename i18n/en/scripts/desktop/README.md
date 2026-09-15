@@ -1,0 +1,108 @@
+<!-- translation-navigation:start -->
+[简体中文](../../../../scripts/desktop/README.md) · [繁體中文](../../../zh-TW/scripts/desktop/README.md) · [English](README.md)
+<!-- translation-navigation:end -->
+
+<a id="桌面宿主开发与本机候选构建"></a>
+
+# Desktop host development and local candidate builds
+
+The application identity is fixed to `org.gcsa.ailab` and signing uses `Apple Distribution: Global Cybersecurity Alliance Limited (R3JK7R29AC)`. This signs local candidates; Developer ID signing, notarization, and release acceptance on an independent machine remain incomplete.
+
+The current candidate targets only Apple Silicon / macOS 26 and later: the local Python 3.13 framework has a Mach-O minimum OS version of 26.0. Older-system support in the desktop shell alone is not compatibility evidence for the complete bundle; supporting earlier versions requires replacing Python with a correspondingly built runtime and validating on the target system.
+
+<a id="启动"></a>
+
+## Launching
+
+App development, running, native tests, and delivery share `apps/desktop/src-tauri/target/release/bundle/macos/GCSA AI Lab.app`. Use `scripts/desktop/build.sh` for full builds, then `scripts/desktop/run.sh` to launch; `dev.sh` calls the same entry to avoid a separate debug App. `run.sh` first checks version and identity against the frozen manifest, preventing old bundles from being mistaken for the current candidate. Web hot reload remains available separately through `npm run dev`, but web checks cannot replace native App acceptance. The development control service requires a prepared `services/control/.venv`; `AILAB_DATA_DIR` can select an isolated test directory and `AILAB_WORKER_PYTHON` an isolated MLX environment; production bundles reject these development overrides.
+
+Closing the window preserves local background tasks; clicking the Dock icon reopens it. Quitting first displays a prompt about stopping local tasks; after confirmation, it requests control-service shutdown and reclaims executors. The host manages only process handles it started, without process-name scans or global termination.
+
+<a id="前端合同"></a>
+
+## Frontend contract
+
+- `invoke('api_request', {request:{method,path,body?,idempotency_key?}})`: returns business JSON on success and a standard error structure on failure.
+- `invoke('api_media', {artifactId})`: reads only the authenticated content endpoint for registered artifacts, limited to PNG, MP4, WAV, and 64 MiB; returns `{media_type,base64}`. The interface creates a temporary Blob URL for preview and releases it on leaving.
+- `invoke('host_status')`: returns service status, a Chinese explanation, PID and port when available, and the host-controlled origin setting `market_fixture_origin` (default `null`).
+- `invoke('restart_control')`: returns current status if already running; starts a new process after service exit without automatically rerunning tasks.
+- `invoke('pick_import_path', {kind:'model'|'dataset'|'image-dataset'|'material'|'backup'})`: opens a native picker; cancellation returns `null` and selection returns `{path,grant_id}`. Image datasets select directories; materials select PNG files. Import or restore plans carry this grant ID.
+- `invoke('pick_worker_python')`: selects an existing Python environment and applies it through a native confirmation dialog, returning complete settings; cancellation returns `null`. The frontend cannot replace the executable through the generic proxy.
+- `invoke('pick_media_python', {engine:'diffusers'|'kokoro'})`: selects an isolated Python environment for image/video or Chinese voiceover, with the same native confirmation and settings-version checks, updating `media_python` or `audio_python` respectively; other environments retain their existing values.
+- `invoke('use_bundled_worker')`: switches back to bundled MLX without arguments; after checking that the bundled executor exists, clears the external Python selection and returns complete settings.
+- `invoke('use_bundled_media', {engine:'diffusers'|'kokoro'})`: checks that the corresponding bundled executor exists, clears only that category's external Python selection, and returns complete settings.
+- `invoke('pick_export_directory')`: selects an existing export directory; cancellation returns `null` and selection returns `{path,grant_id}`. This grants export writes for the current session, separately from import read grants.
+- `invoke('use_restored_library', {restoreId})`: accepts only completed restore records. The host verifies complete files live through the control service, freezes new writes with an independent host credential, stops the old service, and starts the new directory; it saves library selection only after a successful health check, reconnecting to the original library on failure.
+- `invoke('configure_market_fixture', {origin})`: explicitly sets `http://127.0.0.1:端口` or passes `null` to disable the fixture origin. It registers only the fixed `fixture-provider` and does not start a provider. The host first acquires a reconfiguration gate requiring no active writes, downloads, or executors, then restarts within the same library; after successful health checks and independent `host-settings.json` persistence it returns `{market_fixture_origin,status}`, restoring the original configuration if startup or saving fails. This setting is excluded from library backups and is not implicitly injected through environment variables.
+- The `host-status` event notifies control-service status changes; the frontend can also read status for initial synchronization.
+
+Authentication tokens remain in Rust memory; the WebView never holds the control-service token. Library switching and reconfiguration use a separate host credential sent to Rust only through the stdout handshake, never written to the development bridge's token file. The proxy accesses only fixed loopback addresses, fixed endpoint prefixes, and registered business resources; it rejects redirects, path traversal, additional authentication headers, frontend-created import grants, and direct calls to library activation or host reconfiguration endpoints.
+
+Full backups freeze SQLite under a brief database lock, then copy models, data, adapters, frozen evaluations, and original run evidence through immutable references. Restore first checks the complete closure, database structure, file digests, read grant, and independent destination grant, then restores into a new subdirectory of an existing destination directory. macOS atomic no-overwrite renaming ensures publication cannot replace an existing directory. Plans and command receipts reside in the original library's `backups/.commands`, not its business database; the same command can verify the original restore result even after a service restart. Original snapshots and artifacts preserve their bytes; migrated database references explicitly record original snapshots, original digests, and path mappings. Restore clears external Python selections from the original machine and old idempotent responses; new runs default to this bundle's built-in executors.
+
+The current database version is 4; new libraries directly create the current schema. Old libraries migrate stepwise through v1→v2→v3→v4: the first two steps add pagination and latest-run-by-task indexes, while v4 marks source-group splitting and paired data-resource semantics, preserving existing table structures and business content. Each step first saves a consistent copy including WAL, SHA, and a durable receipt in `migrations`, then updates the version transactionally; failure rolls back and prevents runner initialization, while unknown future versions are rejected read-only. Temporary directories left before the initial receipt completes do not prevent retry after interruption. Full backup supports database versions 1, 2, 3, 4; the manifest version must match the actual database. One database may not exceed 1 GiB, and the database plus up to 50000 referenced files may not exceed 32 GiB. Resource checks use repeatable read-only iteration; restore migrates references in groups of 512 rows to avoid keeping millions of metadata entries in memory.
+
+Collection endpoints read only a bounded number of SQLite rows per page. Tasks, works, workflows, and execution history default to newest first; descending cursors carry `desc:` and cannot be mixed with old ascending cursors. Task lists return summaries and latest-execution status; drafts are read through the single-task endpoint. A single task includes the first 100 execution summaries and a next-page cursor; complete snapshots, bodies, and artifacts are read only through the single-execution endpoint. The frontend explicitly loads subsequent pages without automatically fetching whole collections in the background.
+
+Storage cleanup first creates a plan containing exact paths, byte counts, file digests, and reasons. After explicit user execution, it moves only immutable assets in the current library's `assets` that have no project, run, checkpoint, backup, or restore references into that library's `trash`, retaining original manifests and supporting restoration; there is no permanent deletion endpoint. Original run evidence, downloads outside projects, and caches are outside cleanup scope. Moves are rejected if references or files change after planning, or if running, library-switching, or backup operations exist; restoration also refuses to overwrite an occupied original location. The same command can verify and continue after interruption, and existing content remains readable during cleanup.
+
+<a id="构建与验证"></a>
+
+## Building and validation
+
+`scripts/desktop/version.json` is the sole version source. Small changes increment the parenthesized build number, new features change the feature version, and broad changes change the major version; for example, version `2.2.0` with build `7` displays as `Ver2.2(007)`. `build=0` means only that no candidate bundle exists for that feature version yet. At the start of each actual full candidate build, `app_version.py begin` increments exactly once and synchronizes package/Cargo/Tauri/control/frontend versions; internal executor packaging and tests do not consume extra numbers. `CFBundleShortVersionString` stores the feature version, `CFBundleVersion` the build number, and the interface and diagnostics read generated constants; acceptance states such as “technical preview” are displayed separately. Do not manually edit generated fields.
+
+Full candidate builds protect the fixed output with a mutual-exclusion directory. Each number and its start, success, or failure record are saved in `.artifacts/desktop/version-history/build-NNNN.json`; failed numbers are not reused. A `building` record and lock directory left by a forcibly killed process must be handled only after confirming no build process remains. At completion, the version script checks the fixed path's `Info.plist`, frozen version digest, and current source; a success record also freezes the full-bundle verification report digest. Old `0.1.0` evidence retains its original version. Run `services/control/.venv/bin/python scripts/desktop/app_version.py check` for a read-only synchronization check.
+
+`scripts/desktop/build.sh` stages control-service, executor, and recipe source in the same `.artifacts/desktop/source-*` snapshot, creates self-contained control, MLX, Diffusers, and Kokoro executors in isolated packaging environments, then runs frontend build, Tauri build, and signing checks. All executor dependency licenses ship with the bundle; model weights and user data are imported by users and excluded from the installer. `scripts/desktop/toolchain.sh` selects only the existing local standalone Rust 1.95 toolchain for that command.
+
+Media runtimes use the verified Python 3.13.9 and 3.10.19 separately and cannot be combined into one dependency environment. `runtime-*.lock.txt` and corresponding `sources.json` freeze versions, official download URLs, and SHAs; builds install only digest-verified caches. `package_media.py` collects dynamic modules, frozen dependency data files, real source, and metadata, then generates a license index and full file manifest. After all data sources are combined, PyInstaller's own expander resolves directories and globs, excluding only development headers under final destination `torch/include/` with extensions `.h`, `.hpp`, and `.cuh`; precompiled runtime libraries, metadata, licenses, and other paths remain intact. This rule has dedicated tests in both fixed packaging environments; bundles with changed collection scope still require real media recipe revalidation before delivery. Media scripts and restricted parsing dependencies retain their original directory relationships, copied from the same snapshot into resource paths `workers`, `adapters/media`, and `services/control` so runtime identity can align file by file. Explicit external Python selections take precedence; otherwise the host-provided bundled executor is used without automatically searching development directories.
+
+Frozen media entry points allow only exactly matching standard-library resource-tracker calls, checking the complete options produced by the current interpreter and the inherited read-only pipe before directly calling the fixed function; they do not execute supplied Python text. Probes actually start a child process with identical parameters and require successful natural exit. Video acceptance additionally rejects tracker exceptions, entry execution failures, and resource-leak warnings.
+
+`package_media_tools.py` copies the actual FFmpeg/FFprobe dynamic-library closure into the bundle, rewrites nonsystem load paths, preserves licensing and build information, and signs each item. The current source is the local GPL-enabled FFmpeg 8.1.1; final distribution must fulfill the licensing obligations of this combination. Successful building establishes only a local candidate and cannot replace independent-machine or release acceptance.
+
+Tauri's wildcard resource copying expands symlinks, so `seal_runtime.py` first restores the internal symlink layout of each self-contained runtime, allowing MLX to locate Metal resources from the dynamic library's real directory. Final signing changes nested binaries; after nested code is signed, the script recomputes all runtime manifests before signing the outer App. `verify_bundle.py` checks certificate fingerprints for the outer App and all entry points, internal symlinks, dynamic-library paths, and runtime integrity, aligning executor, recipe, entry-point, and dependency-lock digests in the control manifest individually with bundled runtimes.
+
+Real runtime acceptance uses `verify_mlx_runtime.py`: it copies the entire bundled runtime to a new path containing spaces, then launches with a PATH containing only `/usr/bin:/bin` and an empty working directory to perform probes, preflight, and authorized generation after durable registration. Adding `--evaluation-snapshot` continues with two independent processes under a fixed plan, loading baseline and candidate separately and retaining the quality report without treating execution success as meeting evaluation criteria. Example:
+
+```sh
+.artifacts/desktop/package-venv/bin/python scripts/desktop/verify_mlx_runtime.py \
+  'apps/desktop/src-tauri/target/release/bundle/macos/GCSA AI Lab.app/Contents/Resources/resources/mlx/ailab-mlx' \
+  --snapshot .artifacts/m0-mlx/evaluation-20260910-01/candidate-evaluation.snapshot.json \
+  --evaluation-snapshot .artifacts/m0-mlx/evaluation-20260910-01/candidate-evaluation.snapshot.json \
+  --output .artifacts/desktop/bundled-runtime-acceptance
+```
+
+`verify_media_runtime.py` accepts `--image-snapshot`, `--train-snapshot`, `--video-snapshot`, and `--audio-snapshot`. It copies the required runtimes and media tools together into a directory containing spaces and performs real preflight and two-stage authorized execution with a fresh HOME, empty cwd, and minimal PATH. After training it reloads the new adapter to generate an image; bundled FFprobe/FFmpeg independently read the video and decode 14 frames; voiceover checks the complete 24 kHz mono WAV. `--cancel-video` cancels after the first denoising step actually completes, requiring no completion event and natural cleanup of same-group processes. Original acceptance snapshots remain read-only; each run refreezes its execution recipe against the actual relocated environment. This script's report must be checked together with the final App's source manifest and signature; intermediate runtime reports cannot replace final native App acceptance.
+
+Representative Rust tests: `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib` covers owned-process cleanup, preservation of unrelated processes, identity errors, startup timeout, crash restart, proxy paths, and request boundaries. After preparing the control environment, explicitly run `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib real_control_handshake_authentication_and_restart -- --ignored` to check real health responses, authentication, crash restart, session-token rotation, and port closure on exit. Set `AILAB_TEST_CONTROL_BINARY` to test the self-contained control program with the same test. The full application still requires actual opening to verify real business requests, quitting, and signing identity.
+
+<a id="同一候选的启动测量"></a>
+
+## Startup measurement for the same candidate
+
+`verify_startup.py` defaults to launching the fixed-path App sequentially 20 times. Each round starts timing before process launch and ends after reading that round's PID, version, build number, and visible-first-screen receipt; the native host must write the receipt only after project resources and environment load and the interface passes two render scheduling cycles. The script then waits for the operator to confirm Quit through the real App menu and verifies control-process exit before starting the next round. It does not substitute a health endpoint for the first screen or automatically force-quit the App.
+
+```sh
+services/control/.venv/bin/python scripts/desktop/verify_startup.py \
+  --output .artifacts/desktop/startup-acceptance-v1 --rounds 20
+```
+
+The output directory must not already exist; each round separately saves its receipt, externally measured duration, and quit result. The target passes only if all 20 rounds complete within 3000 milliseconds each; failed rounds and old batches are retained. This measures independent process launches while preserving the OS file cache, not system restarts or clean installation. Before starting, it rejects version/signature mismatches, existing App processes, unfinished tasks, pending restores, and active downloads.
+
+<a id="本地候选更新与恢复"></a>
+
+## Local candidate update and recovery
+
+`candidate_update.py` updates only this project's fixed App path. It first plans replacement using a locally signed new candidate, then applies it with the plan SHA; both bundles must belong to this project's organization certificate, and the new candidate's version must be higher. The plan freezes complete directory digests of both bundles, the selected library, and database content, rechecking quiescence before execution. The old bundle moves only after the new bundle is staged and verified; the old bundle, new candidate source, and receipts are all retained. This tool does not access the network or launch the App automatically.
+
+```sh
+services/control/.venv/bin/python scripts/desktop/candidate_update.py plan \
+  --source '.artifacts/desktop/candidates/GCSA AI Lab.app' \
+  --output .artifacts/desktop/candidate-updates/update-v1
+```
+
+After inspecting the generated `plan.json`, run `apply --plan <计划绝对路径> --sha256 <计划SHA>`. If interrupted, run `recover` for the same plan; after full replacement, run `rollback` when rollback is needed. Each plan applies once; do not repeat apply after completion or interruption. Recovery uses actual on-disk bundle digests and stops while preserving the scene if it encounters an unknown bundle or occupied location.
+
+Before replacement, `database-backup` saves a consistent database including WAL and library-selection settings, **excluding assets such as models and materials**. Old 0.1.0 bundles support only schema1; after a newer version upgrades the database to schema3, the tool rejects rollback to the old bundle and does not downgrade the database. Use the existing full-backup restore process in that case. Passing script tests still cannot replace real old-bundle upgrades, failure rollback, and native acceptance of the new version.

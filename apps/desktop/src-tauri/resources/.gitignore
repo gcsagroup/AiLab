@@ -1,0 +1,13 @@
+control/*
+workers/*
+adapters/*
+mlx/*
+diffusers/*
+kokoro/*
+media-tools/*
+services/*
+worker/*
+!control/.gitkeep
+!workers/.gitkeep
+!adapters/.gitkeep
+!mlx/.gitkeep
