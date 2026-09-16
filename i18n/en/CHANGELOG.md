@@ -14,6 +14,8 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ### Model Import Trust and Permission Explanations (Source Validation)
 
+The following source and candidate paragraphs retain their state when written; “035 not built” does not describe the current candidate.
+
 Source progress: model import now explains loading trust and permissions, including fixed loaders, rejection of custom code, and limits of a same-user process. Offline options and credential environment allowlists do not provide operating-system isolation. The backend passed 40 tests and the frontend 46, with type checking passing. The fixed App remains 034 without these changes; 035 is not built and native acceptance is pending. [Model import trust boundaries](docs/implementation/2026-09-16-model-import-trust-boundary.md)
 
 <a id="人工补收恢复与生命周期修复构建前源码记录"></a>
@@ -72,6 +74,12 @@ Pre-build source progress: stale dataset-split reads no longer clear apply error
 - Organized product source, tests, build scripts, and formal documentation in one repository while retaining the prototype and historical design archive.
 - Added Simplified Chinese, Traditional Chinese, and English documentation and changelogs, stating candidate status and the scope of local evidence links.
 - Completed ignore rules for generated runtimes and build files; source commits do not contain models, user libraries, or credentials.
+
+<a id="ver24035本机推理与重开--2026-09-16"></a>
+
+## Ver2.4（035） Native Inference and Reopening — 2026-09-16
+
+The fixed company-signed 035 candidate received limited acceptance for real local inference and same-library reopening on Apple M5 Max (E145): import trust and persisted boundaries, preset cancellation/application, rejected50+79/allowed50+78 budgets, auto512/stop39/stream=false→text7, saved work, and an unexecuted recipe draft are evidenced. There was 1 attempt and 0 training; 15 resources/4 commands/13 events/6 artifacts and31 file hashes remained unchanged, both App exits were normal, and47/44 protection records plus12 source-model files passed restoration checks. The original guard exit1, rejected launch, and interrupted locking remain recorded; M2, full AC, M0, M2—M6 and release status are not advanced. [035 inference and reopening evidence](docs/implementation/2026-09-16-ver2-4-035-native-inference.md)
 
 <a id="ver24034补收恢复验收--2026-09-16"></a>
 
