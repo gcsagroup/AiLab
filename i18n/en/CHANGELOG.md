@@ -10,6 +10,8 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+The 035 packaged worker completed one real generation under process network denial, producing `7`; the rejection matrix for unsupported media/cache requests is published (E146). This does not establish physical disconnection, a product OS sandbox, or cache-hit performance. Real HTTP cancellation and subsequent generation recovery through the packaged control service also passed, without App UI acceptance in this round; M2 and release status are not advanced. [Runtime boundaries and evidence](docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md)
+
 <a id="未开放媒体与缓存请求的拒绝测试--2026-09-16"></a>
 
 ### Rejection Tests for Unsupported Media and Cache Requests — 2026-09-16

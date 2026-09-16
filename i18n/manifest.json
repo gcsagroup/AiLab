@@ -2,19 +2,19 @@
   "documents": [
     {
       "source": "CHANGELOG.md",
-      "source_sha256": "e6330d1deb3bf6bc12339b01d2953eff884d7ef44d38110741e83d1ead9f6dc2",
+      "source_sha256": "fc1a9dc7bacc0ce7a351b6e668a0114015095c4e836bba4184f17af7fd149a6d",
       "en": "i18n/en/CHANGELOG.md",
       "zh-TW": "i18n/zh-TW/CHANGELOG.md",
-      "zh-TW_sha256": "3daf96276ae82a2a703817f34871c37e030ff298a353962b7e207320a04f34de",
-      "en_sha256": "a2069e5d0462baa09321d1f15dd56c9f6ff7af6123a4d580af4e3d6aa04c1fc3"
+      "zh-TW_sha256": "d1908c6b0293831f1bed27f2671ba7bf3c2ee5753f5ab203125f04111ee47309",
+      "en_sha256": "11398f37bbfc4793c6596418893dc62437ccc6c936bfba2344838292a272c29a"
     },
     {
       "source": "README.md",
-      "source_sha256": "e007dfa4d08c63c374b3f338c8b23b74302daaa419d282fdb0ea316a3aa8fabf",
+      "source_sha256": "fd03905dce79e706bb623611ccaaee5dec5953fd3d7ee7110b07688525929f5b",
       "en": "i18n/en/README.md",
       "zh-TW": "i18n/zh-TW/README.md",
-      "zh-TW_sha256": "4a19afaf6aae04b76560d9f2802b4dc236080803ce34a5d981ec1c859fc41adf",
-      "en_sha256": "7e0cf3fe30b61916b3afe183c330b921a5e694b0473990521e14893e36c4dabb"
+      "zh-TW_sha256": "8d183b1b68b41818d601b500aa57d23612ee4028e6f3043a996e47b1085d4ef6",
+      "en_sha256": "36475a60f67621ad8f886afd9ca94882e84e5694576d2895859017eb873b3cb0"
     },
     {
       "source": "adapters/media/ACCEPTANCE.md",
@@ -202,11 +202,11 @@
     },
     {
       "source": "docs/README.md",
-      "source_sha256": "3179d824fe839b45f6f27c08ac2c2b201c4f16d886b143b5de3b81a2d65b5bea",
+      "source_sha256": "5426c9fe393d7e86a15267a853ec6f55afca9aee6767342394e1c0228f3d8bf0",
       "en": "i18n/en/docs/README.md",
       "zh-TW": "i18n/zh-TW/docs/README.md",
-      "zh-TW_sha256": "8aadfe94c497664e31fbf9c3cf7c3c76bc4b37bd7e3935d9baadfe8dd19ea901",
-      "en_sha256": "6b56e65bf8a9a030a95dcd5135534819c75124a46f7fe17449575a32253c7521"
+      "zh-TW_sha256": "6d3954a18d3e04dbfdf8d0d67c6afc63d15408fe584676c2634a6d6398ec2e08",
+      "en_sha256": "61d1dc0035ca76eb6dfa4efa56c4cf35164e32332b71e08c10615ec8000f3770"
     },
     {
       "source": "docs/USER_GUIDE.zh-CN.md",
@@ -362,11 +362,11 @@
     },
     {
       "source": "docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "source_sha256": "98c10fd6c56218231e771374a5e4480e2be694bb1a5a8b6848c13133375b0586",
+      "source_sha256": "ac0abf26ee775efd8a9ed681dd6c247ee5b4ec4bad90b02670d1e1d1268ba178",
       "en": "i18n/en/docs/implementation/2026-09-10-current-delivery-matrix.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "zh-TW_sha256": "a319601ad6689330dd9e42adcd81deaf56a3ec639c4d41de6cb9a516afdb42ce",
-      "en_sha256": "a8cc838ab72dbed5929b7cd10c49cda0260c7943ce4a046988492163a1f4657a"
+      "zh-TW_sha256": "49bea3ad733c91417cf9ed7b98d9497c0b1f692f48bc929a7e66d79b7df4dd97",
+      "en_sha256": "107ad75fc5e28afd41851cff1d69e59fa47ef1da467c57b6e727722513bd4c6f"
     },
     {
       "source": "docs/implementation/2026-09-10-execution-board.md",
@@ -689,6 +689,22 @@
       "en_sha256": "a456c94b9d203878b414f01b6ad59189fff5178f419329a8ac3a4caa8a9cc157"
     },
     {
+      "source": "docs/implementation/2026-09-16-ver2-4-035-native-inference.md",
+      "source_sha256": "fc9a60218bc438f2417dc1444a5212e9ed7eb1de6e61793e5a44942f2972115e",
+      "en": "i18n/en/docs/implementation/2026-09-16-ver2-4-035-native-inference.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-16-ver2-4-035-native-inference.md",
+      "zh-TW_sha256": "9d4cb6474ee5d7428329b9ddca1a0aac97c266896383dc9418c68912e05efdf3",
+      "en_sha256": "28c51524e7a6dbe355739e54a64c0555d9bb1d42e0ddd9b7809ee228f824e590"
+    },
+    {
+      "source": "docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md",
+      "source_sha256": "aaf53e9d6c0aa624c2bf0b8e602e9d71ffdd6b34bc7fff1dba3531f8176fea26",
+      "en": "i18n/en/docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md",
+      "en_sha256": "7ee8f349c4961e6a47a9543b96e2dcbd68837cf3a5076c4cbe662f7f5745ab62",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md",
+      "zh-TW_sha256": "4c5dcc669609181ca4c7c5b68f67ebc192a72f3484461bc8de07a51c78996a86"
+    },
+    {
       "source": "docs/validation-report.md",
       "source_sha256": "028a913c1638b9d73b0d1db13819fc1d7dbffc39f8c296ca0e94af0563fa1038",
       "en": "i18n/en/docs/validation-report.md",
@@ -727,17 +743,9 @@
       "zh-TW": "i18n/zh-TW/scripts/desktop/README.md",
       "zh-TW_sha256": "dde504f3020ac3df4eae3756efd1fd8a44f67ef3f060bad37db6097df54e23a2",
       "en_sha256": "e3a19ef54b764961596a3ba404d4344a75818fbbaf31287378bedffc7de17fe0"
-    },
-    {
-      "source": "docs/implementation/2026-09-16-ver2-4-035-native-inference.md",
-      "source_sha256": "fc9a60218bc438f2417dc1444a5212e9ed7eb1de6e61793e5a44942f2972115e",
-      "en": "i18n/en/docs/implementation/2026-09-16-ver2-4-035-native-inference.md",
-      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-16-ver2-4-035-native-inference.md",
-      "zh-TW_sha256": "9d4cb6474ee5d7428329b9ddca1a0aac97c266896383dc9418c68912e05efdf3",
-      "en_sha256": "28c51524e7a6dbe355739e54a64c0555d9bb1d42e0ddd9b7809ee228f824e590"
     }
   ],
-  "source_count": 91,
+  "source_count": 93,
   "schema_version": 1,
   "languages": [
     "zh-CN",
@@ -746,5 +754,5 @@
   ],
   "source_language": "zh-CN",
   "index": "i18n/README.md",
-  "index_sha256": "a79b1a55ced777b6ca2d6693d5a680646f0dd1bfeb416c22c278940001c2b597"
+  "index_sha256": "3db0af07e6392cd8708f471a6a1e5f90edd0217332e6a7527b90debe21816d7f"
 }
