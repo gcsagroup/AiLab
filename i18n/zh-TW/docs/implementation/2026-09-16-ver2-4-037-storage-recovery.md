@@ -55,3 +55,21 @@
 補強既有匯出回歸測試：原用例在建立實際檔案前直接拋錯，不能證明部分檔案保留。新用例分別在寫入、刷新和同步階段注入空間不足與 I/O 錯誤，共 6 種情況，核對部分內容不發布、恢復匯出、原失敗不變、來源資產不變及重啟後無模型執行。最終匯出測試 57 項通過，保留 2 項既有警告；故障工具邊界測試 7 項通過。[回歸用例](../../../../tests/control/test_delivery.py) [最終測試日誌](../../../../.artifacts/packaged-export-enospc-ver2-4-037-v1/control-tests-final.log)
 
 該後續階段補足包內服務在真實複製途中卷滿時的檔案與狀態證據。它不等於該故障的原生介面驗收、真實模型載入、備份故障、升級後全部物件匯出或完整 M6；沒有修改凍結品質方案、裝置要求或原驗收門檻。
+
+<a id="后续产品备份恢复与原生历史查看"></a>
+
+## 後續：產品備份恢復與原生歷史檢視
+
+沿用同一固定公司簽名 037 App。先以包內控制服務對上一階段合成驗收庫呼叫正式備份介面，再正式檢查並恢復到新獨立庫；本次不是離線檔案副本冒充產品備份。備份包含資料庫及已登記資產，共 4 個檔案、33640669 位元組，另有清單。來源資料庫位元組與業務表不變，來源目錄只新增備份和恢復回執。[正式備份恢復回執](../../../../.artifacts/native-midcopy-records-ver2-4-037-v1/restore-001/result.json)
+
+原匯出目錄在庫外，失敗部分包和成功包仍由原故障映像保留，不屬於上述備份檔案。原映像按原路徑唯讀掛載，核對卷身分、全部部分檔案及成功檔案摘要後，才啟動 App 查看歷史；檢視完成後正常卸載，映像摘要不變。[唯讀卷身分](../../../../.artifacts/native-midcopy-records-ver2-4-037-v1/mount-001/identity.json) [卸載回執](../../../../.artifacts/native-midcopy-records-ver2-4-037-v1/mount-001/detach.json)
+
+原生工作台分別開啟原失敗與成功記錄。失敗頁顯示執行失敗、檢查儲存後重新準備的提示及重新檢查入口；成功頁顯示全部檔案已寫入並通過校驗、原儲存路徑及相同記錄編號。關閉對話框並正常退出，再次啟動同一 App 與恢復庫，兩份記錄仍分別保持失敗與成功。[首次失敗畫面](../../../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/01-failed.jpg) [首次成功畫面](../../../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/02-success.jpg) [重開失敗畫面](../../../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/03-reopen-failed.jpg) [重開成功畫面](../../../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/04-reopen-success.jpg)
+
+正式恢復按產品規則清除原 3 條冪等命令，保留 10 項資源、14 條事件與原匯出身分。原生階段未改變這些業務表，新增匯出、執行、模型執行與評測均為 0。首次啟動僅建立 1 行介面設定；兩次原生退出碼均為 0，兩次停機資料庫位元組及全部表內容完全一致。[停機根核驗](../../../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/root-readback.json)
+
+原工作庫選擇已恢復，守衛釋放鎖，App 與控制程序均已停止。原 E22 庫、準備完成後凍結的先前 7 個驗收庫及 12 個模型來源檔案保持；本輪沒有連接原使用者庫 SQL。備份恢復回歸 36 項通過，保留 2 項既有警告；原生啟動守衛測試 7 項通過。[完成回執](../../../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/completion.json) [備份恢復測試](../../../../.artifacts/native-midcopy-records-ver2-4-037-v1/backup-tests.log)
+
+輔助過程保留負例：首次用系統 Python 執行工具因缺少依賴而停止，改用專案虛擬環境後通過；退出確認尚未完成時，快照守衛拒絕連接資料庫；核驗器初次把實際 JPEG 截圖誤認為 PNG，核對檔案頭後只修正副檔名與格式檢查，影像位元組未改變。[執行環境失敗](../../../../.artifacts/native-midcopy-records-ver2-4-037-v1/helper-tests-wrong-runtime.log) [截圖格式假設失敗](../../../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/readback-initial-image-format.log)
+
+本次接受正式備份恢復後的原生歷史展示及重開保持。複製途中故障和恢復匯出的觸發仍來自上一階段包內服務 HTTP 路徑；本次沒有透過原生按鈕再次觸發故障或新匯出，也不證明合成夾具能夠推理、全部物件升級匯出或完整 M6。

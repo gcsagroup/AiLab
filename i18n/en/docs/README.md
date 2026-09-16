@@ -4,7 +4,7 @@
 
 [简体中文](../../../docs/README.md) · [繁體中文](../../zh-TW/docs/README.md) · [English](README.md)
 
-037 completed native disk-full rejection before copying and recovery, and added evidence of actual volume exhaustion during copying in the packaged service: no partial package was published, a new export succeeded after freeing space, and the old failure and restart state persisted. The latter used a synthetic storage fixture with 0 new model runs or evaluations and no native-interface acceptance of this fault. Full M6, M0—M6, and release remain unpassed. [037 disk-full recovery acceptance](implementation/2026-09-16-ver2-4-037-storage-recovery.md)
+037 verified native disk-full rejection before copying and recovery, plus preservation of failure and recovery export after actual mid-copy volume exhaustion in the packaged service. Native history inspection and reopening after formal backup and restoration also passed; original failed and successful records and files remain unchanged, with no new model runs. The mid-copy fault was still triggered through HTTP, and the synthetic fixture does not establish model capability. Full M6, M0—M6, and release remain unpassed. [037 disk-full recovery acceptance](implementation/2026-09-16-ver2-4-037-storage-recovery.md)
 
 The same signed 037 candidate completed actual admission rejection, native report export, and reopening for an existing failed evaluation. All 11 payload files and 60884 bytes passed individual checks; 52 original resources remain, with 4 export resources added and 0 new model runs or evaluations. The quality failure remains; full M5, M0—M6, and release remain unpassed. [037 quality report acceptance](implementation/2026-09-16-ver2-4-037-quality-export.md)
 

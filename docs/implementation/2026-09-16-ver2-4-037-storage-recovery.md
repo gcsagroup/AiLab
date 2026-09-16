@@ -45,3 +45,19 @@
 补强既有导出回归测试：原用例在创建实际文件前直接抛错，不能证明部分文件保留。新用例分别在写入、刷新和同步阶段注入空间不足与 I/O 错误，共 6 种情况，核对部分内容不发布、恢复导出、原失败不变、源资产不变及重启后无模型执行。最终导出测试 57 项通过，保留 2 项既有警告；故障工具边界测试 7 项通过。[回归用例](../../tests/control/test_delivery.py) [最终测试日志](../../.artifacts/packaged-export-enospc-ver2-4-037-v1/control-tests-final.log)
 
 该后续阶段补足包内服务在真实复制途中卷满时的文件与状态证据。它不等于该故障的原生界面验收、真实模型加载、备份故障、升级后全部对象导出或完整 M6；没有修改冻结质量方案、设备要求或原验收门槛。
+
+## 后续：产品备份恢复与原生历史查看
+
+沿用同一固定公司签名 037 App。先以包内控制服务对上一阶段合成验收库调用正式备份接口，再正式检查并恢复到新独立库；本次不是离线文件副本冒充产品备份。备份包含数据库及已登记资产，共 4 个文件、33640669 字节，另有清单。来源数据库字节与业务表不变，来源目录只新增备份和恢复回执。[正式备份恢复回执](../../.artifacts/native-midcopy-records-ver2-4-037-v1/restore-001/result.json)
+
+原导出目录在库外，失败部分包和成功包仍由原故障映像保留，不属于上述备份文件。原映像按原路径只读挂载，核对卷身份、全部部分文件及成功文件摘要后，才启动 App 查看历史；查看完成后正常卸载，映像摘要不变。[只读卷身份](../../.artifacts/native-midcopy-records-ver2-4-037-v1/mount-001/identity.json) [卸载回执](../../.artifacts/native-midcopy-records-ver2-4-037-v1/mount-001/detach.json)
+
+原生工作台分别打开原失败与成功记录。失败页显示执行失败、检查存储后重新准备的提示及重新检查入口；成功页显示全部文件已写入并通过校验、原保存路径及相同记录编号。关闭对话框并正常退出，再次启动同一 App 与恢复库，两份记录仍分别保持失败与成功。[首次失败画面](../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/01-failed.jpg) [首次成功画面](../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/02-success.jpg) [重开失败画面](../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/03-reopen-failed.jpg) [重开成功画面](../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/04-reopen-success.jpg)
+
+正式恢复按产品规则清除原 3 条幂等命令，保留 10 项资源、14 条事件与原导出身份。原生阶段未改变这些业务表，新增导出、执行、模型运行与评测均为 0。首次启动仅创建 1 行界面设置；两次原生退出码均为 0，两次停机数据库字节及全部表内容完全一致。[停机根核验](../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/root-readback.json)
+
+原工作库选择已恢复，守卫释放锁，App 与控制进程均已停止。原 E22 库、准备完成后冻结的先前 7 个验收库及 12 个模型来源文件保持；本轮没有连接原用户库 SQL。备份恢复回归 36 项通过，保留 2 项既有警告；原生启动守卫测试 7 项通过。[完成回执](../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/completion.json) [备份恢复测试](../../.artifacts/native-midcopy-records-ver2-4-037-v1/backup-tests.log)
+
+辅助过程保留负例：首次用系统 Python 执行工具因缺少依赖而停止，改用项目虚拟环境后通过；退出确认尚未完成时，快照守卫拒绝连接数据库；核验器初次把实际 JPEG 截图误认为 PNG，核对文件头后只修正扩展名与格式检查，图像字节未改变。[运行时失败](../../.artifacts/native-midcopy-records-ver2-4-037-v1/helper-tests-wrong-runtime.log) [截图格式假设失败](../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/readback-initial-image-format.log)
+
+本次接受正式备份恢复后的原生历史展示及重开保持。复制途中故障和恢复导出的触发仍来自上一阶段包内服务 HTTP 路径；本次没有通过原生按钮再次触发故障或新导出，也不证明合成夹具能够推理、全部对象升级导出或完整 M6。
