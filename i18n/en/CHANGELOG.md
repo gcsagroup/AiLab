@@ -10,6 +10,10 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+The fixed company-signed 037 candidate passed native offline registration and application of downloaded data: a real 292-byte download containing 2 rows was registered and applied to the original task after the provider stopped and the market reopened. Draft revision changed from 2→3, only the dataset changed, and seed 817 was preserved. Normal exit, stopped-library readback, and original-data restoration passed; full M4, M0—M6, and release remain unpassed. [037 native offline acceptance](docs/implementation/2026-09-16-market-offline-downloads.md)
+
+The following source-stage records retain their state when written.
+
 Source progress: when the market catalog is unavailable, users can explicitly view completed local downloads, verify and register them, and apply them to the original draft. The 31 frontend, 63 backend, and targeted host tests passed, as did the real HTTP browser flow. The fixed App remains 036 and does not contain this fix; native acceptance and full M4 remain pending. [Offline download entry](docs/implementation/2026-09-16-market-offline-downloads.md)
 
 The fixed company-signed 036 candidate includes the official-model runtime-boundary fix. Package checks and limited native notice acceptance passed: official-catalog and local-inspection explanations were visible, with 1 project/1 import plan and no download, import confirmation, or model execution. Normal exit and original-data protection/restoration passed; full M2 and release remain unpassed. [036 notice acceptance](docs/implementation/2026-09-16-official-model-runtime-boundary.md)
