@@ -3,6 +3,7 @@
 import argparse
 from contextlib import closing
 from datetime import datetime, timezone
+import fcntl
 import hashlib
 import json
 import math
@@ -44,13 +45,17 @@ def read_receipt(path, pid, version, launched_ms, observed_ms):
         return None
 
 
-def assert_idle(data_root):
+def selected_database(data_root):
     selection = data_root / "selected-library.json"
     selected = Path(json.loads(selection.read_text())["data_dir"]) if selection.exists() else data_root
-    database = selected / "control.sqlite3"
+    return selected / "control.sqlite3"
+
+
+def idle_counts(database, *, immutable=False):
     if not database.exists():
         return {"projects": 0, "attempts": 0, "active_attempts": 0}
-    with closing(sqlite3.connect(database.resolve().as_uri() + "?mode=ro", uri=True)) as connection:
+    suffix = "?mode=ro&immutable=1" if immutable else "?mode=ro"
+    with closing(sqlite3.connect(database.resolve().as_uri() + suffix, uri=True)) as connection:
         projects = connection.execute("SELECT count(*) FROM projects").fetchone()[0]
         attempts = [json.loads(row[0]) for row in connection.execute("SELECT body FROM resources WHERE kind='attempt'")]
         downloads = [json.loads(row[0]) for row in connection.execute("SELECT body FROM resources WHERE kind IN ('model-download','market-download')")]
@@ -60,6 +65,27 @@ def assert_idle(data_root):
     if any(value.get("state") in {"queued", "downloading", "verifying"} for value in downloads):
         raise RuntimeError("当前库仍有模型或市场下载，请先完成或停止后再测启动")
     return {"projects": projects, "attempts": len(attempts), "active_attempts": active}
+
+
+def assert_idle(data_root):
+    # 活库读者必须看到已提交的 WAL；不能把这条路径一律改成 immutable。
+    return idle_counts(selected_database(data_root))
+
+
+def assert_idle_stopped(data_root):
+    """持控制服务排他锁，确认无旁路后只读主库，避免停机检查创建 WAL/SHM。"""
+    database = selected_database(data_root)
+    if not database.exists():
+        return {"projects": 0, "attempts": 0, "active_attempts": 0}
+    with (database.parent / "control.lock").open("rb") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise RuntimeError("控制服务仍持有工作库锁，不能执行停机检查") from error
+        sidecars = [Path(str(database) + suffix) for suffix in ("-wal", "-shm", "-journal")]
+        if any(path.exists() or path.is_symlink() for path in sidecars):
+            raise RuntimeError("停机工作库旁路尚未清除，保留现场并停止测量")
+        return idle_counts(database, immutable=True)
 
 
 def assert_not_running(executable):
@@ -222,13 +248,13 @@ def main():
             raise RuntimeError("候选 App 签名或组织校验失败")
     report = {"schema_version": 3, "started_at": datetime.now(timezone.utc).isoformat(), "version": version,
               "app_path": str(app), "executable_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
-              "library_before": assert_idle(DATA_ROOT), "rounds": [], "status": "running",
+              "library_before": assert_idle_stopped(DATA_ROOT), "rounds": [], "status": "running",
               "scope": "同一已安装候选由 macOS open 正常前台启动；保留系统文件缓存，不是系统重启或干净安装。外部计时从启动 open 前至完整就绪回执读回，包含系统启动、进程检查、文件写入及约100ms轮询等待；不测主窗口初次可见，不判定其三秒目标。App退出码未知；启动器成功结束、App及控制进程消失，并由操作者确认原生正常退出后，才开始下一轮。"}
     output.mkdir(parents=True, mode=0o700)
     try:
         for index in range(arguments.rounds):
             assert_not_running(executable)
-            assert_idle(DATA_ROOT)
+            assert_idle_stopped(DATA_ROOT)
             log_path = output / f"round-{index + 1:02d}.private.log"
             with log_path.open("x") as log:
                 os.chmod(log_path, 0o600)
@@ -238,7 +264,7 @@ def main():
             atomic_write(output / "report.json", json_text(report))
             if value["status"] != "completed":
                 raise RuntimeError(value.get("error", "本轮未完成"))
-        report.update(status="completed", library_after=assert_idle(DATA_ROOT))
+        report.update(status="completed", library_after=assert_idle_stopped(DATA_ROOT))
     except Exception as error:
         report.update(status="failed", error=str(error))
     finally:

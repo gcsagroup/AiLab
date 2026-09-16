@@ -10,6 +10,8 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+Native tool review found that ordinary read-only inspection after shutdown left database sidecars, so the strict snapshot check refused to proceed. Inspection now holds the control-service lock and confirms that no sidecars exist before reading the main database. The old sidecars were preserved unchanged, and the database and all tables matched. All 50 measurement-tool tests passed; native revalidation of the fix is pending.
+
 The startup measurement tool now uses foreground system launch and checks the new App path, PID, start identity, and owned control process. It records the launcher exit code separately from the unknown App exit code and requires confirmation of normal native exit. Duplicate instances, identity changes, timeouts, and unconfirmed exits retain a failed round and stop subsequent launches. All 44 tests passed; the fixed signed App remains 037, and native acceptance of this tool change is pending.
 
 037 completed a native comparison of launch methods using the same independent library: direct execution incurred a long hidden wait, while normal system launch produced a full-readiness receipt of 5.943 seconds. Data protection and exit checks passed, with no new model execution. This does not pass initial-visibility performance or all stages; system-launch support in the startup acceptance tool remains pending. [Comparison evidence and limits](scripts/desktop/README.md#同一候选的启动测量).

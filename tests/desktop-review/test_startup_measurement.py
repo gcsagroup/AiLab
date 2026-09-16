@@ -2,6 +2,7 @@
 
 from contextlib import closing
 import importlib.util
+import fcntl
 import json
 from pathlib import Path
 import sqlite3
@@ -91,6 +92,53 @@ def test_selected_library_nonterminal_attempt_prevents_repeated_launches(tmp_pat
     with sqlite3.connect(database) as connection:
         connection.execute("UPDATE resources SET body=?", (json.dumps({"state": "succeeded", "snapshot": {"operation": "evaluation"}}),))
     assert measurement.assert_idle(tmp_path) == {"projects": 0, "attempts": 1, "active_attempts": 0}
+
+
+def stopped_library(tmp_path):
+    database = tmp_path/'control.sqlite3'
+    with closing(sqlite3.connect(database)) as connection:
+        connection.execute('PRAGMA journal_mode=WAL')
+        connection.execute('CREATE TABLE projects(id TEXT)')
+        connection.execute('CREATE TABLE resources(kind TEXT, body TEXT)')
+        connection.execute("INSERT INTO projects VALUES('保留项目')")
+        connection.commit()
+    (tmp_path/'control.lock').touch()
+    return database
+
+
+def test_stopped_wal_database_read_does_not_create_sidecars(tmp_path):
+    database = stopped_library(tmp_path)
+    before = database.read_bytes()
+    expected = {'projects': 1, 'attempts': 0, 'active_attempts': 0}
+    # 普通只读连接会在已停机 WAL 库产生旁路；验收前后检查必须避免这一副作用。
+    assert measurement.assert_idle_stopped(tmp_path) == expected
+    assert measurement.assert_idle_stopped(tmp_path) == expected
+    assert database.read_bytes() == before
+    assert not any(Path(str(database)+s).exists() for s in ('-wal','-shm','-journal'))
+
+
+@pytest.mark.parametrize('suffix', ['-wal','-shm','-journal'])
+def test_stopped_reader_refuses_existing_sidecars_without_sql(tmp_path, monkeypatch, suffix):
+    database = stopped_library(tmp_path)
+    side = Path(str(database)+suffix); side.write_bytes('保留'.encode())
+    monkeypatch.setattr(measurement.sqlite3, 'connect', lambda *a, **k: pytest.fail('不能忽略旁路读主库'))
+    with pytest.raises(RuntimeError, match='旁路'): measurement.assert_idle_stopped(tmp_path)
+    assert side.read_bytes() == '保留'.encode()
+
+
+def test_stopped_reader_refuses_held_control_lock(tmp_path, monkeypatch):
+    stopped_library(tmp_path)
+    with (tmp_path/'control.lock').open('rb') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        monkeypatch.setattr(measurement.sqlite3, 'connect', lambda *a, **k: pytest.fail('持锁时不能读SQL'))
+        with pytest.raises(RuntimeError, match='仍持有'): measurement.assert_idle_stopped(tmp_path)
+
+
+def test_stopped_reader_refuses_dangling_sidecar_link(tmp_path, monkeypatch):
+    database = stopped_library(tmp_path)
+    Path(str(database)+'-wal').symlink_to(tmp_path/'missing')
+    monkeypatch.setattr(measurement.sqlite3, 'connect', lambda *a, **k: pytest.fail('不能忽略旁路链接'))
+    with pytest.raises(RuntimeError, match='旁路'): measurement.assert_idle_stopped(tmp_path)
 
 
 @pytest.mark.parametrize("kind,body", [
