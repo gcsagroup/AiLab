@@ -2,11 +2,11 @@
   "documents": [
     {
       "source": "CHANGELOG.md",
-      "source_sha256": "5b3b319afbdf8303f7c416d4fd3dcd36a48dc4635b3578ee924e2134addf7c50",
+      "source_sha256": "e6330d1deb3bf6bc12339b01d2953eff884d7ef44d38110741e83d1ead9f6dc2",
       "en": "i18n/en/CHANGELOG.md",
       "zh-TW": "i18n/zh-TW/CHANGELOG.md",
-      "zh-TW_sha256": "90376fd49276c1c1fafd0dd2830f3048056aaa35d01da5e30d975dade92d7dd9",
-      "en_sha256": "878a9d637238b9828ec269099f277038a640ea132662069be67c69e2e0db23f6"
+      "zh-TW_sha256": "3daf96276ae82a2a703817f34871c37e030ff298a353962b7e207320a04f34de",
+      "en_sha256": "a2069e5d0462baa09321d1f15dd56c9f6ff7af6123a4d580af4e3d6aa04c1fc3"
     },
     {
       "source": "README.md",

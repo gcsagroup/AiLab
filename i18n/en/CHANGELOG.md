@@ -10,6 +10,15 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+<a id="未开放媒体与缓存请求的拒绝测试--2026-09-16"></a>
+
+### Rejection Tests for Unsupported Media and Cache Requests — 2026-09-16
+
+- Added [MLX entry-point tests](../../tests/mlx/test_media_cache_boundary.py) and [control-service tests](../../tests/control/test_media_cache_http.py). With the text input held constant, 10 cases cover media identity, media order, processor revisions, preprocessing dimensions, and cache reuse requests. Production code is unchanged.
+- The 30 tests of MLX validation, preflight, and execution entry points confirm explicit rejection before loading or computation. The 20 control-service tests use in-process TestClient requests to verify that draft updates return 422 and submission after a failed legacy-draft preflight returns 409, without creating runs or artifacts. Legacy-draft tests replace subprocess dispatch with the production preflight function; they do not establish real network or native UI acceptance.
+- All 50 new rejection tests passed, along with 139 related MLX regression tests and 50 control regression tests. These suites overlap and are not added together. Tests use temporary files, temporary libraries, and fixtures, without real model computation.
+- README, CHANGELOG, user guides, design specifications, implementation records, and historical records all continue to be available in Simplified Chinese, Traditional Chinese, and English. The fixed App remains 035 and was not rebuilt. These tests do not establish media cache hits, invalidation, performance, or offline inference, and do not advance M2 or formal release status.
+
 <a id="模型导入信任与权限说明源码验证"></a>
 
 ### Model Import Trust and Permission Explanations (Source Validation)
