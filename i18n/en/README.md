@@ -10,7 +10,11 @@ A local-first desktop workbench for model training and inference. Organize model
 
 ## Current status
 
-The current fixed company-signed candidate is **Ver2.4（033）**, signed by **Global Cybersecurity Alliance Limited**. It is a development candidate; full M0—M6, clean installation, notarization, and formal distribution acceptance remain incomplete.
+The current fixed company-signed candidate is **Ver2.4（034）**, signed by **Global Cybersecurity Alliance Limited**. It is a development candidate; full M0—M6, clean installation, notarization, and formal distribution acceptance remain incomplete.
+
+The fixed company-signed 034 package and native collection roundtrip received limited acceptance (E144): recovery after a real interruption in a new fixture-executor library, collection-only retry, saving a short text work, and same-library reopening. The original failure remains, with no new attempt or model execution. Resources 7→10, 2 commands/3 events, both normal exits, and 47/44 protection restoration passed. The M1 application and data foundations stage passed (contract and UI subsets); full AC, M0, M2—M6, and release remain unpassed. [034 collection recovery and stage evidence](docs/implementation/2026-09-16-ver2-4-034-collection-recovery.md)
+
+The following source-stage, E143, and earlier records retain their state at the time.
 
 Source progress: fixes recover manual collection stuck in collecting after interruption and cover computation finishing first, failed-exit records, and stop-signal errors. The final integrated regression passed 221 tests. The fixed signed App remains 033 and does not contain these changes; no 034 build has occurred, and complete M1 and release status do not advance. [Collection recovery and source limits](docs/implementation/2026-09-16-collection-recovery-source-progress.md)
 

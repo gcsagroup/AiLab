@@ -67,6 +67,12 @@ Pre-build source progress: stale dataset-split reads no longer clear apply error
 - Added Simplified Chinese, Traditional Chinese, and English documentation and changelogs, stating candidate status and the scope of local evidence links.
 - Completed ignore rules for generated runtimes and build files; source commits do not contain models, user libraries, or credentials.
 
+<a id="ver24034补收恢复验收--2026-09-16"></a>
+
+## Ver2.4（034） Collection Recovery Acceptance — 2026-09-16
+
+The fixed company-signed 034 package and native collection roundtrip received limited acceptance (E144): recovery after a real interruption in a new fixture-executor library, collection-only retry, saving a short text work, and same-library reopening. The original failure remains, with no new attempt or model execution. Resources 7→10, 2 commands/3 events, both normal exits, and 47/44 protection restoration passed. The M1 application and data foundations stage passed (contract and UI subsets); full AC, M0, M2—M6, and release remain unpassed. [034 collection recovery and stage evidence](docs/implementation/2026-09-16-ver2-4-034-collection-recovery.md)
+
 <a id="ver24033数据流程验收--2026-09-16"></a>
 
 ## Ver2.4（033） Dataset Workflow Acceptance — 2026-09-16
