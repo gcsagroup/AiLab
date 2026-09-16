@@ -2,19 +2,19 @@
   "documents": [
     {
       "source": "CHANGELOG.md",
-      "source_sha256": "a887db82a6f526b8f13054bb34ce8700eca52f92e28d859775d071845b90412a",
+      "source_sha256": "c57a7aad60dc47248fd429f56081d3b3f3bcc421a13817df5b07b89db8ffc81c",
       "en": "i18n/en/CHANGELOG.md",
       "zh-TW": "i18n/zh-TW/CHANGELOG.md",
-      "zh-TW_sha256": "8f36a47d8268693d4f433de0fc44d2e1b4b755e89aa752cced6f67bc10d97005",
-      "en_sha256": "b7b3168a7b4193b7f0138cf932b0609524355e4597b0d7ed29da8258f4fc5101"
+      "zh-TW_sha256": "81f65fda6e9dc6d2a199426e06b3e1b4c8e236b797ce84d7d7c2772cb1dc4841",
+      "en_sha256": "e2fb1f2d8b6976feaa29e0f9bbf25294c212f65a224a67fbe320832e404737e0"
     },
     {
       "source": "README.md",
-      "source_sha256": "9cfcc6fc24d22dd70fc47e93611d5c1081593103b0af1a3ff6c18718c7c61a98",
+      "source_sha256": "e4fd2cf51a6097b85836c260ad6f2f57cf48776bc0647c1a687587b401840353",
       "en": "i18n/en/README.md",
       "zh-TW": "i18n/zh-TW/README.md",
-      "zh-TW_sha256": "46429ce75a7f03dc4cd1ed94de966f2ccb770b1ce3e943807dff0c9b98e5f12d",
-      "en_sha256": "2362df548e7fdd104173f771fb63882d715a0a5c2ad4a816e4a50cf1d64531fc"
+      "zh-TW_sha256": "35baeedad9d42fd8cedefeb13bafa15bb8ba7efec657e4f3474ac777f70b2b5d",
+      "en_sha256": "c7d0d1d21e90137f01bb986dfcb671663cce60dec9e69d3e710dbff8e461ee5f"
     },
     {
       "source": "adapters/media/ACCEPTANCE.md",
@@ -202,11 +202,11 @@
     },
     {
       "source": "docs/README.md",
-      "source_sha256": "fad90ec739bb8a253db3747daec031d5b02cb384ba723078de81591e213af15e",
+      "source_sha256": "3c149a8709bf9bf2946f33f4a2bb59c1dbf5a5baf55d1fd88dc490fea734ee53",
       "en": "i18n/en/docs/README.md",
       "zh-TW": "i18n/zh-TW/docs/README.md",
-      "zh-TW_sha256": "db0779ee9f3821015bcca23c008ac523a89c6ad558a16e08e3be03a64465a437",
-      "en_sha256": "7dbb02e80de394e44dd294b11df2ec52f2960906f26a63dce9bc1a9e182502c7"
+      "zh-TW_sha256": "cf3b3e7a0c17743fe55234db0418ca410b99836fb1c79493f9fa065d24c7e6c2",
+      "en_sha256": "3bd039f2d69b1458a7e6a489c4218991cec8687b705f30cc9195ec5156a67767"
     },
     {
       "source": "docs/USER_GUIDE.zh-CN.md",
@@ -609,6 +609,14 @@
       "en_sha256": "d982a2ae7d19d6449b822ad1675107655c05c43677b5a55beb5a59da62e03382"
     },
     {
+      "source": "docs/implementation/2026-09-16-dataset-and-collection-source-fixes.md",
+      "source_sha256": "56b1effafb72a9770e4065b9e1d97ca80ffaac8039e030a3a745571013376d85",
+      "en": "i18n/en/docs/implementation/2026-09-16-dataset-and-collection-source-fixes.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-16-dataset-and-collection-source-fixes.md",
+      "zh-TW_sha256": "ca1f966c373d8dfc548cd88f0b63c72dbdade8ea3b0e35c130c8849de25185ef",
+      "en_sha256": "2db92277213f950b5a2e1be237a45d0cebd12b262e72c1d3221db67e431fd587"
+    },
+    {
       "source": "docs/implementation/2026-09-16-ver2-4-030-connection-isolation.md",
       "en": "i18n/en/docs/implementation/2026-09-16-ver2-4-030-connection-isolation.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-16-ver2-4-030-connection-isolation.md",
@@ -689,7 +697,7 @@
       "en_sha256": "e3a19ef54b764961596a3ba404d4344a75818fbbaf31287378bedffc7de17fe0"
     }
   ],
-  "source_count": 86,
+  "source_count": 87,
   "schema_version": 1,
   "languages": [
     "zh-CN",
@@ -698,5 +706,5 @@
   ],
   "source_language": "zh-CN",
   "index": "i18n/README.md",
-  "index_sha256": "48942c35b0bbebc1af5dfebb914cce9457dc63f0fad5e8f6e84e95286826b249"
+  "index_sha256": "1e18bd3f8faeb29241987c936313a0ca1770efe75f04c1b0dfed5e59bae6aed6"
 }

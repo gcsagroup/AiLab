@@ -1130,6 +1130,7 @@ class Service:
             collection = self.resource("collection", attempt["project_id"], attempt_id=attempt_id, state="collecting", manifest_digest=manifest["digest"], error=None, registered_artifact_ids=[])
             self.store.put("collection", collection)
             attempt.update(collection_state="collecting", collection_version=attempt["collection_version"] + 1)
+            collection_version = attempt["collection_version"]
             self.store.event(attempt, "collection_changed", {"collection_id": collection["id"], "state": "collecting"})
         output_dir = self.root / "runs" / attempt_id / "output"
         registered = []
@@ -1156,38 +1157,62 @@ class Service:
                                    "size": record["size"], "sha256": item["sha256"], "media_type": media_type, "text": text, "text_truncated": truncated})
         except (Fault, OSError, UnicodeError) as error:
             failure = error if isinstance(error, Fault) else Fault("COLLECTION_FAILED", "文件保存失败，计算结果保留，可修复存储后补收。", 500)
-        with self.store.transaction():
-            attempt = self.store.get("attempt", attempt_id)
-            cancelled = attempt["state"] == "cancelling"
-            collection["state"] = "failed" if failure else "cancelled" if cancelled else "succeeded"
-            collection["error"] = {"code": failure.code, "message": failure.message} if failure else None
-            collection["finished_at"] = now()
-            if not failure and not cancelled:
-                for artifact in registered:
-                    self.store.put("artifact", artifact)
-                collection["registered_artifact_ids"] = [artifact["id"] for artifact in registered]
-                texts = [artifact for artifact in registered if artifact["relative_path"] == "result.txt" and artifact["media_type"] == "text/plain" and artifact["text"] is not None]
-                if texts:
-                    attempt["output_text"] = texts[0]["text"]
-                    attempt["output_text_truncated"] = texts[0]["text_truncated"]
-                elif attempt["snapshot"]["operation"] != "generate":
-                    attempt["output_text"] = ""
-            self.store.put("collection", collection)
-            attempt.update(collection_state=collection["state"], collection_version=attempt["collection_version"] + 1)
-            self.store.event(attempt, "collection_changed", {"collection_id": collection["id"], "state": collection["state"], "error": collection["error"]})
-            if attempt["state"] not in TERMINAL:
-                if cancelled:
-                    attempt.update(stop_status="confirmed", terminal_reason="COLLECTION_CANCELLED")
-                    self.transition(attempt, "cancelled", "计算已完成，产物收集已取消。")
-                elif failure:
-                    attempt["terminal_reason"] = failure.code
-                    self.transition(attempt, "failed", failure.message)
-                else:
-                    attempt["terminal_reason"] = "COMPLETED"
-                    self.transition(attempt, "succeeded", "产物已校验并完整保存。")
-            if payload is not None:
-                self.store.remember(scope, key, payload, collection)
-            return collection
+        try:
+            with self.store.transaction():
+                attempt = self.store.get("attempt", attempt_id)
+                cancelled = attempt["state"] == "cancelling"
+                collection["state"] = "failed" if failure else "cancelled" if cancelled else "succeeded"
+                collection["error"] = {"code": failure.code, "message": failure.message} if failure else None
+                collection["finished_at"] = now()
+                if not failure and not cancelled:
+                    for artifact in registered:
+                        self.store.put("artifact", artifact)
+                    collection["registered_artifact_ids"] = [artifact["id"] for artifact in registered]
+                    texts = [artifact for artifact in registered if artifact["relative_path"] == "result.txt" and artifact["media_type"] == "text/plain" and artifact["text"] is not None]
+                    if texts:
+                        attempt["output_text"] = texts[0]["text"]
+                        attempt["output_text_truncated"] = texts[0]["text_truncated"]
+                    elif attempt["snapshot"]["operation"] != "generate":
+                        attempt["output_text"] = ""
+                self.store.put("collection", collection)
+                attempt.update(collection_state=collection["state"], collection_version=attempt["collection_version"] + 1)
+                self.store.event(attempt, "collection_changed", {"collection_id": collection["id"], "state": collection["state"], "error": collection["error"]})
+                if attempt["state"] not in TERMINAL:
+                    if cancelled:
+                        attempt.update(stop_status="confirmed", terminal_reason="COLLECTION_CANCELLED")
+                        self.transition(attempt, "cancelled", "计算已完成，产物收集已取消。")
+                    elif failure:
+                        attempt["terminal_reason"] = failure.code
+                        self.transition(attempt, "failed", failure.message)
+                    else:
+                        attempt["terminal_reason"] = "COMPLETED"
+                        self.transition(attempt, "succeeded", "产物已校验并完整保存。")
+                if payload is not None:
+                    self.store.remember(scope, key, payload, collection)
+                return collection
+        except Exception as error:
+            # 登记事务已回滚；人工补收没有 run 的外层收尾，必须释放本次收集状态。
+            # 使用版本确认归属，避免异常收尾覆盖后来已经完成的收集。
+            try:
+                with self.store.transaction():
+                    current = self.store.get("attempt", attempt_id)
+                    pending = self.store.get("collection", collection["id"])
+                    if (pending["state"] == "collecting" and current["collection_state"] == "collecting"
+                            and current["collection_version"] == collection_version):
+                        fault = error if isinstance(error, Fault) else Fault("COLLECTION_FAILED", "产物登记失败，计算结果保留，可修复存储后补收。", 500)
+                        pending.update(state="failed", error={"code": fault.code, "message": fault.message}, finished_at=now())
+                        self.store.put("collection", pending)
+                        current.update(collection_state="failed", collection_version=collection_version + 1)
+                        self.store.event(current, "collection_changed", {"collection_id": pending["id"], "state": "failed", "error": pending["error"]})
+                        if current["state"] == "cancelling":
+                            current.update(stop_status="confirmed", terminal_reason="COLLECTION_CANCELLED")
+                            self.transition(current, "cancelled", "计算已完成，产物登记失败，本次收集已取消。")
+                        elif current["state"] not in TERMINAL:
+                            current["terminal_reason"] = fault.code
+                            self.transition(current, "failed", fault.message)
+            finally:
+                # 即使故障持续导致收尾写入也失败，仍向调用者保留原登记异常。
+                raise error
 
     def save_work(self, payload, key):
         if self.store.get('attempt', payload['attempt_id'])['snapshot'].get('kind', 'text') != 'text':

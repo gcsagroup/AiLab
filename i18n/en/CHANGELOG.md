@@ -10,6 +10,12 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+<a id="数据划分读取与人工补收修复构建前源码记录"></a>
+
+### Dataset Read and Manual Collection Fixes (Pre-build Source Record)
+
+Pre-build source progress: stale dataset-split reads no longer clear apply errors, and failed manual-collection registration can preserve the computation result and allow retries after recovery. Related source tests and browser component fixture checks passed. The fixed App remains 032; 033 has not been built, and this round’s native dataset workflow has not run. [Source fixes and limits](docs/implementation/2026-09-16-dataset-and-collection-source-fixes.md)
+
 <a id="python-环境路径保留修复构建前源码记录"></a>
 
 ### Python Environment Path Preservation Fix (Pre-build Source Record)

@@ -580,12 +580,13 @@ class RemoteExecution:
                 finally:
                     if temporary.exists():
                         shutil.rmtree(temporary)
-            return self.service.collect(attempt_id, payload, key, _remote_ready=True)
         except (ProtocolError, Fault, OSError) as error:
             failure = {'code': getattr(error, 'code', 'REMOTE_COLLECTION_FAILED'), 'message': '原计算已结束，产物尚未完整收回；修复连接或存储后可只补收。'}
             with self.store.transaction():
                 attempt = self.store.get('attempt', attempt_id)
-                attempt.update(collection_state='failed', collection_version=attempt['collection_version'] + 1, terminal_reason=failure['code'])
+                attempt.update(collection_state='failed', collection_version=attempt['collection_version'] + 1)
+                if attempt['state'] not in TERMINAL:
+                    attempt['terminal_reason'] = failure['code']
                 collection = self.service.resource('collection', attempt['project_id'], attempt_id=attempt_id, state='failed',
                                                    manifest_digest=attempt['output_manifest_ref']['digest'], error=failure, registered_artifact_ids=[])
                 self.store.put('collection', collection)
@@ -594,3 +595,5 @@ class RemoteExecution:
                 if payload is not None:
                     self.store.remember('collect:' + attempt_id, key, payload, collection)
             return collection
+        # 本地登记拥有自己的事务与失败收尾，异常不可再当作传输失败重复处理。
+        return self.service.collect(attempt_id, payload, key, _remote_ready=True)

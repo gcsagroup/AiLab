@@ -4,6 +4,8 @@
 
 [简体中文](../../../docs/README.md) · [繁體中文](../../zh-TW/docs/README.md) · [English](README.md)
 
+Pre-build source progress: stale dataset-split reads no longer clear apply errors, and failed manual-collection registration can preserve the computation result and allow retries after recovery. Related source tests and browser component fixture checks passed. The fixed App remains 032; 033 has not been built, and this round’s native dataset workflow has not run. [Source fixes and limits](implementation/2026-09-16-dataset-and-collection-source-fixes.md)
+
 **032 Subtitle Workflow Acceptance (2026-09-16, E142)**: The fixed signed App was not rebuilt. Keyboard operation of the functional flow, container-scroll sampling, continuing/discarding temporary edits, one v5 save, and same-library reopening passed. Only the final cue changed across 200 cues/16000 characters. Explicit historical v4 selection produced a 5-file export while current v5 and historical v4 remained intact. Root accepted both normal exits, 44 of 47 protection records strictly unchanged, and selector restoration. No model ran. The old 020 root cause remains unknown; full AC22, AC27, M0—M6, and release status do not advance. [Subtitle workflow and limits](implementation/2026-09-16-ver2-4-032-subtitle-workflow.md)
 
 The following E141 and earlier records preserve their state at the time.

@@ -171,7 +171,10 @@ export default function DatasetSplitDialog({ dataset, models, projectId, initial
       await readSplit(value.applied_split_id, isCurrent, value);
     }
   }
+  // 读取属于产生它的那次渲染，延后启动也不能借用新操作的代次。
+  const readGeneration = generation.current;
   useEffect(() => {
+    if (readGeneration !== generation.current) return;
     if (!dataset.dataset_split_id && !plan) return;
     if (scope.current && !scope.current()) return;
     let current = true; let timer: ReturnType<typeof setTimeout>;
