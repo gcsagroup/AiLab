@@ -10,6 +10,10 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+Native revalidation of the startup tool’s system-launch and shutdown-sidecar fixes is complete. For the fixed 037 candidate, one round recorded host full readiness at 4.933 seconds and external observation at 5.029 seconds. Native Quit, operator acknowledgement, process disappearance, and the stopped snapshot passed; original library protection was restored, with no new model execution. The first-round sidecar failure remains preserved, and all 50 measurement tests passed. The 20 initial-visibility measurements and full-stage acceptance remain incomplete. [Native tool revalidation](scripts/desktop/README.md#同一候选的启动测量).
+
+The following source-stage records retain their status when written; the native revalidation result above takes precedence.
+
 Native tool review found that ordinary read-only inspection after shutdown left database sidecars, so the strict snapshot check refused to proceed. Inspection now holds the control-service lock and confirms that no sidecars exist before reading the main database. The old sidecars were preserved unchanged, and the database and all tables matched. All 50 measurement-tool tests passed; native revalidation of the fix is pending.
 
 The startup measurement tool now uses foreground system launch and checks the new App path, PID, start identity, and owned control process. It records the launcher exit code separately from the unknown App exit code and requires confirmation of normal native exit. Duplicate instances, identity changes, timeouts, and unconfirmed exits retain a failed round and stop subsequent launches. All 44 tests passed; the fixed signed App remains 037, and native acceptance of this tool change is pending.
