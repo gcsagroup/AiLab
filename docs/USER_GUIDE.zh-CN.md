@@ -2,7 +2,11 @@
 
 [简体中文](USER_GUIDE.zh-CN.md) · [繁體中文](../i18n/zh-TW/docs/USER_GUIDE.zh-CN.md) · [English](../i18n/en/docs/USER_GUIDE.zh-CN.md)
 
-本手册对应当前公司签名候选 Ver2.4（032）。可以继续既有任务、查看和编辑作品修订、加载更早历史，并导出明确选择的版本。正文与配音文案各支持最多 16000 字符，字幕最多 200 条。029 已接受 Media 三入口在两个既有任务中的四个原生实例、正反向 Tab、Enter／Escape 回焦、正常退出与一次停机读回的有限子集（E137）；没有执行真实导入或模型运行。028 工作台四按钮的既有有限接受保留。详见[028进度](implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md)、[Media进度](implementation/2026-09-15-media-keyboard-progress.md)和[候选范围](implementation/2026-09-10-ver2-scope.md)。
+本手册对应当前公司签名候选 Ver2.4（033）。可以继续既有任务、查看和编辑作品修订、加载更早历史，并导出明确选择的版本。正文与配音文案各支持最多 16000 字符，字幕最多 200 条。029 已接受 Media 三入口在两个既有任务中的四个原生实例、正反向 Tab、Enter／Escape 回焦、正常退出与一次停机读回的有限子集（E137）；没有执行真实导入或模型运行。028 工作台四按钮的既有有限接受保留。详见[028进度](implementation/2026-09-15-ver2-4-028-workbench-keyboard-progress.md)、[Media进度](implementation/2026-09-15-media-keyboard-progress.md)和[候选范围](implementation/2026-09-10-ver2-scope.md)。
+
+033 固定公司签名包与原生数据流程已获有限接受（E143）：三项导入拒绝、7 条主数据导入、来源划分、配置通过后长度失效及同库直接恢复草稿完成。停机新增 12 项资源／3 条命令／0 次运行，草稿修订 5，两次正常退出和 47／44 保护恢复通过。没有训练或模型生成，不提高完整 M1、M0—M6 或发布状态。 [033 数据流程与边界](implementation/2026-09-16-ver2-4-033-dataset-workflow.md)
+
+以下源码阶段及 E142 和更早记录保留形成时状态。
 
 032 字幕流程的功能链键盘操作、继续／放弃修改、保存 v5 和同库重开已通过；200 条／16000 字符仅末条变化，随后明确导出历史 v4 的 5 文件包。当前 v5、历史 v4 与原视频保持，两次正常退出及资料恢复通过。渲染仅作容器滚动采样，旧 020 根因仍未明；未重建或运行模型，不提高完整 AC 和发布状态。 [字幕流程与边界](implementation/2026-09-16-ver2-4-032-subtitle-workflow.md)
 

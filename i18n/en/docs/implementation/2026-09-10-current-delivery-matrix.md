@@ -6,6 +6,10 @@
 
 # Current Implementation, Evidence, and Remaining Delivery Matrix
 
+The fixed company-signed 033 package and native dataset workflow received limited acceptance (E143): three import rejections, 7-row import, source splitting, successful configuration checking followed by length invalidation, and direct draft restoration in the same library. Stopped-state checks found 12 new resources, 3 commands, 0 attempts, and draft revision 5; both normal exits and 47/44 protection restoration passed. No training or model generation occurred; complete M1, M0—M6, and release status do not advance. [033 dataset workflow and limits](2026-09-16-ver2-4-033-dataset-workflow.md)
+
+The following source-stage, E142, and earlier records retain their state at the time.
+
 **032 Subtitle Workflow Acceptance (2026-09-16, E142)**: The fixed signed App was not rebuilt. Keyboard operation of the functional flow, container-scroll sampling, continuing/discarding temporary edits, one v5 save, and same-library reopening passed. Only the final cue changed across 200 cues/16000 characters. Explicit historical v4 selection produced a 5-file export while current v5 and historical v4 remained intact. Root accepted both normal exits, 44 of 47 protection records strictly unchanged, and selector restoration. No model ran. The old 020 root cause remains unknown; full AC22, AC27, M0—M6, and release status do not advance. [Subtitle workflow and limits](2026-09-16-ver2-4-032-subtitle-workflow.md)
 
 The following E141 and earlier records preserve their state at the time.

@@ -61,6 +61,12 @@ Pre-build source progress: stale dataset-split reads no longer clear apply error
 - Added Simplified Chinese, Traditional Chinese, and English documentation and changelogs, stating candidate status and the scope of local evidence links.
 - Completed ignore rules for generated runtimes and build files; source commits do not contain models, user libraries, or credentials.
 
+<a id="ver24033数据流程验收--2026-09-16"></a>
+
+## Ver2.4（033） Dataset Workflow Acceptance — 2026-09-16
+
+The fixed company-signed 033 package and native dataset workflow received limited acceptance (E143): three import rejections, 7-row import, source splitting, successful configuration checking followed by length invalidation, and direct draft restoration in the same library. Stopped-state checks found 12 new resources, 3 commands, 0 attempts, and draft revision 5; both normal exits and 47/44 protection restoration passed. No training or model generation occurred; complete M1, M0—M6, and release status do not advance. [033 dataset workflow and limits](docs/implementation/2026-09-16-ver2-4-033-dataset-workflow.md)
+
 <a id="ver24032字幕流程进展--2026-09-16"></a>
 
 ## Ver2.4（032） Subtitle Workflow Progress — 2026-09-16
