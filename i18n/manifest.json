@@ -2,11 +2,11 @@
   "documents": [
     {
       "source": "CHANGELOG.md",
-      "source_sha256": "9f1b999fabfb1f1089e72b782c1906e34efe86313a0dd0a8e6ef7e080e8bb1c6",
+      "source_sha256": "0efdf456f3dc33c2b29f0bcf970b49ba026b0b0e442ddd105a8550065f0aba68",
       "en": "i18n/en/CHANGELOG.md",
       "zh-TW": "i18n/zh-TW/CHANGELOG.md",
-      "zh-TW_sha256": "b191ba9864cc11591d73fa1f293a813232ee6852b3c4d3d13e7505b37b0086ea",
-      "en_sha256": "b9b93d4d81ae3098d4ac83931b37b2b0305f8fde0901f6ffb33e97b3ba05b468"
+      "zh-TW_sha256": "3ce41d302e617b297d1c6c249d5962db2c64bffdf7cc5d50b375d5fe6b8e26a9",
+      "en_sha256": "83e1766d1698403ca4caee40e0aa1818a6e826fe9051850ba4c6e36d05576c3a"
     },
     {
       "source": "README.md",
@@ -778,11 +778,11 @@
     },
     {
       "source": "scripts/desktop/README.md",
-      "source_sha256": "6d70953acc52934f3a4aefb56b7f71fc723b322b64ee76d954efd91b70762fa9",
+      "source_sha256": "9935034e31e4de079518f74d4d935c6e50f9a3d532660e95c20cc6f1f8817e53",
       "en": "i18n/en/scripts/desktop/README.md",
       "zh-TW": "i18n/zh-TW/scripts/desktop/README.md",
-      "zh-TW_sha256": "a9ee8bf7237e22d1b3cab9b0d16184755fa75f977eae3a02e3e3342845e95f58",
-      "en_sha256": "cafe064072e1e6b4ad9584520cf58c19a95eba71c5339bbef60441aa0713c255"
+      "zh-TW_sha256": "67c495e4372621c534d61be2919dbbcc7a503a2ebd4988a1737061a8efe02f22",
+      "en_sha256": "7916c9090a5bf0ae6f6c81ebe1f044b3e5102886ad4fc1dec231273dd08581d2"
     }
   ],
   "source_count": 98,

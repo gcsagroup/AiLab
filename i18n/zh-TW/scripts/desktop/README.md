@@ -91,6 +91,10 @@ services/control/.venv/bin/python scripts/desktop/verify_startup.py \
 
 輸出目錄必須不存在，每輪單獨保存回執、外部耗時和退出結果。報告版本為 `schema_version: 2`；原 `twenty_launch_target_passed` 欄位改為 `twenty_full_readiness_under_3000_ms`，仍統計完整20輪是否全部不超過3000毫秒。該值只描述完整就緒；`initial_visibility_target_passed` 保持 `null`，`initial_visibility_evidence` 為 `not_measured`，初顯目標仍須獨立的20次真實介面測量。失敗輪、慢樣本及舊批次保留，不回寫歷史報告。這是獨立進程啟動測量，保留作業系統檔案快取，不代表系統重啟或乾淨安裝。啟動前會拒絕版本或簽名不符、已有App進程、未結束任務、恢復待處理和活動下載。
 
+037 原生對照發現：直接執行包內可執行檔時，資料及環境在前端約5.546秒就緒，但頁面報告 `hidden`，直到退出流程附近才產生518.761秒的完整就緒回執。同一獨立庫使用 macOS `open` 正常啟動，完整就緒為5.943秒，階段記錄沒有 `hidden`。這是單次啟動方式對照，不證明全部歷史長尾的原因，也不替代20次初顯驗收。目前 `verify_startup.py` 仍直接執行可執行檔，須先修正啟動方式及新進程身分核對，再用於正常系統啟動驗收。
+
+兩次均經原生退出確認，App和控制服務已停止；系統啟動只觀察到 `open` 退出碼，未取得App退出碼。新庫第一次只更新介面選擇，第二次資料庫及全部表完全不變；原庫選擇及保護項已恢復，沒有新增模型執行。原始記錄、工具逾時和複核執行環境錯誤均保留。[原生對照與停機核對](../../../../.artifacts/native-startup-diagnosis-ver2-4-037-v1/root-readback.json)。
+
 <a id="本地候选更新与恢复"></a>
 
 ## 本地候選更新與恢復
