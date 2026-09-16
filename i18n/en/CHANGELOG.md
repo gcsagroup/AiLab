@@ -55,6 +55,16 @@ This record distinguishes source changes, local signed candidates, and formal re
 - Added Simplified Chinese, Traditional Chinese, and English documentation and changelogs, stating candidate status and the scope of local evidence links.
 - Completed ignore rules for generated runtimes and build files; source commits do not contain models, user libraries, or credentials.
 
+<a id="ver24032字幕流程进展--2026-09-16"></a>
+
+## Ver2.4（032） Subtitle Workflow Progress — 2026-09-16
+
+- Real keyboard operation of the functional flow, container-scroll sampling, continuing/discarding temporary edits, one v5 save, and same-library reopening passed (E142). The fixed App was not rebuilt, and no model ran.
+- Stopped-state checks confirmed that only the final cue changed across 200 cues/16000 characters, with 1 new revision, subtitle artifact, and command. Explicit historical v4 export then produced a 5-file package while current v5 and historical v4 remained intact.
+- Root accepted both normal exits and protection restoration, with 44 of 47 protection records strictly unchanged. Recorder filename conflicts, directory-input corrections, screenshot limits, and the unknown old 020 cause remain recorded; full AC22, AC27, M0—M6, and release status do not advance.
+
+[Subtitle workflow and limits](docs/implementation/2026-09-16-ver2-4-032-subtitle-workflow.md)
+
 <a id="ver24032诊断目录回归--2026-09-16"></a>
 
 ## Ver2.4（032） Diagnostic Directory Regression — 2026-09-16

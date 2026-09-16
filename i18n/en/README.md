@@ -12,6 +12,10 @@ A local-first desktop workbench for model training and inference. Organize model
 
 The current fixed company-signed candidate is **Ver2.4（032）**, signed by **Global Cybersecurity Alliance Limited**. It is a development candidate; full M0—M6, clean installation, notarization, and formal distribution acceptance remain incomplete.
 
+032 passed keyboard operation of the subtitle functional flow, continuing/discarding edits, saving v5, and reopening the same library. Only the final cue changed across 200 cues/16000 characters, followed by explicit export of the 5-file historical v4 package. Current v5, historical v4, and the original video remained intact; both normal exits and data restoration passed. Rendering was sampled through container scrolling, and the old 020 cause remains unknown. No rebuild or model execution occurred; full AC and release status do not advance. [Subtitle workflow and limits](docs/implementation/2026-09-16-ver2-4-032-subtitle-workflow.md)
+
+The following E141 and earlier records preserve their state at the time.
+
 032 passed complete diagnostic-directory regression: actual trilingual data import, both cancellation actions, ZIP saving to a directory with Chinese characters and a space, and integrity/redaction verification. Database and ZIP bytes remained unchanged after reopening the same build and library. Both normal exits and data restoration passed. Automatic probing was nonzero; no model ran. This diagnostic success does not replace complete artifact-export or release acceptance. [Diagnostic regression and limits](docs/implementation/2026-09-16-ver2-4-032-diagnostic-directory-regression.md)
 
 The following E140 and earlier records preserve their state at the time.
