@@ -7,18 +7,20 @@ import { MarketSourceSettings } from '../../apps/desktop/src/MarketSourceSetting
 
 let native = false;
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => native, invoke: vi.fn() }));
+const boundary = { scope_semantics: 'loader_policy_not_os_permissions', process: 'separate_process', os_sandbox: false, filesystem: 'current_user_permissions', network: 'offline_loader_options_not_os_block', credentials: 'environment_allowlist_not_filesystem_denial', custom_code: 'not_supported' };
+let catalogBoundary: unknown;
 const catalog = { id: 'fixed-model-v1', name: '固定官方模型', repo: 'official/model', revision: 'fixed-revision', source_url: 'https://huggingface.co/official/model/tree/fixed-revision', license: 'Apache-2.0', manifest_digest: 'fixed-digest', total_bytes: 1024, network_scope: '只请求已列出的固定文件。', capability: '文本生成与训练，质量需要实际核对。', files: [{ path: 'model.safetensors', size: 1024, sha256: 'a'.repeat(64) }] };
 const model = { id: 'model-new', name: '新登记模型', format: 'safetensors', modality: 'text' };
 let record: ModelDownload; let requests: { path: string; method: string; body: unknown; key?: string }[]; let failure: string | null; let providerOrigin: string | null;
 const response = (value: unknown, ok = true) => ({ ok, json: async () => structuredClone(value) }) as Response;
 beforeEach(() => {
  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); }; HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
- native = false; requests = []; failure = null; providerOrigin = null; record = { id: 'download-one', project_id: 'project-one', name: '固定官方模型', state: 'completed', received_bytes: 1024, total_bytes: 1024, current_file: null, cancel_requested: false, model_id: null };
+ catalogBoundary = structuredClone(boundary); native = false; requests = []; failure = null; providerOrigin = null; record = { id: 'download-one', project_id: 'project-one', name: '固定官方模型', state: 'completed', received_bytes: 1024, total_bytes: 1024, current_file: null, cancel_requested: false, model_id: null };
  vi.stubGlobal('fetch', vi.fn(async (input: string, options?: RequestInit) => {
   const path = String(input).replace('/api/v1', ''); const method = options?.method || 'GET'; const body = options?.body ? JSON.parse(String(options.body)) : {};
   requests.push({ path, method, body, key: (options?.headers as Record<string, string>)?.['Idempotency-Key'] });
   if (method === 'GET') {
-   if (path === '/model-catalog') return response({ items: [catalog] });
+   if (path === '/model-catalog') return response({ items: [{ ...catalog, execution_boundary: catalogBoundary }] });
    if (path === '/model-downloads/download-one') return response(record);
    if (path === '/models/model-new') return response(model);
    if (path === '/market/sources') return response({ items: providerOrigin ? [{ provider_id: 'fixture-provider', origin: providerOrigin, source_label: '受控测试来源' }] : [] });
@@ -83,4 +85,23 @@ it('宿主配置回执不明时冻结修改，重新读取真实状态而非重�
  vi.mocked(invoke).mockImplementation(async (name, args: any) => { if (name === 'configure_market_fixture') { providerOrigin = args.origin; throw { error: { code: 'CONTROL_UNAVAILABLE', message: '回执尚未确认' } }; } return { market_fixture_origin: providerOrigin } as any; });
  fireEvent.change(screen.getByLabelText('本机提供方端口'), { target: { value: '54001' } }); fireEvent.click(screen.getByRole('button', { name: '连接受控来源' })); await screen.findByText('当前来源：状态待确认'); expect(screen.getByLabelText('本机提供方端口').hasAttribute('disabled')).toBe(true);
  fireEvent.click(screen.getByRole('button', { name: '重新读取连接状态' })); await screen.findByText('当前来源：http://127.0.0.1:54001'); expect(vi.mocked(invoke).mock.calls.filter(value => value[0] === 'configure_market_fixture')).toHaveLength(1);
+});
+
+it('官方模型下载前说明运行权限，告知不会触发下载或计算', async () => {
+ view(); await screen.findByRole('region', { name: '模型加载与权限说明' });
+ expect(screen.getByText(/未启用操作系统沙箱/)).toBeTruthy();
+ expect(screen.getByText(/不代表系统已阻断网络/)).toBeTruthy();
+ expect(screen.getByText(/不代表系统已阻止读取凭证文件/)).toBeTruthy();
+ expect(requests.map(value => value.method)).toEqual(['GET']);
+ fireEvent.click(screen.getByRole('button', { name: '下载并核对固定模型' }));
+ await screen.findByRole('button', { name: '加入当前项目模型库' });
+ expect(requests.some(value => value.path.includes('/attempts'))).toBe(false);
+});
+it.each([undefined, { ...boundary, os_sandbox: true }, { ...boundary, network: 'unknown' }])('未知官方运行边界明确显示未确认并保留停止下载 %j', async value => {
+ catalogBoundary = value; record = { ...record, state: 'downloading', received_bytes: 256 }; view(record);
+ await screen.findByText('当前应用未提供可识别的运行权限说明，请更新应用后核对。下载及登记不代表模型已运行。');
+ expect(screen.queryByRole('region', { name: '模型加载与权限说明' })).toBeNull();
+ fireEvent.click(screen.getByRole('button', { name: '停止下载，保留进度' }));
+ await screen.findByRole('button', { name: '继续下载并核对' });
+ expect(requests.filter(value => value.method === 'POST').map(value => value.path)).toEqual(['/model-downloads/download-one/cancel']);
 });

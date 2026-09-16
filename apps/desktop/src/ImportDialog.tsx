@@ -3,22 +3,13 @@ import { FolderOpen, ArrowRight, FileCheck2 } from 'lucide-react';
 import { api, canPickFile, errorMessage, pickImport, type ImportKind, type ImportSelection } from './api';
 import { Button, Dialog, ErrorNotice, readableSize } from './ui';
 import type { ImportPlan } from './types';
+import { hasKnownModelBoundary, ModelExecutionNotice } from './ModelExecutionNotice';
 
 function modelLoadingLabel(plan: ImportPlan): string | null {
   if (plan.trust_class === 'restricted_weights' && plan.loader === 'mlx_lm.local_restricted') return '受限权重 · 本机 MLX 加载器';
   if (plan.trust_class === 'restricted_weights' && plan.loader === 'diffusers.fixed_local_safetensors') return '受限权重 · 固定媒体 safetensors 加载器';
   if (plan.trust_class === 'restricted_official_torch' && plan.loader === 'kokoro.fixed_official_weights_only_cpu') return '固定官方权重 · Kokoro 受限加载器';
   return null;
-}
-
-function hasKnownBoundary(plan: ImportPlan): boolean {
-  const boundary = plan.execution_boundary;
-  return boundary?.scope_semantics === 'loader_policy_not_os_permissions'
-    && boundary.process === 'separate_process' && boundary.os_sandbox === false
-    && boundary.filesystem === 'current_user_permissions'
-    && boundary.network === 'offline_loader_options_not_os_block'
-    && boundary.credentials === 'environment_allowlist_not_filesystem_denial'
-    && boundary.custom_code === 'not_supported';
 }
 
 export default function ImportDialog({ kind, projectId, onClose, onImported }: { kind: ImportKind; projectId: string; onClose: () => void; onImported: () => void }) {
@@ -30,7 +21,7 @@ export default function ImportDialog({ kind, projectId, onClose, onImported }: {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const loadingLabel = plan && kind === 'model' ? modelLoadingLabel(plan) : null;
-  const modelBoundaryKnown = kind !== 'model' || Boolean(plan && loadingLabel && hasKnownBoundary(plan));
+  const modelBoundaryKnown = kind !== 'model' || Boolean(plan && loadingLabel && hasKnownModelBoundary(plan.execution_boundary));
   const importKey = useRef<string | null>(null);
   const live = useRef(true);
   const identity = `${projectId}:${kind}`;
@@ -73,7 +64,7 @@ export default function ImportDialog({ kind, projectId, onClose, onImported }: {
       <label>{label}位置<div className="input-action"><input aria-label={`${label}文件路径`} disabled={busy} readOnly={canPickFile()} value={selection.path} onChange={e => { setSelection({ path: e.target.value }); setPlan(null); }} placeholder={canPickFile() ? '点击选择本机文件' : '输入开发环境已授权目录内的绝对路径'} />{canPickFile() && <Button onClick={choose} disabled={busy}><FolderOpen size={16} />选择</Button>}</div></label>
       {!plan && <Button primary onClick={inspect} busy={busy} disabled={!selection.path.trim()}><FileCheck2 size={16} />检查{label}</Button>}
       {plan && <section className="review-box" aria-label="导入检查结果"><h3>导入检查</h3><dl className="facts"><div><dt>名称</dt><dd>{String(plan.name || name || label)}</dd></div><div><dt>{kind === 'model' ? '模型格式' : '数据结构'}</dt><dd>{String(plan.detected_format || plan.format || plan.schema || '已检查')}</dd></div>{plan.file_count !== undefined && <div><dt>文件数</dt><dd>{plan.file_count}</dd></div>}{plan.total_bytes !== undefined && <div><dt>占用空间</dt><dd>{readableSize(plan.total_bytes)}</dd></div>}{plan.sample_count !== undefined && <div><dt>样本数</dt><dd>{plan.sample_count}</dd></div>}</dl>
-        {kind === 'model' && (modelBoundaryKnown ? <section aria-label="模型加载与权限说明"><h4>加载信任</h4><p>{loadingLabel}</p><p>仅使用固定加载器，不支持模型自定义代码。运行时使用独立进程，仍具有当前用户的文件权限，未启用操作系统沙箱。</p><p className="muted">加载器使用本机文件与离线选项；这不代表系统已阻断网络。工作进程仅继承允许的环境变量，不传入应用凭证；这不代表系统已阻止读取凭证文件。</p></section> : <ErrorNotice message="模型加载信任或权限说明缺失、未知，暂不能确认导入。请更新应用后重新检查。" />)}
+        {kind === 'model' && (modelBoundaryKnown ? <ModelExecutionNotice loadingLabel={loadingLabel!} /> : <ErrorNotice message="模型加载信任或权限说明缺失、未知，暂不能确认导入。请更新应用后重新检查。" />)}
         {issues.map((issue, i) => <ErrorNotice key={i} message={issue.message} />)}{(plan.warnings || []).map((warning, i) => <p key={i} className="warning">{warning.message}</p>)}<Button primary busy={busy} onClick={confirm} disabled={plan.can_import !== true || issues.length > 0 || !modelBoundaryKnown}>确认导入<ArrowRight size={16} /></Button></section>}
       {Boolean(plan?.selection_scope) && <p className="muted">{String(plan?.selection_scope)}</p>}
       <ErrorNotice message={error} />

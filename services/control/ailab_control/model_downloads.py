@@ -9,7 +9,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from .assets import copy_asset, file_hash, model_manifest, regular_path, verify_manifest
+from .assets import copy_asset, file_hash, model_manifest, regular_path, restricted_execution_boundary, verify_manifest
 from .model_catalog import CATALOG_ID, FILES, MODEL_NAME, REPO, REVISION
 from .storage import Fault, digest, identifier, now
 
@@ -74,7 +74,7 @@ class ModelDownloads:
     def catalog(self):
         return {'id': CATALOG_ID, 'name': MODEL_NAME, 'repo': REPO, 'revision': REVISION, 'source_url': f'https://huggingface.co/{REPO}/tree/{REVISION}',
                 'license': 'Apache-2.0', 'files': FILES, 'manifest_digest': digest(FILES), 'total_bytes': sum(item['size'] for item in FILES),
-                'loader': 'safetensors', 'network_scope': '只向固定官方模型来源请求这 9 个公开文件，不发送项目名、提示词或本机路径。',
+                'loader': 'safetensors', 'execution_boundary': restricted_execution_boundary(), 'network_scope': '只向固定官方模型来源请求这 9 个公开文件，不发送项目名、提示词或本机路径。',
                 'capability': '本机 Apple Silicon / MLX；文本生成与 SFT + LoRA。下载与文件完整不代表质量通过。'}
 
     def get(self, download_id):
@@ -286,7 +286,7 @@ class ModelDownloads:
                 raise Fault('MODEL_DOWNLOAD_CHANGED', '下载记录已变化，请刷新后登记。', 409)
             plan = self.service.resource('import-plan', record['project_id'], kind='model', name=MODEL_NAME, path=str(source), source_path=str(source), grant_id=None, can_import=True, issues=[], **report)
             model = self.service.resource('model', record['project_id'], name=MODEL_NAME, revision=1, version_id=identifier('version'), status='ready', manifest=FILES, manifest_digest=digest(FILES), total_bytes=record['total_bytes'], storage_path=str(destination),
-                format=report['detected_format'], family=report['family'], model_config=report['model_config'], modality='text', load_policy_ref=plan['id'], loader=report['loader'], trust_class=report['trust_class'], execution_scope=report['execution_scope'],
+                format=report['detected_format'], family=report['family'], model_config=report['model_config'], modality='text', load_policy_ref=plan['id'], loader=report['loader'], trust_class=report['trust_class'], execution_scope=report['execution_scope'], execution_boundary=report['execution_boundary'],
                 provenance={'source': 'official_download', 'repo': REPO, 'revision': REVISION, 'source_url': self.catalog()['source_url'], 'manifest_digest': digest(FILES)}, default_engine='mlx')
             self.store.put('import-plan', plan); self.store.put('model', model)
             current.update(model_id=model['id'], updated_at=now()); self.store.put('model-download', current)

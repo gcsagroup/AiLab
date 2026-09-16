@@ -16,6 +16,12 @@ from ailab_control.storage import Fault, digest
 import ailab_control.model_downloads as module
 
 
+BOUNDARY = {'scope_semantics': 'loader_policy_not_os_permissions', 'process': 'separate_process',
+            'os_sandbox': False, 'filesystem': 'current_user_permissions',
+            'network': 'offline_loader_options_not_os_block',
+            'credentials': 'environment_allowlist_not_filesystem_denial', 'custom_code': 'not_supported'}
+
+
 @pytest.fixture
 def transfer(rig, monkeypatch):
     client, service, source, _ = rig
@@ -79,12 +85,28 @@ def test_real_download_register_idempotency_and_original_bytes(transfer):
     assert len(state['requests'])==len(manifest)
     model=post(client, f"/model-downloads/{record['id']}/models",{},'register')
     assert post(client,f"/model-downloads/{record['id']}/models",{},'register')==model
-    assert post(client,f"/model-downloads/{record['id']}/models",{},'another-register')['id']==model['id']
+    assert post(client,f"/model-downloads/{record['id']}/models",{},'another-register')==model
     assert len(service.store.list('model'))==1 and not service.store.list('attempt')
     actual=service.store.get('model',model['id'])
+    plan = service.store.get('import-plan', actual['load_policy_ref'])
+    assert plan['execution_boundary'] == BOUNDARY
+    assert actual.get('execution_boundary') == BOUNDARY
+    assert model.get('execution_boundary') == BOUNDARY
+    assert client.get('/api/v1/models/' + model['id']).json()['execution_boundary'] == BOUNDARY
     for item in manifest:
         assert (Path(actual['storage_path'])/item['path']).read_bytes()==(root/item['path']).read_bytes()
     assert actual['provenance']['revision']==module.REVISION and actual['manifest_digest']==digest(manifest)
+
+
+def test_catalog_http_declares_loader_permissions_without_downloading(rig):
+    client, service, *_ = rig
+    response = client.get('/api/v1/model-catalog')
+    assert response.status_code == 200
+    catalog = response.json()['items'][0]
+    assert catalog['loader'] == 'safetensors'
+    assert catalog.get('execution_boundary') == BOUNDARY
+    assert not service.store.list('model-download') and not service.store.list('model')
+    assert not service.store.list('attempt')
 
 
 def test_interrupted_range_resume_and_new_command(transfer):
