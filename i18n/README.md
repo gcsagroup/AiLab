@@ -102,6 +102,7 @@ Simplified Chinese is the maintained source. Translation does not turn historica
 | docs/implementation/2026-09-16-ver2-4-032-subtitle-workflow.md | [阅读](../docs/implementation/2026-09-16-ver2-4-032-subtitle-workflow.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-032-subtitle-workflow.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-032-subtitle-workflow.md) |
 | docs/implementation/2026-09-16-ver2-4-033-dataset-workflow.md | [阅读](../docs/implementation/2026-09-16-ver2-4-033-dataset-workflow.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-033-dataset-workflow.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-033-dataset-workflow.md) |
 | docs/implementation/2026-09-16-ver2-4-034-collection-recovery.md | [阅读](../docs/implementation/2026-09-16-ver2-4-034-collection-recovery.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-034-collection-recovery.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-034-collection-recovery.md) |
+| docs/implementation/2026-09-16-ver2-4-035-native-inference.md | [阅读](../docs/implementation/2026-09-16-ver2-4-035-native-inference.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-035-native-inference.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-035-native-inference.md) |
 | docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md | [阅读](../docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md) |
 | docs/validation-report.md | [阅读](../docs/validation-report.md) | [閱讀](zh-TW/docs/validation-report.md) | [Read](en/docs/validation-report.md) |
 | packages/contracts/bootstrap.md | [阅读](../packages/contracts/bootstrap.md) | [閱讀](zh-TW/packages/contracts/bootstrap.md) | [Read](en/packages/contracts/bootstrap.md) |
@@ -125,4 +126,3 @@ python3 -B docs/tools/test_check_translations.py
 services/control/.venv/bin/python -B docs/tools/validate_docs.py --check-archive --json
 services/control/.venv/bin/python -B docs/tools/test_validate_docs.py
 ```
-| docs/implementation/2026-09-16-ver2-4-035-native-inference.md | [阅读](../docs/implementation/2026-09-16-ver2-4-035-native-inference.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-035-native-inference.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-035-native-inference.md) |
