@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import tempfile
 import threading
 
@@ -455,6 +456,23 @@ class Delivery:
 
     def verify_export(self, directory, record, plan):
         regular_path(directory)
+        expected = {entry["path"] for entry in plan["files"]} | {"manifest.json"}
+        actual = set()
+        pending = [directory]
+        # 先核对全部目录项，再读取清单；不能遗漏目录链接、断链或特殊文件。
+        while pending:
+            with os.scandir(pending.pop()) as entries:
+                for entry in entries:
+                    mode = entry.stat(follow_symlinks=False).st_mode
+                    path = Path(entry.path)
+                    if stat.S_ISDIR(mode):
+                        pending.append(path)
+                    elif stat.S_ISREG(mode):
+                        actual.add(path.relative_to(directory).as_posix())
+                    else:
+                        raise Fault("EXPORT_INCOMPLETE", "导出包包含符号链接或非常规文件。", 409)
+        if expected != actual:
+            raise Fault("EXPORT_INCOMPLETE", "导出文件集合不完整或出现额外文件。", 409)
         manifest = safe_json(directory / "manifest.json")
         # 文件摘要不证明物件身份；逐项绑定冻结清单，并区分 JSON 布尔值与数字。
         try:
@@ -463,10 +481,6 @@ class Delivery:
             matches_plan = False
         if not matches_plan:
             raise Fault("EXPORT_INCOMPLETE", "导出清单与冻结计划不一致。", 409)
-        expected = {entry["path"] for entry in plan["files"]} | {"manifest.json"}
-        actual = {path.relative_to(directory).as_posix() for path in directory.rglob("*") if path.is_file()}
-        if expected != actual:
-            raise Fault("EXPORT_INCOMPLETE", "导出文件集合不完整或出现额外文件。", 409)
         for entry in plan["files"]:
             path = regular_path(directory / entry["path"])
             if path.stat().st_size != entry["size"] or file_hash(path) != entry["sha256"]:

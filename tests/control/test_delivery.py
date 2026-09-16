@@ -750,3 +750,83 @@ def test_restarted_export_checks_manifest_identity_without_recopy(rig, tmp_path,
         assert {str(p.relative_to(directory)): file_hash(p) for p in directory.rglob('*') if p.is_file()} == files
     finally:
         reopened.close()
+
+
+@pytest.mark.parametrize('entry_kind', [
+    'unchanged', 'ordinary_directory', 'manifest_symlink', 'payload_symlink',
+    'dangling_symlink', 'directory_symlink', 'fifo',
+])
+def test_restarted_export_rejects_nonregular_tree_entries(rig, tmp_path, monkeypatch, entry_kind):
+    """真实停机重开后，拒绝清单链接与被文件集合检查漏掉的特殊目录项。"""
+    import os
+    import stat
+    from ailab_control.service import Service
+    client, service, *_ = rig
+    project, model, _ = setup_task(rig)
+    plan = prepare(rig, 'model', model['id'], project['id'], tmp_path / '目录项恢复')
+    original_put = service.store.put
+    failed_once = False
+
+    def fail_registration(kind, record):
+        nonlocal failed_once
+        if kind == 'export' and record.get('verified_path') and not failed_once:
+            failed_once = True
+            raise OSError('测试发布后的登记中断')
+        return original_put(kind, record)
+
+    def reject_execution(*args, **kwargs):
+        raise AssertionError('核实目录项不得重新复制或执行模型')
+
+    monkeypatch.setattr('subprocess.Popen', reject_execution)
+    monkeypatch.setattr(service.store, 'put', fail_registration)
+    record = post(client, '/exports', {'plan_id': plan['id'], 'plan_digest': plan['plan_digest']}, 'tree-export')
+    wait_attempt(client, record['attempt_id'], lambda item: bool(item.get('recovery_required')))
+    directory = Path(service.store.get('export', record['id'])['final_path'])
+    service.close()
+    outside = tmp_path / '包外夹具'
+    outside.mkdir()
+    if entry_kind in {'manifest_symlink', 'payload_symlink'}:
+        path = directory / ('manifest.json' if entry_kind == 'manifest_symlink' else plan['files'][0]['path'])
+        external = outside / '相同内容'
+        external.write_bytes(path.read_bytes())
+        path.unlink()
+        path.symlink_to(external)
+    elif entry_kind == 'dangling_symlink':
+        (directory / '额外链接').symlink_to(outside / '不存在')
+    elif entry_kind == 'directory_symlink':
+        (outside / '未声明内容.txt').write_text('此内容不得混入完整导出包')
+        (directory / '额外目录链接').symlink_to(outside, target_is_directory=True)
+    elif entry_kind == 'fifo':
+        os.mkfifo(directory / '额外管道')
+    elif entry_kind == 'ordinary_directory':
+        (directory / '普通空目录').mkdir()
+
+    def tree():
+        result = {}
+        for root in (directory, outside):
+            for path in root.rglob('*'):
+                mode = path.lstat().st_mode
+                contents = os.readlink(path) if stat.S_ISLNK(mode) else file_hash(path) if stat.S_ISREG(mode) else None
+                result[str(path)] = (stat.S_IFMT(mode), contents)
+        return result
+
+    before = tree()
+    reopened = Service(service.settings)
+    try:
+        monkeypatch.setattr(reopened.delivery, 'run_export', reject_execution)
+        counts = {kind: len(reopened.store.list(kind)) for kind in ('export', 'task', 'attempt')}
+        attempt = reopened.store.get('attempt', record['attempt_id'])
+        command = {'expected_state_version': attempt['state_version']}
+        result = reopened.reconcile(attempt['id'], command, 'tree-reconcile')
+        assert reopened.reconcile(attempt['id'], command, 'tree-reconcile') == result
+        current = reopened.delivery.export_record(reopened.store.get('export', record['id']))
+        if entry_kind in {'unchanged', 'ordinary_directory'}:
+            assert result['state'] == 'succeeded' and result['terminal_reason'] == 'EXPORT_RECOVERED'
+            assert current['verified_path'] == str(directory)
+        else:
+            assert result['state'] == 'failed' and result['terminal_reason'] == 'EXPORT_INTERRUPTED'
+            assert current['verified_path'] is None and current['error']['code'] == 'EXPORT_INTERRUPTED'
+        assert {kind: len(reopened.store.list(kind)) for kind in counts} == counts
+        assert tree() == before
+    finally:
+        reopened.close()

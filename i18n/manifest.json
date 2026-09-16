@@ -2,19 +2,19 @@
   "documents": [
     {
       "source": "CHANGELOG.md",
-      "source_sha256": "2be207d2560a39a351b804fd8757bb0b7ca2658f7adff38d79975f77b09c7315",
+      "source_sha256": "0cce67e4702ad9c4dbaae7528c4cb695d82eb783ed16838f5f801c83807a8404",
       "en": "i18n/en/CHANGELOG.md",
       "zh-TW": "i18n/zh-TW/CHANGELOG.md",
-      "zh-TW_sha256": "b2899271e4e4d511ca5b73561ee57f229a874c98d4dba7a43217fbb3dbd63720",
-      "en_sha256": "cdd5f1c7955f54c6a0db293b056d8fc7af7fc069c4c62f4416d518f3ecfe8b22"
+      "zh-TW_sha256": "9f5baa2ba13bbffc4b979d711b0e565b9ffe4b0d8432bbc09af9d924f88a26ac",
+      "en_sha256": "046db82b6992f96b007fcdcb1f78b499836cb8b9f4f00fc94ba34f1bbd8cf52a"
     },
     {
       "source": "README.md",
-      "source_sha256": "9cc023a7405cce627f0e76c2bfdbf947a217caa4b582099eee3a00c35ba2f1f1",
+      "source_sha256": "b1b007acea6a1d5b19a0bc30dc1bc1e11c1704a810cafcef5c951329767befad",
       "en": "i18n/en/README.md",
       "zh-TW": "i18n/zh-TW/README.md",
-      "zh-TW_sha256": "9773db09a8bd219b02fbba63df7fa2e25268c38f4958668e2a60a8bffaf0e46a",
-      "en_sha256": "267146a6f8c8dfd9b557ddc4aecb3a9ae7246764f6bc08b16c5f6cd2f0440013"
+      "zh-TW_sha256": "85ef424925026f200a61ebd5528c3d1458df7adcba0fd19ad05136174c239e07",
+      "en_sha256": "eeaca09969eda13183bee965291341f697323fc2ca5b14c90ac7d82eb9584d78"
     },
     {
       "source": "adapters/media/ACCEPTANCE.md",
@@ -202,11 +202,11 @@
     },
     {
       "source": "docs/README.md",
-      "source_sha256": "af28e2f35dc646623ac1ec2854a744ccc9af8536d143232fe4eeee1f07fcce8d",
+      "source_sha256": "73feec1619407fb3762b125cbd27859d7827b2f9fdeff4408b3ea5888f9d9c56",
       "en": "i18n/en/docs/README.md",
       "zh-TW": "i18n/zh-TW/docs/README.md",
-      "zh-TW_sha256": "d544cf4d8015310cdd0461551dd3c064e7640448af220c4f4c8fc85095a28ca4",
-      "en_sha256": "430b12da782fa92c53243642c5f0d5c77153a50a55a9be36f7eb898f8c933bb8"
+      "zh-TW_sha256": "30a23f16aa6037f3012bc903c1bb2824642a7e1396f9aa39dc151707225e6f71",
+      "en_sha256": "f7669b2d16da3b95bd66886ca53adb66f433e9109ef33ed28881bb3242bb4c69"
     },
     {
       "source": "docs/USER_GUIDE.zh-CN.md",
@@ -362,11 +362,11 @@
     },
     {
       "source": "docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "source_sha256": "1606a5f30c517b0860e669bf83f8cd694ef1f22b346c5ffcda17c47adb7e2cfd",
+      "source_sha256": "3f599b44fc4b68e29ef40fdd0b8cab7c8a261bfe80fc8f08331948e56feba898",
       "en": "i18n/en/docs/implementation/2026-09-10-current-delivery-matrix.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "zh-TW_sha256": "0e5c8c35e2c87a79a1584164873000214954a17512cfd30c62408c9aad18e68d",
-      "en_sha256": "8dc9a86ab44de85b52c19e5903db1580db81fbca185fc2e666a9324753896609"
+      "zh-TW_sha256": "6173e4fa6dbab9acf875d6252d9254e2626a9f0253bbdd879cb7219b397d56d7",
+      "en_sha256": "f6bb081326e31d1b0bb88866735474014983ce433ad345584a95460826b40cfc"
     },
     {
       "source": "docs/implementation/2026-09-10-execution-board.md",
@@ -625,6 +625,14 @@
       "en_sha256": "2db92277213f950b5a2e1be237a45d0cebd12b262e72c1d3221db67e431fd587"
     },
     {
+      "source": "docs/implementation/2026-09-16-export-tree-integrity.md",
+      "en": "i18n/en/docs/implementation/2026-09-16-export-tree-integrity.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-16-export-tree-integrity.md",
+      "source_sha256": "a21c2121ae7c4c9e3106d003f82d81028f9a6fa48aac6787a2614cffcb383a34",
+      "en_sha256": "3105645dd3d3eab5d980b3d964ca378dfe2a4c2a2b799bde7c899e0a797280b8",
+      "zh-TW_sha256": "1fa65dba9854f35fa3c80b60bdc82e4c15f5a0653a39a834bffb5b5f48d88094"
+    },
+    {
       "source": "docs/implementation/2026-09-16-market-offline-downloads.md",
       "source_sha256": "602b07a6cb9996f7cab77d5c58d31a9373251ce4e234135ccb6875da59f23a27",
       "en": "i18n/en/docs/implementation/2026-09-16-market-offline-downloads.md",
@@ -802,5 +810,5 @@
   ],
   "source_language": "zh-CN",
   "index": "i18n/README.md",
-  "index_sha256": "56e30fafb242719a22ca550a1703aa4545c52e43f559334c3042021cac2f844b"
+  "index_sha256": "0854bf0b019ae9e18223a268c2565a323fdfb75803ee1303512f8683f618d2d5"
 }
