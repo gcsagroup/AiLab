@@ -10,6 +10,8 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+The same signed 037 candidate completed explicit workflow reuse, saving all three works, invalidation after upstream changes, and same-library reopening. The original 507 resources were preserved, with 14 new resources and 9 commands; model attempts and training runs were both 0. Native target occupancy, quality, and full M4 acceptance remain pending. [037 workflow acceptance](docs/implementation/2026-09-16-ver2-4-037-workflow-reuse.md)
+
 The fixed company-signed 037 candidate passed native offline registration and application of downloaded data: a real 292-byte download containing 2 rows was registered and applied to the original task after the provider stopped and the market reopened. Draft revision changed from 2→3, only the dataset changed, and seed 817 was preserved. Normal exit, stopped-library readback, and original-data restoration passed; full M4, M0—M6, and release remain unpassed. [037 native offline acceptance](docs/implementation/2026-09-16-market-offline-downloads.md)
 
 The following source-stage records retain their state when written.
