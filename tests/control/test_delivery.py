@@ -682,3 +682,71 @@ def test_export_interruption_reconciles_without_copy_or_model_execution(rig, tmp
         assert not list((tmp_path / "中断").iterdir())
     finally:
         reopened.close()
+
+
+@pytest.mark.parametrize('field,value', [
+    (None, None),
+    ('schema_version', 'unknown'),
+    ('object_type', 'adapter'),
+    ('object_id', 'model-other'),
+    ('object_version_id', 'version-other'),
+    ('object_version_id', None),
+    ('complete', 'false'),
+    ('complete', 1),
+    ('complete', float('nan')),
+    ('independent_use', 'verified'),
+    ('extra_verification', 'verified'),
+])
+def test_restarted_export_checks_manifest_identity_without_recopy(rig, tmp_path, monkeypatch, field, value):
+    """登记中断后的真实文件包仍须绑定原物件与版本；文件摘要正确不能代替清单身份。"""
+    from ailab_control.service import Service
+    client, service, *_ = rig
+    project, model, _ = setup_task(rig)
+    plan = prepare(rig, 'model', model['id'], project['id'], tmp_path / '清单身份核实')
+    original_put = service.store.put
+    failed_once = False
+
+    def fail_registration(kind, record):
+        nonlocal failed_once
+        if kind == 'export' and record.get('verified_path') and not failed_once:
+            failed_once = True
+            raise OSError('只注入一次发布后登记中断')
+        return original_put(kind, record)
+
+    def reject_execution(*args, **kwargs):
+        raise AssertionError('清单核实不得重新导出、复制或运行模型')
+
+    monkeypatch.setattr('subprocess.Popen', reject_execution)
+    monkeypatch.setattr(service.store, 'put', fail_registration)
+    record = post(client, '/exports', {'plan_id': plan['id'], 'plan_digest': plan['plan_digest']}, 'identity-export')
+    wait_attempt(client, record['attempt_id'], lambda item: bool(item.get('recovery_required')))
+    directory = Path(service.store.get('export', record['id'])['final_path'])
+    service.close()
+    manifest_path = directory / 'manifest.json'
+    manifest = json.loads(manifest_path.read_text())
+    if field is not None:
+        if value is None:
+            manifest.pop(field)
+        else:
+            manifest[field] = value
+        manifest_path.write_text(json.dumps(manifest, ensure_ascii=False) + '\n')
+    files = {str(p.relative_to(directory)): file_hash(p) for p in directory.rglob('*') if p.is_file()}
+
+    reopened = Service(service.settings)
+    try:
+        monkeypatch.setattr(reopened.delivery, 'run_export', reject_execution)
+        counts = {kind: len(reopened.store.list(kind)) for kind in ('export', 'task', 'attempt')}
+        attempt = reopened.store.get('attempt', record['attempt_id'])
+        assert attempt['recovery_required']
+        result = reopened.reconcile(attempt['id'], {'expected_state_version': attempt['state_version']}, 'identity-reconcile')
+        current = reopened.delivery.export_record(reopened.store.get('export', record['id']))
+        if field is None:
+            assert result['state'] == 'succeeded' and result['terminal_reason'] == 'EXPORT_RECOVERED'
+            assert current['verified_path'] == str(directory) and current['error'] is None
+        else:
+            assert result['state'] == 'failed' and result['terminal_reason'] == 'EXPORT_INTERRUPTED'
+            assert current['verified_path'] is None and current['error']['code'] == 'EXPORT_INTERRUPTED'
+        assert {kind: len(reopened.store.list(kind)) for kind in counts} == counts
+        assert {str(p.relative_to(directory)): file_hash(p) for p in directory.rglob('*') if p.is_file()} == files
+    finally:
+        reopened.close()

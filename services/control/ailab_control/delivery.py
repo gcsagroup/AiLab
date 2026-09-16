@@ -352,6 +352,13 @@ class Delivery:
         if self.service.closed.is_set() or attempt["state"] in {"cancelling", "cancelled"}:
             raise ExportCancelled()
 
+    @staticmethod
+    def export_manifest(record, plan):
+        return {"schema_version": "1.1", "export_id": record["id"], "plan_digest": plan["plan_digest"],
+                "object_type": plan["object_type"], "object_id": plan["object_id"],
+                "object_version_id": plan["object_version_id"], "files": plan["files"],
+                "dependencies": plan["dependencies"], "complete": True, "independent_use": "not_verified"}
+
     def run_export(self, export_id):
         record = self.store.get("export", export_id)
         plan = self.store.get("export-plan", record["plan_id"])
@@ -406,8 +413,7 @@ class Delivery:
                     attempt["progress"] = copied / max(1, plan["total_bytes"])
                     self.store.event(attempt, "progress", {"copied_bytes": copied, "total_bytes": plan["total_bytes"], "progress": attempt["progress"]})
             self.check_cancel(attempt_id)
-            manifest = {"schema_version": "1.1", "export_id": export_id, "plan_digest": plan["plan_digest"], "object_type": plan["object_type"], "object_id": plan["object_id"],
-                        "object_version_id": plan["object_version_id"], "files": plan["files"], "dependencies": plan["dependencies"], "complete": True, "independent_use": "not_verified"}
+            manifest = self.export_manifest(record, plan)
             with (temporary / "manifest.json").open("x", encoding="utf-8") as stream:
                 stream.write(encode(manifest) + "\n")
                 stream.flush()
@@ -450,7 +456,12 @@ class Delivery:
     def verify_export(self, directory, record, plan):
         regular_path(directory)
         manifest = safe_json(directory / "manifest.json")
-        if manifest.get("export_id") != record["id"] or manifest.get("plan_digest") != plan["plan_digest"] or not manifest.get("complete") or manifest.get("files") != plan["files"] or manifest.get("dependencies") != plan["dependencies"]:
+        # 文件摘要不证明物件身份；逐项绑定冻结清单，并区分 JSON 布尔值与数字。
+        try:
+            matches_plan = encode(manifest) == encode(self.export_manifest(record, plan))
+        except ValueError:
+            matches_plan = False
+        if not matches_plan:
             raise Fault("EXPORT_INCOMPLETE", "导出清单与冻结计划不一致。", 409)
         expected = {entry["path"] for entry in plan["files"]} | {"manifest.json"}
         actual = {path.relative_to(directory).as_posix() for path in directory.rglob("*") if path.is_file()}

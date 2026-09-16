@@ -61,3 +61,9 @@
 辅助过程保留负例：首次用系统 Python 执行工具因缺少依赖而停止，改用项目虚拟环境后通过；退出确认尚未完成时，快照守卫拒绝连接数据库；核验器初次把实际 JPEG 截图误认为 PNG，核对文件头后只修正扩展名与格式检查，图像字节未改变。[运行时失败](../../.artifacts/native-midcopy-records-ver2-4-037-v1/helper-tests-wrong-runtime.log) [截图格式假设失败](../../.artifacts/native-midcopy-records-ver2-4-037-v1/native-001/readback-initial-image-format.log)
 
 本次接受正式备份恢复后的原生历史展示及重开保持。复制途中故障和恢复导出的触发仍来自上一阶段包内服务 HTTP 路径；本次没有通过原生按钮再次触发故障或新导出，也不证明合成夹具能够推理、全部对象升级导出或完整 M6。
+
+后续源码检查发现导出恢复会误接受身份被改写的清单：修改格式版本、对象类型、对象编号、对象版本、完整标记或独立使用声明，原文件摘要仍正确时，重启后的核实错误地返回成功。6 个原始失败案例已保留；修复将整份清单与冻结计划比对，同时区分布尔值与数字，拒绝缺失字段、额外声明及非有限数字。[失败复现](../../.artifacts/export-manifest-identity-source-v1/red.log)
+
+11 个恢复场景覆盖原样完整包及上述变更，核实不重复制、不启动模型，保留原文件和记录数量。导出、备份恢复、作品修订及数据划分导出共 179 项回归通过，保留 2 项既有警告；原库 47 项保护文件不变。[源码回归](../../.artifacts/export-manifest-identity-source-v1/regression-final.log) [保护核对](../../.artifacts/export-manifest-identity-source-v1/protection.json)
+
+此修复尚未编入固定签名 037 App。磁盘可用约 37 GiB，低于既有实机验收的 41 GiB 保留线，本轮没有新建恢复副本或打包。以上是源代码和测试库的恢复验证，不是复制途中实际进程中断、原生界面或完整 M6 验收；这些项目仍待执行。
