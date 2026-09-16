@@ -10,6 +10,10 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+The fixed company-signed 036 candidate includes the official-model runtime-boundary fix. Package checks and limited native notice acceptance passed: official-catalog and local-inspection explanations were visible, with 1 project/1 import plan and no download, import confirmation, or model execution. Normal exit and original-data protection/restoration passed; full M2 and release remain unpassed. [036 notice acceptance](docs/implementation/2026-09-16-official-model-runtime-boundary.md)
+
+The following source-stage and earlier-candidate records retain their state when written.
+
 Source progress: official model preparation now shows runtime boundaries consistent with manual import, and newly registered models retain fields from actual verification. Missing/unknown notices add no download or registration gate. Related tests passed; the fixed signed App remains 035 and does not contain this fix. Full M2 and release status are not advanced. [Official model preparation boundary](docs/implementation/2026-09-16-official-model-runtime-boundary.md)
 
 The 035 packaged worker completed one real generation under process network denial, producing `7`; the rejection matrix for unsupported media/cache requests is published (E146). This does not establish physical disconnection, a product OS sandbox, or cache-hit performance. Real HTTP cancellation and subsequent generation recovery through the packaged control service also passed, without App UI acceptance in this round; M2 and release status are not advanced. [Runtime boundaries and evidence](docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md)
