@@ -2,19 +2,19 @@
   "documents": [
     {
       "source": "CHANGELOG.md",
-      "source_sha256": "f7adef8357563040a0eceb56f7cf246f8aa4be0a24d8355e8e317c2de1430761",
+      "source_sha256": "067599218644daaa35509926429541b325a0e73a998099f0a1e48710a37e4363",
       "en": "i18n/en/CHANGELOG.md",
       "zh-TW": "i18n/zh-TW/CHANGELOG.md",
-      "zh-TW_sha256": "e9083fd96973c18c12a689a1eacc8298535d18b6e4f8c8d81cee2bfaeafd7b23",
-      "en_sha256": "361da799b815d2fa72e993f96e733f97b62b6d7e2cff966fdbd5ffb3ee15726b"
+      "zh-TW_sha256": "9061a112bb4750bcf199306a9ea15ba2ddf073f3986af4eded3b0865455a47a4",
+      "en_sha256": "6c085476e6265bef805eeea26d0944f6727ab629b3665bf47c50600515f4a0fd"
     },
     {
       "source": "README.md",
-      "source_sha256": "ac79071519f0166b7d2309a18e1bf78821e9de11dbf90c6c345156f7a9e5b01a",
+      "source_sha256": "60e104b0014ae8e49174e1f5459d8b014af215d2f59d02708a5602718d7a8f59",
       "en": "i18n/en/README.md",
       "zh-TW": "i18n/zh-TW/README.md",
-      "zh-TW_sha256": "318c8b00d62a8abead9b01e4484160c4a13ffda097e6492d1583817f93c4a593",
-      "en_sha256": "c48675c4000e093384fe5ae1058ded50185e4696cdbab2ed764e0c423730be9d"
+      "zh-TW_sha256": "7448d9dcb96400ae90953b66e8ceae90887432938878633e76e0bbc4e4b5d1c6",
+      "en_sha256": "a3e885422e14d1b90f6caa966c74e17556c0330f3ba5fe2fc2171536b8b115c2"
     },
     {
       "source": "adapters/media/ACCEPTANCE.md",
@@ -362,11 +362,11 @@
     },
     {
       "source": "docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "source_sha256": "73b6ebebda09ce6cc54de97743263072cea45760860ec593b0996f77bb8ff22d",
+      "source_sha256": "9b3caa3eea8c52ceb51439015cc208aa868314eb15f76caa698471fc24a4d690",
       "en": "i18n/en/docs/implementation/2026-09-10-current-delivery-matrix.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "zh-TW_sha256": "98f103010a4f36359a96c8d194a19d95c6c62f8fd36177ea2b6850f6a0cf16f5",
-      "en_sha256": "237563565cc19108ba66f4f1b03d9c86a62ddf3dc0c0071bce135e098e06ba10"
+      "zh-TW_sha256": "624e86ab125be75ea73520872587973fc3a1809b192334b1122a98a3096ff510",
+      "en_sha256": "eeacd4e389b14e789ec063424e921da1018a867f204963b6fd79d580b14a70d7"
     },
     {
       "source": "docs/implementation/2026-09-10-execution-board.md",
@@ -724,9 +724,9 @@
       "source": "docs/implementation/2026-09-16-ver2-4-037-workflow-reuse.md",
       "en": "i18n/en/docs/implementation/2026-09-16-ver2-4-037-workflow-reuse.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-16-ver2-4-037-workflow-reuse.md",
-      "source_sha256": "61f33b79d3e614703f23f14d482af65eb0e7cead31b7e6ffe2056467bad7eadc",
-      "zh-TW_sha256": "7ef58f535710bb7f85e16fb859442f2a610b94c4329498efc15c0c2f2c29d765",
-      "en_sha256": "d59ccbc8845ce1dbaeff92d01dbda0a62845f86d3649e8496bb80a64a71ceb05"
+      "source_sha256": "4b22a0c35e12e9ac0aa65cee6297bc1eac1c03be51a446cd29a9ac20df1f3c93",
+      "zh-TW_sha256": "dd220fa74996833d45adf5baf3578a89f3b0b56f1a34c284b9a9c8e0d079f167",
+      "en_sha256": "4e19f17bf489af2b34a93b75bf0772eb499374f86ad7efdd75403fbaf9bd38e5"
     },
     {
       "source": "docs/validation-report.md",
