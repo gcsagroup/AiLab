@@ -167,31 +167,179 @@ def test_idle_reader_closes_live_wal_connection_and_preserves_data(tmp_path, mon
         assert list(reopened.iterdump()) == before
 
 
-def test_real_fixture_process_receipt_then_normal_exit(tmp_path):
+def system_launch_fixture(tmp_path, monkeypatch, *, receipt_enabled=True, confirm=True):
+    """真实父子进程和回执；仅替代系统启动器及 Python 夹具的可执行路径标识。"""
     receipt = tmp_path / "receipt.json"
-    # 先取得确已退出的测试 PID，代表正常释放的侧进程。
-    child = subprocess.Popen([sys.executable, "-c", "pass"])
-    child.wait(timeout=5)
-    executable = tmp_path / "fixture"
-    executable.write_text(f"#!{Path(sys.executable).resolve()}\nimport json,os,time\nfrom pathlib import Path\n"
-                          f"value={valid_receipt(control_pid=child.pid)!r}\n"
-                          "value['pid']=os.getpid()\nvalue['reported_at_unix_ms']=time.time_ns()//1_000_000\n"
-                          f"Path({str(receipt)!r}).write_text(json.dumps(value))\ntime.sleep(.1)\n")
-    executable.chmod(0o700)
-    with (tmp_path / "log").open("w") as log:
+    identities = tmp_path / "identities.json"
+    executable = tmp_path / "带空格 Fixture.app/Contents/MacOS/fixture"
+    app = tmp_path / "app.py"
+    app.write_text("import os,json,subprocess,sys,time\nfrom pathlib import Path\n"
+        "control=subprocess.Popen([sys.executable,'-c','import time;time.sleep(3)'])\n"
+        f"identities=Path({str(identities)!r})\n"
+        "temporary=identities.with_suffix('.tmp')\n"
+        "temporary.write_text(json.dumps({'app':os.getpid(),'control':control.pid}))\n"
+        "temporary.replace(identities)\n"
+        f"value={valid_receipt()!r}\n"
+        "value.update(pid=os.getpid(),control_pid=control.pid,reported_at_unix_ms=time.time_ns()//1_000_000)\n"
+        + (f"Path({str(receipt)!r}).write_text(json.dumps(value))\n" if receipt_enabled else "")
+        + "time.sleep(.7)\ncontrol.terminate();control.wait(timeout=2)\n")
+    launcher = tmp_path / "open.py"
+    launcher.write_text(f"import subprocess,sys\np=subprocess.Popen([sys.executable,{str(app)!r}])\np.wait(timeout=5)\n")
+    actual_rows = measurement.process_rows
+    launched = []
+
+    def launch(_executable, log):
+        assert _executable == executable
+        process = subprocess.Popen([sys.executable, str(launcher)], stdout=log, stderr=log)
+        launched.append(process)
+        return process
+
+    def fixture_rows():
+        rows = actual_rows()
+        if identities.exists():
+            ids = json.loads(identities.read_text())
+            for key, path in (("app", executable), ("control", executable.parents[1] / "Resources/resources/control/ailab-control")):
+                if ids[key] in rows:
+                    rows[ids[key]] = {**rows[ids[key]], "executable": str(path)}
+        return rows
+
+    monkeypatch.setattr(measurement, 'launch_system_app', launch)
+    monkeypatch.setattr(measurement, 'process_rows', fixture_rows)
+    monkeypatch.setattr(measurement, 'confirm_native_quit', lambda pid: confirm)
+    with (tmp_path / 'log').open('w') as log:
         result = measurement.measure_one(executable, receipt, VERSION, log, 5, 5)
-    assert result["status"] == "completed" and result["exit_code"] == 0 and result["control_exit_observed"]
+    for process in launched:
+        process.wait(timeout=5)
+    return result
+
+
+def test_real_system_launcher_fixture_receipt_and_both_processes_exit(tmp_path, monkeypatch):
+    result = system_launch_fixture(tmp_path, monkeypatch)
+    assert result["status"] == "completed" and result["launcher_exit_code"] == 0
+    assert result["app_exit_code"] is None and result["native_quit_confirmed"]
+    assert result["control_exit_observed"] and result["app_exit_observed"]
+    assert result["pid"] != result["launcher_pid"]
     assert result["receipt"]["pid"] == result["pid"] and result["launch_to_receipt_observed_ms"] > 0
 
 
-def test_real_fixture_exit_before_first_frame_keeps_failed_round(tmp_path):
-    executable = tmp_path / "fixture"
-    executable.write_text(f"#!{Path(sys.executable).resolve()}\nraise SystemExit(0)\n")
-    executable.chmod(0o700)
-    with (tmp_path / "log").open("w") as log:
-        result = measurement.measure_one(executable, tmp_path / "missing", VERSION, log, 5, 5)
+def test_real_fixture_exit_before_first_frame_keeps_failed_round(tmp_path, monkeypatch):
+    result = system_launch_fixture(tmp_path, monkeypatch, receipt_enabled=False)
     assert result["status"] == "failed" and "首屏回执前退出" in result["error"]
     assert not measurement.summarize([result], 1)["measurement_complete"]
+
+
+def test_system_launcher_success_cannot_replace_native_quit_confirmation(tmp_path, monkeypatch):
+    result = system_launch_fixture(tmp_path, monkeypatch, confirm=False)
+    assert result["launcher_exit_code"] == 0 and result["app_exit_code"] is None
+    assert result["status"] == "failed" and not result["native_quit_confirmed"]
+    assert "未确认原生正常退出" in result["error"]
+
+
+def test_process_parser_preserves_full_paths_and_start_identity(monkeypatch):
+    content = " 12 1 Wed Sep 16 17:00:00 2026 /带空格/Example App.app/Contents/MacOS/app\n"
+    def run(argv, **kwargs):
+        assert argv == ["/bin/ps", "-axo", "pid=,ppid=,lstart=,comm="]
+        assert kwargs['env']['LC_ALL'] == 'C' and kwargs['check']
+        return subprocess.CompletedProcess(argv, 0, content, '')
+    monkeypatch.setattr(measurement.subprocess, 'run', run)
+    rows = measurement.process_rows()
+    assert rows[12] == {'pid': 12, 'ppid': 1, 'started_at': 'Wed Sep 16 17:00:00 2026', 'executable': '/带空格/Example App.app/Contents/MacOS/app'}
+    assert measurement.matching_app(rows, Path(rows[12]['executable'])) == rows[12]
+    assert measurement.matching_app(rows, Path('/other/app')) is None
+    with pytest.raises(RuntimeError, match='多个'):
+        measurement.matching_app({**rows, 13: {**rows[12], 'pid': 13}}, Path(rows[12]['executable']))
+
+
+@pytest.mark.parametrize('content', ['invalid\n', '12 1 Wed Sep 16 17:00:00 2026 /app\n12 1 Wed Sep 16 17:00:00 2026 /app\n'])
+def test_ambiguous_process_table_is_rejected(monkeypatch, content):
+    monkeypatch.setattr(measurement.subprocess, 'run', lambda *a, **k: subprocess.CompletedProcess(a, 0, content, ''))
+    with pytest.raises(RuntimeError): measurement.process_rows()
+
+
+def test_system_launch_uses_foreground_bundle_and_separate_private_logs(tmp_path, monkeypatch):
+    executable = tmp_path / '固定 App.app/Contents/MacOS/app'
+    calls = []
+    monkeypatch.setattr(measurement.subprocess, 'Popen', lambda argv, **kwargs: calls.append(argv) or object())
+    with (tmp_path/'launch.log').open('w') as log:
+        measurement.launch_system_app(executable, log)
+    assert calls[0][:4] == ['/usr/bin/open', '-W', '-n', str(executable.parents[2])]
+    assert '-g' not in calls[0] and '-j' not in calls[0]
+    assert calls[0][4::2] == ['--stdout', '--stderr']
+    assert calls[0][5] != calls[0][7]
+    for name in calls[0][5::2]: assert Path(name).stat().st_mode & 0o777 == 0o600
+    with (tmp_path/'launch.log').open('a') as log:
+        with pytest.raises(FileExistsError): measurement.launch_system_app(executable, log)
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize('response', ['已确认退出', 'no', ''])
+def test_quit_acknowledgement_requires_explicit_phrase(monkeypatch, response):
+    monkeypatch.setattr('builtins.input', lambda _: response)
+    assert measurement.confirm_native_quit(12) is (response == '已确认退出')
+
+
+def test_quit_acknowledgement_eof_is_not_success(monkeypatch):
+    def eof(_): raise EOFError
+    monkeypatch.setattr('builtins.input', eof)
+    assert not measurement.confirm_native_quit(12)
+
+
+@pytest.mark.parametrize('case,reason', [
+    ('duplicate', '多个'), ('identity_changed', '身份变化'),
+    ('wrong_parent', '不属于'), ('wrong_control_path', '不属于'),
+    ('app_still_live', 'App 仍在'), ('control_still_live', '控制进程仍存在'),
+    ('launcher_failed', '启动器未正常结束'), ('timeout', '超时'),
+])
+def test_system_launch_failures_never_restart_kill_or_count_as_complete(tmp_path, monkeypatch, case, reason):
+    executable = tmp_path/'App.app/Contents/MacOS/app'
+    app = {'pid': 123, 'ppid': 1, 'started_at': 'current', 'executable': str(executable)}
+    control = {'pid': 124, 'ppid': 123, 'started_at': 'current', 'executable': str(executable.parents[1]/'Resources/resources/control/ailab-control')}
+    calls = 0
+    class Launcher:
+        pid = 122
+        code = None
+        def poll(self): return self.code
+        def wait(self, timeout):
+            self.code = 2 if case == 'launcher_failed' else 0
+            return self.code
+    launcher = Launcher()
+    def launch(*args):
+        nonlocal calls
+        calls += 1
+        return launcher
+    snapshots = 0
+    def rows():
+        nonlocal snapshots
+        snapshots += 1
+        if snapshots == 1: return {}
+        if case == 'duplicate': return {123: app, 125: {**app, 'pid': 125}}
+        if case == 'identity_changed' and snapshots > 2: return {123: {**app, 'started_at': 'replacement'}}
+        if case == 'wrong_parent': return {123: app, 124: {**control, 'ppid': 999}}
+        if case == 'wrong_control_path': return {123: app, 124: {**control, 'executable': '/other/control'}}
+        if launcher.code is not None:
+            return {123: app} if case == 'app_still_live' else {124: control} if case == 'control_still_live' else {}
+        return {123: app, 124: control}
+    monkeypatch.setattr(measurement, 'process_rows', rows)
+    monkeypatch.setattr(measurement, 'launch_system_app', launch)
+    monkeypatch.setattr(measurement, 'read_receipt', lambda *args: None if case in ('identity_changed', 'timeout') else valid_receipt())
+    monkeypatch.setattr(measurement, 'confirm_native_quit', lambda _: pytest.fail('失败不能进入确认'))
+    if case == 'control_still_live':
+        clock = iter([0, 6])
+        monkeypatch.setattr(measurement.time, 'monotonic', lambda: next(clock))
+    with (tmp_path/'log').open('w') as log:
+        result = measurement.measure_one(executable, tmp_path/'receipt', VERSION, log, .01 if case == 'timeout' else 5, 5)
+    assert result['status'] == 'failed' and reason in result['error']
+    assert not result['native_quit_confirmed'] and calls == 1
+    assert not measurement.summarize([result], 1)['measurement_complete']
+    if case == 'timeout': assert result['launcher_running'] and result['launcher_exit_code'] is None
+
+
+def test_existing_fixed_app_blocks_system_launch(tmp_path, monkeypatch):
+    executable = tmp_path/'App.app/Contents/MacOS/app'
+    monkeypatch.setattr(measurement, 'process_rows', lambda: {1: {'pid': 1, 'executable': str(executable)}})
+    monkeypatch.setattr(measurement, 'launch_system_app', lambda *args: pytest.fail('不应再次启动'))
+    with (tmp_path/'log').open('w') as log, pytest.raises(RuntimeError, match='已运行'):
+        measurement.measure_one(executable, tmp_path/'receipt', VERSION, log, 1, 1)
 
 
 def test_real_cli_rejects_invalid_round_count_without_starting_app(tmp_path):

@@ -10,6 +10,8 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+The startup measurement tool now uses foreground system launch and checks the new App path, PID, start identity, and owned control process. It records the launcher exit code separately from the unknown App exit code and requires confirmation of normal native exit. Duplicate instances, identity changes, timeouts, and unconfirmed exits retain a failed round and stop subsequent launches. All 44 tests passed; the fixed signed App remains 037, and native acceptance of this tool change is pending.
+
 037 completed a native comparison of launch methods using the same independent library: direct execution incurred a long hidden wait, while normal system launch produced a full-readiness receipt of 5.943 seconds. Data protection and exit checks passed, with no new model execution. This does not pass initial-visibility performance or all stages; system-launch support in the startup acceptance tool remains pending. [Comparison evidence and limits](scripts/desktop/README.md#同一候选的启动测量).
 
 The startup acceptance script distinguishes full readiness from initial window visibility: it retains the 20-round, 3000-millisecond statistic and all failures, uses an explicit readiness field, and marks the initial-visibility verdict as unmeasured; historical reports are not rewritten. Only acceptance tooling and tests changed. The fixed company-signed App remains 037, with no new native performance results or model execution. See [startup measurement guidance](scripts/desktop/README.md#同一候选的启动测量).

@@ -70,42 +70,114 @@ def assert_not_running(executable):
         raise RuntimeError("无法核对 App 是否已退出")
 
 
+def process_rows():
+    """只读取进程身份，不收集参数或凭据；路径内空格必须完整保留。"""
+    observed = subprocess.run(["/bin/ps", "-axo", "pid=,ppid=,lstart=,comm="],
+                              capture_output=True, text=True, check=True, timeout=5,
+                              env={**os.environ, "LC_ALL": "C"})
+    rows = {}
+    for line in observed.stdout.splitlines():
+        fields = line.strip().split(None, 7)
+        if len(fields) != 8 or not fields[0].isdigit() or not fields[1].isdigit():
+            raise RuntimeError("无法解析进程身份，停止本轮测量")
+        pid = int(fields[0])
+        if pid in rows:
+            raise RuntimeError("进程身份重复，停止本轮测量")
+        rows[pid] = {"pid": pid, "ppid": int(fields[1]), "started_at": " ".join(fields[2:7]),
+                     "executable": fields[7]}
+    return rows
+
+
+def matching_app(rows, executable):
+    matches = [row for row in rows.values() if row["executable"] == str(executable)]
+    if len(matches) > 1:
+        raise RuntimeError("存在多个固定 App 进程，拒绝混用回执")
+    return matches[0] if matches else None
+
+
+def launch_system_app(executable, log):
+    app = executable.parents[2]
+    if app.suffix != ".app" or executable.parent != app / "Contents/MacOS":
+        raise RuntimeError("启动目标不是 App 包内固定可执行文件")
+    streams = []
+    for channel in ("stdout", "stderr"):
+        path = Path(log.name).with_name(Path(log.name).name + ".app-" + channel)
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        os.close(descriptor)
+        streams.extend(["--" + channel, str(path)])
+    return subprocess.Popen(["/usr/bin/open", "-W", "-n", str(app), *streams], stdout=log, stderr=log)
+
+
+def confirm_native_quit(pid):
+    # LaunchServices 不提供 App 退出码；不能把 open 的 0 冒充 App 正常退出。
+    try:
+        return input(f"App {pid} 和控制服务已停止。确认已通过原生退出菜单及确认框退出后，输入“已确认退出”：").strip() == "已确认退出"
+    except EOFError:
+        return False
+
+
 def measure_one(executable, receipt_path, version, log, timeout, quit_timeout):
+    if matching_app(process_rows(), executable) is not None:
+        raise RuntimeError("固定 App 已运行，拒绝复用已有进程")
     started_wall_ms = time.time_ns() // 1_000_000
     started = time.perf_counter()
-    process = subprocess.Popen([str(executable)], cwd=executable.parent, stdout=log, stderr=log)
-    result = {"pid": process.pid, "launched_at_unix_ms": started_wall_ms, "status": "waiting_first_frame"}
+    process = None
+    result = {"launched_at_unix_ms": started_wall_ms, "status": "waiting_first_frame",
+              "launch_method": "macos_launchservices_foreground", "app_exit_code": None,
+              "native_quit_confirmed": False}
     try:
+        process = launch_system_app(executable, log)
+        result["launcher_pid"] = process.pid
+        identity = None
         while time.perf_counter() - started < timeout:
-            receipt = read_receipt(receipt_path, process.pid, version, started_wall_ms, time.time_ns() // 1_000_000)
+            rows = process_rows()
+            current = matching_app(rows, executable)
+            if identity is None and current is not None:
+                identity = current
+                result.update(pid=identity["pid"], app_identity=identity)
+            elif identity is not None and current != identity:
+                raise RuntimeError("App 在有效首屏回执前退出或进程身份变化")
+            receipt = read_receipt(receipt_path, identity["pid"], version, started_wall_ms, time.time_ns() // 1_000_000) if identity else None
             if receipt is not None:
+                control = rows.get(receipt["control_pid"])
+                if (control is None or control["ppid"] != identity["pid"]
+                        or control["executable"] != str(executable.parents[1] / "Resources/resources/control/ailab-control")):
+                    raise RuntimeError("首屏回执的控制进程不属于本轮 App")
                 result.update(status="first_frame", receipt=receipt,
+                              control_identity=control,
                               launch_to_receipt_observed_ms=(time.perf_counter() - started) * 1000)
                 break
             if process.poll() is not None:
-                raise RuntimeError("App 在有效首屏回执前退出")
-            time.sleep(0.005)
+                raise RuntimeError("系统启动器在有效首屏回执前退出")
+            time.sleep(0.1)
         else:
             raise RuntimeError("等待可见首屏超时；App 保留供界面排查")
         print(json_text({"event": "first_frame", **result}).strip(), flush=True)
         # 操作者通过真实 App 的退出菜单确认退出；脚本没有退出后门或强制停止。
         code = process.wait(timeout=quit_timeout)
-        result.update(exit_code=code, status="completed" if code == 0 else "failed")
+        result["launcher_exit_code"] = code
         if code != 0:
-            result["error"] = "App 未正常退出"
+            raise RuntimeError("系统启动器未正常结束")
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            rows = process_rows()
+            if matching_app(rows, executable) is not None or identity["pid"] in rows:
+                raise RuntimeError("系统启动器结束后 App 仍在或身份被复用")
+            if receipt["control_pid"] not in rows:
+                result.update(app_exit_observed=True, control_exit_observed=True)
+                break
+            time.sleep(.1)
         else:
-            deadline = time.monotonic() + 5
-            while time.monotonic() < deadline:
-                try:
-                    os.kill(receipt["control_pid"], 0)
-                except ProcessLookupError:
-                    result["control_exit_observed"] = True
-                    break
-                time.sleep(.025)
-            else:
-                result.update(status="failed", error="App 退出后控制进程仍存在")
-    except (RuntimeError, subprocess.TimeoutExpired) as error:
+            raise RuntimeError("App 退出后控制进程仍存在")
+        if not confirm_native_quit(identity["pid"]):
+            raise RuntimeError("未确认原生正常退出；保留本轮，不计为完成")
+        result.update(native_quit_confirmed=True, status="completed")
+    except (RuntimeError, OSError, subprocess.SubprocessError) as error:
         result.update(status="failed", error=str(error))
+    finally:
+        if process is not None:
+            result["launcher_exit_code"] = process.poll()
+            result["launcher_running"] = result["launcher_exit_code"] is None
     return result
 
 
@@ -148,10 +220,10 @@ def main():
         check = subprocess.run(["/usr/bin/codesign", *args, str(app)], capture_output=True, text=True, timeout=60)
         if check.returncode or (args == ("-dvvv",) and "Authority=Apple Distribution: Global Cybersecurity Alliance Limited (R3JK7R29AC)" not in check.stderr):
             raise RuntimeError("候选 App 签名或组织校验失败")
-    report = {"schema_version": 2, "started_at": datetime.now(timezone.utc).isoformat(), "version": version,
+    report = {"schema_version": 3, "started_at": datetime.now(timezone.utc).isoformat(), "version": version,
               "app_path": str(app), "executable_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
               "library_before": assert_idle(DATA_ROOT), "rounds": [], "status": "running",
-              "scope": "同一已安装候选的独立进程启动；保留系统文件缓存，不是系统重启或干净安装。外部计时从 Popen 前至数据、环境和可见双帧完整就绪回执读回，包含文件写入及最多约 5ms 的轮询等待；不测主窗口初次可见，不判定其三秒目标。实际 UI 正常退出后再开始下一轮。"}
+              "scope": "同一已安装候选由 macOS open 正常前台启动；保留系统文件缓存，不是系统重启或干净安装。外部计时从启动 open 前至完整就绪回执读回，包含系统启动、进程检查、文件写入及约100ms轮询等待；不测主窗口初次可见，不判定其三秒目标。App退出码未知；启动器成功结束、App及控制进程消失，并由操作者确认原生正常退出后，才开始下一轮。"}
     output.mkdir(parents=True, mode=0o700)
     try:
         for index in range(arguments.rounds):
