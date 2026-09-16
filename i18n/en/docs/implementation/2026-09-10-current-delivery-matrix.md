@@ -6,6 +6,8 @@
 
 # Current Implementation, Evidence, and Remaining Delivery Matrix
 
+The same signed 037 candidate completed actual admission rejection, native report export, and reopening for an existing failed evaluation. All 11 payload files and 60884 bytes passed individual checks; 52 original resources remain, with 4 export resources added and 0 new model runs or evaluations. The quality failure remains; full M5, M0—M6, and release remain unpassed. [037 quality report acceptance](2026-09-16-ver2-4-037-quality-export.md)
+
 The same signed 037 candidate completed explicit workflow reuse, saving all three works, invalidation after upstream changes, and same-library reopening. The original 507 resources were preserved, with 14 new resources and 9 commands; model attempts and training runs were both 0. A subsequent controlled-occupancy fixture verified unchanged contents in all six tables after native rejection, followed by formal reconciliation, one advancement, and persistence across reopening; real execution races, quality, and full M4 acceptance remain pending. [037 workflow acceptance](2026-09-16-ver2-4-037-workflow-reuse.md)
 
 The fixed company-signed 037 candidate passed native offline registration and application of downloaded data: a real 292-byte download containing 2 rows was registered and applied to the original task after the provider stopped and the market reopened. Draft revision changed from 2→3, only the dataset changed, and seed 817 was preserved. Normal exit, stopped-library readback, and original-data restoration passed; full M4, M0—M6, and release remain unpassed. [037 native offline acceptance](2026-09-16-market-offline-downloads.md)

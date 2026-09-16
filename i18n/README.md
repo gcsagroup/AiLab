@@ -1,10 +1,10 @@
 # 三语文档目录 · 三語文件目錄 · Trilingual documentation
 
-全部 96 份正式文档均提供简体中文、繁体中文和英文，包括 README、CHANGELOG、用户指南、设计规范、实现记录及历史归档。原文保留在原目录，译文按相同路径镜像。
+全部 97 份正式文档均提供简体中文、繁体中文和英文，包括 README、CHANGELOG、用户指南、设计规范、实现记录及历史归档。原文保留在原目录，译文按相同路径镜像。
 
-全部 96 份正式文件均提供簡體中文、繁體中文和英文，包括 README、CHANGELOG、使用指南、設計規範、實作記錄及歷史歸檔。原文保留在原目錄，譯文按相同路徑鏡像。
+全部 97 份正式文件均提供簡體中文、繁體中文和英文，包括 README、CHANGELOG、使用指南、設計規範、實作記錄及歷史歸檔。原文保留在原目錄，譯文按相同路徑鏡像。
 
-All 96 formal documents are available in Simplified Chinese, Traditional Chinese, and English, including README, CHANGELOG, user guides, design specifications, implementation records, and historical archives. Originals retain their paths; translations mirror the same directory structure.
+All 97 formal documents are available in Simplified Chinese, Traditional Chinese, and English, including README, CHANGELOG, user guides, design specifications, implementation records, and historical archives. Originals retain their paths; translations mirror the same directory structure.
 
 简体中文是维护原文。历史状态不会因翻译变成当前能力；命令、代码示例、技术标识及原始界面引文保留原值。指向 `.artifacts` 或绝对本机路径的证据只在相应本机目录可用，不随源码仓库上传。
 
@@ -106,6 +106,7 @@ Simplified Chinese is the maintained source. Translation does not turn historica
 | docs/implementation/2026-09-16-ver2-4-034-collection-recovery.md | [阅读](../docs/implementation/2026-09-16-ver2-4-034-collection-recovery.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-034-collection-recovery.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-034-collection-recovery.md) |
 | docs/implementation/2026-09-16-ver2-4-035-native-inference.md | [阅读](../docs/implementation/2026-09-16-ver2-4-035-native-inference.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-035-native-inference.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-035-native-inference.md) |
 | docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md | [阅读](../docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-035-runtime-boundaries.md) |
+| docs/implementation/2026-09-16-ver2-4-037-quality-export.md | [阅读](../docs/implementation/2026-09-16-ver2-4-037-quality-export.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-037-quality-export.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-037-quality-export.md) |
 | docs/implementation/2026-09-16-ver2-4-037-workflow-reuse.md | [阅读](../docs/implementation/2026-09-16-ver2-4-037-workflow-reuse.md) | [閱讀](zh-TW/docs/implementation/2026-09-16-ver2-4-037-workflow-reuse.md) | [Read](en/docs/implementation/2026-09-16-ver2-4-037-workflow-reuse.md) |
 | docs/validation-report.md | [阅读](../docs/validation-report.md) | [閱讀](zh-TW/docs/validation-report.md) | [Read](en/docs/validation-report.md) |
 | packages/contracts/bootstrap.md | [阅读](../packages/contracts/bootstrap.md) | [閱讀](zh-TW/packages/contracts/bootstrap.md) | [Read](en/packages/contracts/bootstrap.md) |
