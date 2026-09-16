@@ -372,7 +372,8 @@ class Service:
                                    manifest_digest=plan["manifest_digest"], total_bytes=plan["total_bytes"], storage_path=str(destination))
             if kind == "model":
                 result.update(format=plan.get('detected_format', 'safetensors'), family=plan["family"], model_config=plan["model_config"], modality=plan.get('modality', 'text'), load_policy_ref=plan["id"],
-                              loader=plan["loader"], trust_class=plan["trust_class"], execution_scope=plan["execution_scope"])
+                              loader=plan["loader"], trust_class=plan["trust_class"], execution_scope=plan["execution_scope"],
+                              execution_boundary=actual["execution_boundary"])
                 for name in ('default_engine', 'metadata_manifest_digest', 'license'):
                     if name in plan:
                         result[name] = plan[name]

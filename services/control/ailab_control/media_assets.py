@@ -9,7 +9,7 @@ import struct
 import zlib
 from pathlib import Path, PurePosixPath
 
-from .assets import check_safetensors, regular_path, safe_json, verify_manifest
+from .assets import check_safetensors, regular_path, restricted_execution_boundary, safe_json, verify_manifest
 from .media_model_cards import CARDS
 from .storage import Fault, digest
 
@@ -62,6 +62,7 @@ def media_model_manifest(path):
             'loader': 'kokoro.fixed_official_weights_only_cpu' if official_torch else 'diffusers.fixed_local_safetensors',
             'trust_class': 'restricted_official_torch' if official_torch else 'restricted_weights',
             'execution_scope': {'network': False, 'custom_code': False, 'credentials': False},
+            'execution_boundary': restricted_execution_boundary(),
             'license': card['license'], 'can_import': True, 'issues': [],
             'warnings': [{'message': '仅验证本地加载和生成功能，输出质量需另行检查。'}]}
 

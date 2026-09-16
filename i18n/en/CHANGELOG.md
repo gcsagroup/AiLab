@@ -10,6 +10,12 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+<a id="模型导入信任与权限说明源码验证"></a>
+
+### Model Import Trust and Permission Explanations (Source Validation)
+
+Source progress: model import now explains loading trust and permissions, including fixed loaders, rejection of custom code, and limits of a same-user process. Offline options and credential environment allowlists do not provide operating-system isolation. The backend passed 40 tests and the frontend 46, with type checking passing. The fixed App remains 034 without these changes; 035 is not built and native acceptance is pending. [Model import trust boundaries](docs/implementation/2026-09-16-model-import-trust-boundary.md)
+
 <a id="人工补收恢复与生命周期修复构建前源码记录"></a>
 
 ### Collection Recovery and Lifecycle Fixes (Pre-build Source Record)

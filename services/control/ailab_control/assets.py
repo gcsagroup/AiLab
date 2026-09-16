@@ -96,6 +96,16 @@ def check_safetensors(path):
         raise Fault("INVALID_MODEL_FORMAT", "权重末尾存在未声明数据。")
 
 
+def restricted_execution_boundary():
+    """受限加载策略不是操作系统沙箱；子进程仍持有当前用户的文件权限。"""
+    return {"scope_semantics": "loader_policy_not_os_permissions",
+            "process": "separate_process", "os_sandbox": False,
+            "filesystem": "current_user_permissions",
+            "network": "offline_loader_options_not_os_block",
+            "credentials": "environment_allowlist_not_filesystem_denial",
+            "custom_code": "not_supported"}
+
+
 def model_manifest(path):
     if not path.is_dir():
         raise Fault("INVALID_MODEL_FORMAT", "请选择包含 config.json 和 safetensors 权重的模型目录。")
@@ -132,7 +142,8 @@ def model_manifest(path):
             "family": config["model_type"], "model_config": {key: config.get(key) for key in ("model_type", "hidden_size", "num_hidden_layers", "quantization", "quantization_config")},
             "total_bytes": sum(f["size"] for f in manifest),
             "loader": "mlx_lm.local_restricted", "trust_class": "restricted_weights",
-            "execution_scope": {"network": False, "custom_code": False, "credentials": False}}
+            "execution_scope": {"network": False, "custom_code": False, "credentials": False},
+            "execution_boundary": restricted_execution_boundary()}
 
 
 def dataset_report(path, schema):

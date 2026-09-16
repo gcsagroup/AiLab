@@ -267,7 +267,7 @@ describe('作品与导入重试', () => {
     const imported = vi.fn();
     render(<ImportDialog kind="model" projectId="project-a" onClose={() => {}} onImported={imported} />);
     fireEvent.change(screen.getByLabelText('模型文件路径'), { target: { value: '/models/example' } });
-    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'plan-a', can_import: true, manifest_digest: 'abc', issues: [] }) } as Response);
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'plan-a', can_import: true, manifest_digest: 'abc', issues: [], trust_class: 'restricted_weights', loader: 'mlx_lm.local_restricted', execution_boundary: { scope_semantics: 'loader_policy_not_os_permissions', process: 'separate_process', os_sandbox: false, filesystem: 'current_user_permissions', network: 'offline_loader_options_not_os_block', credentials: 'environment_allowlist_not_filesystem_denial', custom_code: 'not_supported' } }) } as Response);
     fireEvent.click(screen.getByRole('button', { name: '检查模型' }));
     await screen.findByRole('button', { name: '确认导入' });
     const normalFetch = vi.mocked(fetch).getMockImplementation()!;
