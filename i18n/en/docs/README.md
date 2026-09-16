@@ -4,6 +4,8 @@
 
 [简体中文](../../../docs/README.md) · [繁體中文](../../zh-TW/docs/README.md) · [English](README.md)
 
+The same signed 037 candidate verified native plan rejection on an actually full independent 64 MiB test volume, failure before copying, successful export after freeing space, and persistence across reopening. All 11 payload files and 60884 bytes were individually verified; the original 52 resources remain, with 0 new model runs or evaluations. The test image was detached normally. Failure during copying, full M6, M0—M6, and release remain pending. [037 disk-full recovery acceptance](implementation/2026-09-16-ver2-4-037-storage-recovery.md)
+
 The same signed 037 candidate completed actual admission rejection, native report export, and reopening for an existing failed evaluation. All 11 payload files and 60884 bytes passed individual checks; 52 original resources remain, with 4 export resources added and 0 new model runs or evaluations. The quality failure remains; full M5, M0—M6, and release remain unpassed. [037 quality report acceptance](implementation/2026-09-16-ver2-4-037-quality-export.md)
 
 The fixed company-signed 037 candidate passed native offline registration and application of downloaded data: a real 292-byte download containing 2 rows was registered and applied to the original task after the provider stopped and the market reopened. Draft revision changed from 2→3, only the dataset changed, and seed 817 was preserved. Normal exit, stopped-library readback, and original-data restoration passed; full M4, M0—M6, and release remain unpassed. [037 native offline acceptance](implementation/2026-09-16-market-offline-downloads.md)

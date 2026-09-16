@@ -10,6 +10,8 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+The same signed 037 candidate verified native plan rejection on an actually full independent 64 MiB test volume, failure before copying, successful export after freeing space, and persistence across reopening. All 11 payload files and 60884 bytes were individually verified; the original 52 resources remain, with 0 new model runs or evaluations. The test image was detached normally. Failure during copying, full M6, M0—M6, and release remain pending. [037 disk-full recovery acceptance](docs/implementation/2026-09-16-ver2-4-037-storage-recovery.md)
+
 The same signed 037 candidate completed actual admission rejection, native report export, and reopening for an existing failed evaluation. All 11 payload files and 60884 bytes passed individual checks; 52 original resources remain, with 4 export resources added and 0 new model runs or evaluations. The quality failure remains; full M5, M0—M6, and release remain unpassed. [037 quality report acceptance](docs/implementation/2026-09-16-ver2-4-037-quality-export.md)
 
 The same signed 037 candidate completed explicit workflow reuse, saving all three works, invalidation after upstream changes, and same-library reopening. The original 507 resources were preserved, with 14 new resources and 9 commands; model attempts and training runs were both 0. A subsequent controlled-occupancy fixture verified unchanged contents in all six tables after native rejection, followed by formal reconciliation, one advancement, and persistence across reopening; real execution races, quality, and full M4 acceptance remain pending. [037 workflow acceptance](docs/implementation/2026-09-16-ver2-4-037-workflow-reuse.md)
