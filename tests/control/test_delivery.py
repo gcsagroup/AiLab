@@ -1,8 +1,10 @@
 """实验适配器、来源隔离和真实本机文件导出验收。"""
 
 import copy
+import errno
 import hashlib
 import json
+import os
 from pathlib import Path
 import sqlite3
 import threading
@@ -569,27 +571,94 @@ def test_export_missing_source_after_plan_keeps_original_and_never_publishes(rig
     assert not list((tmp_path / "缺文件").glob("ailab-*"))
 
 
-def test_export_write_failure_keeps_partial_unpublished(rig, tmp_path, monkeypatch):
+@pytest.mark.parametrize('stage', ['write', 'flush', 'fsync'])
+@pytest.mark.parametrize('error_number', [errno.ENOSPC, errno.EIO])
+def test_export_write_failure_keeps_partial_unpublished(rig, tmp_path, monkeypatch, stage, error_number):
+    from ailab_control.service import Service
     client, service, _, _ = rig
     project, model, _ = setup_task(rig)
-    plan = prepare(rig, "model", model["id"], project["id"], tmp_path / "写入失败")
-    original_open = Path.open
+    target = tmp_path / "写入失败"
+    plan = prepare(rig, "model", model["id"], project["id"], target)
+    original_open, original_fsync = Path.open, os.fsync
+    source = Path(service.store.get('model', model['id'])['storage_path'])
+    source_files = {p.name: p.read_bytes() for p in source.iterdir()}
+    failed_descriptors = set()
+    injected = []
 
-    class FullDisk:
+    def fail():
+        injected.append(stage)
+        raise OSError(error_number, "本测试注入存储写入失败")
+
+    class InterruptedFile:
+        def __init__(self, stream):
+            self.stream = stream
+            failed_descriptors.add(stream.fileno())
         def __enter__(self): return self
-        def __exit__(self, *args): return False
-        def write(self, _): raise OSError(28, "本测试注入磁盘空间不足")
+        def __exit__(self, *args):
+            failed_descriptors.discard(self.stream.fileno())
+            return self.stream.__exit__(*args)
+        def write(self, block):
+            if stage == 'write':
+                # 先实际落下部分内容，才能证明失败后没有把部分包当完整包。
+                self.stream.write(block[:max(1, len(block) // 2)])
+                self.stream.flush()
+                fail()
+            return self.stream.write(block)
+        def flush(self):
+            self.stream.flush()
+            if stage == 'flush': fail()
+        def fileno(self): return self.stream.fileno()
 
     def fail_write(path, mode="r", *args, **kwargs):
         if mode == "xb" and path.name == "config.json" and any(part.endswith(".partial") for part in path.parts):
-            return FullDisk()
+            return InterruptedFile(original_open(path, mode, *args, **kwargs))
         return original_open(path, mode, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "open", fail_write)
-    record, _ = export(rig, plan)
+    def fail_sync(descriptor):
+        if stage == 'fsync' and descriptor in failed_descriptors: fail()
+        return original_fsync(descriptor)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "open", fail_write)
+        patch.setattr(os, 'fsync', fail_sync)
+        record, _ = export(rig, plan)
+    assert injected == [stage]
     assert record["state"] == "failed" and record["verified_path"] is None
     assert record["error"]["code"] == "EXPORT_INCOMPLETE"
-    assert not list((tmp_path / "写入失败").glob("ailab-*"))
+    stored = service.store.get('export', record['id'])
+    partial, final = Path(stored['partial_path']), Path(stored['final_path'])
+    partial_files = {str(p.relative_to(partial)): p.read_bytes() for p in partial.rglob('*') if p.is_file()}
+    assert set(partial_files) == {'model/config.json'}
+    contents = partial_files['model/config.json']
+    assert contents and source_files['config.json'].startswith(contents)
+    assert (len(contents) < len(source_files['config.json'])) == (stage == 'write')
+    assert not final.exists() and not (partial / 'manifest.json').exists()
+    old_attempt = service.store.get('attempt', record['attempt_id'])
+
+    # 用户重新检查后创建新导出；旧失败及部分文件保持，既有资产不修改。
+    recovered_plan = prepare(rig, 'model', model['id'], project['id'], target)
+    recovered, _ = export(rig, recovered_plan, 'export-after-storage-recovery')
+    assert recovered['state'] == 'succeeded' and recovered['id'] != record['id']
+    output = Path(recovered['verified_path'])
+    manifest = json.loads((output / 'manifest.json').read_text())
+    assert manifest['complete'] is True
+    for entry in manifest['files']:
+        assert (output / entry['path']).stat().st_size == entry['size']
+        assert file_hash(output / entry['path']) == entry['sha256']
+    assert {p.name: p.read_bytes() for p in source.iterdir()} == source_files
+    assert {str(p.relative_to(partial)): p.read_bytes() for p in partial.rglob('*') if p.is_file()} == partial_files
+    assert service.store.get('export', record['id']) == stored
+    assert service.store.get('attempt', record['attempt_id']) == old_attempt
+    service.close()
+    reopened = Service(service.settings)
+    try:
+        assert reopened.store.get('export', record['id']) == stored
+        assert reopened.store.get('attempt', record['attempt_id']) == old_attempt
+        assert reopened.delivery.export_record(reopened.store.get('export', recovered['id']))['state'] == 'succeeded'
+        attempts = reopened.store.list('attempt')
+        assert len(attempts) == 2 and all(item['executor_type'] == 'export' for item in attempts)
+    finally:
+        reopened.close()
 
 
 def test_export_interruption_reconciles_without_copy_or_model_execution(rig, tmp_path, monkeypatch):
