@@ -350,7 +350,7 @@ fn validate_request(request: &ApiRequest) -> Result<(), Value> {
     if segments[0] == "market"
         && !matches!(
             (request.method.as_str(), segments.as_slice()),
-            ("GET", ["market", "sources" | "catalog"])
+            ("GET", ["market", "sources" | "catalog" | "local-versions"])
                 | ("GET", ["market", "versions", _, "activity"])
                 | ("POST", ["market", "access-requests" | "downloads"])
                 | ("POST", ["market", "access-requests", _, "refresh"])
@@ -2086,6 +2086,10 @@ mod tests {
                 "GET",
                 "/api/v1/market/catalog?project_id=project-1&provider_id=fixture",
             ),
+            (
+                "GET",
+                "/api/v1/market/local-versions?project_id=project-1&provider_id=fixture",
+            ),
             ("GET", "/api/v1/market/versions/version-1/activity"),
             ("POST", "/api/v1/market/access-requests"),
             ("POST", "/api/v1/market/access-requests/request-1/refresh"),
@@ -2104,6 +2108,9 @@ mod tests {
         }
         for (method, path) in [
             ("POST", "/api/v1/market/sources"),
+            ("POST", "/api/v1/market/local-versions"),
+            ("GET", "/api/v1/market/local-versions/version-1"),
+            ("POST", "/api/v1/market/local-versions/version-1"),
             ("PATCH", "/api/v1/market/sources/fixture"),
             ("POST", "/api/v1/market/providers"),
             ("POST", "/api/v1/market/access-requests/request-1/approve"),

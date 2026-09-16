@@ -6,6 +6,8 @@
 
 # Current Implementation, Evidence, and Remaining Delivery Matrix
 
+Source progress: when the market catalog is unavailable, users can explicitly view completed local downloads, verify and register them, and apply them to the original draft. The 31 frontend, 63 backend, and targeted host tests passed, as did the real HTTP browser flow. The fixed App remains 036 and does not contain this fix; native acceptance and full M4 remain pending. [Offline download entry](2026-09-16-market-offline-downloads.md)
+
 The fixed company-signed 036 candidate includes the official-model runtime-boundary fix. Package checks and limited native notice acceptance passed: official-catalog and local-inspection explanations were visible, with 1 project/1 import plan and no download, import confirmation, or model execution. Normal exit and original-data protection/restoration passed; full M2 and release remain unpassed. [036 notice acceptance](2026-09-16-official-model-runtime-boundary.md)
 
 The following source-stage and earlier-candidate records retain their state when written.

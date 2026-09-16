@@ -111,6 +111,10 @@ def mount_market(app, service):
     def catalog(project_id: str, provider_id: str):
         return service.market.browse(project_id, provider_id)
 
+    @app.get('/api/v1/market/local-versions')
+    def local_versions(project_id: str, provider_id: str):
+        return service.market.local_versions(project_id, provider_id)
+
     @app.post('/api/v1/tasks/{task_id}/market-contexts')
     def context(task_id: str, payload: ContextInput, idempotency_key: str | None = Header(default=None)):
         return service.market.enter(task_id, payload.model_dump(), idempotency_key)

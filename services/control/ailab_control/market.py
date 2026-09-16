@@ -136,6 +136,16 @@ class Market:
     def sources(self):
         return [{'provider_id': item.id, 'origin': item.origin, 'source_label': LABEL, 'schemas': list(SCHEMAS), 'operations': ['browse', 'request_access', 'refresh_access', 'download', 'resume_download']} for item in self.providers.values()]
 
+    def local_versions(self, project_id, provider_id):
+        """只读已完整下载的本地版本；不请求目录或更新提供方审批。"""
+        with self.store.lock:
+            self.store.get('project', project_id)
+            self._provider(provider_id)
+            completed = {item['version_id'] for item in self.store.list('market-download', project_id)
+                         if item['state'] == 'completed' and item['complete'] is True}
+            return {'versions': [self._version(item['id']) for item in self.store.list('market-version', project_id)
+                                 if item['provider_id'] == provider_id and item['id'] in completed]}
+
     def activity(self, version_id):
         version = self._version(version_id)
         project = version['project_id']

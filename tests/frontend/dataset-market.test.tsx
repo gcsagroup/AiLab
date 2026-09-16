@@ -105,3 +105,90 @@ it('版本切换后的迟到记录不能覆盖新版本', async () => {
 it('默认来源空白有可操作重新读取入口，不创建虚构目录', async () => {
   sources = []; view(); await screen.findByRole('heading', { name: '尚未登记受控数据来源' }); expect(screen.getByRole('button', { name: '重新读取来源' })).toBeTruthy(); expect(requests.filter(item => item.method === 'GET').map(item => item.path)).toEqual(['/market/sources']);
 });
+
+it('目录离线重开后从完整下载登记并明确应用，原申请和下载入口不开放', async () => {
+  versions = [version('version-one', { access: 'restricted' })];
+  accesses = [access('approved')]; downloads = [download()];
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (input, options) => {
+    if (String(input).includes('/market/catalog?')) return response({ error: { code: 'MARKET_PROVIDER_UNAVAILABLE', message: '提供方离线' } }, false);
+    if (String(input).includes('/market/local-versions?')) return response({ versions });
+    return original(input, options);
+  });
+  const rendered = view(true);
+  await screen.findByRole('heading', { name: '目录暂未读取' });
+  fireEvent.click(screen.getByRole('button', { name: '查看已下载数据' }));
+  fireEvent.click(await screen.findByRole('button', { name: '检查并导入当前项目' }));
+  await screen.findByText('已导入当前项目');
+  expect(rendered.onApplied).not.toHaveBeenCalled();
+  expect(screen.queryByRole('button', { name: /下载此版本|新建一次下载|刷新提供方状态|提交访问申请|继续下载/ })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: '用于当前任务' }));
+  await waitFor(() => expect(rendered.onApplied).toHaveBeenCalledTimes(1));
+  expect(requests.filter(item => item.method === 'POST').map(item => item.path)).toEqual(['/tasks/task-one/market-contexts', '/market/downloads/download-one/datasets', '/market/contexts/context-one/use']);
+  expect(rendered.onApplied.mock.calls[0][0].task.draft).toEqual({ ...task.draft, dataset_id: dataset.id });
+});
+
+it('在线目录迟到不会盖过已下载视图，最新半下载不遮蔽较早完整文件', async () => {
+  let finish!: (value: Response) => void;
+  downloads = [download(), download({ id: 'incomplete', complete: false, state: 'cancelled', received_bytes: 256 })];
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (input, options) => {
+    if (String(input).includes('/market/catalog?')) return new Promise(resolve => { finish = resolve; });
+    if (String(input).includes('/market/local-versions?')) return response({ versions });
+    return original(input, options);
+  });
+  view(); await waitFor(() => expect(finish).toBeTruthy());
+  fireEvent.click(screen.getByRole('button', { name: '查看已下载数据' }));
+  await screen.findByRole('button', { name: '检查并导入当前项目' });
+  await act(async () => finish(response({ versions: [version('wrong-late')], catalog_version: 'late' })));
+  expect((screen.getByLabelText('数据版本') as HTMLSelectElement).value).toBe('version-one');
+  expect((screen.getByLabelText('下载记录') as HTMLSelectElement).options).toHaveLength(1);
+  expect(screen.queryByRole('button', { name: '继续下载保留的文件' })).toBeNull();
+  expect(requests.every(item => item.method === 'GET')).toBe(true);
+});
+
+it('本机记录读取失败不伪造离线目录，可以返回在线目录重试', async () => {
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (input, options) => String(input).includes('/market/local-versions?')
+    ? response({ error: { code: 'MARKET_SOURCE_CHANGED', message: '来源地址已经变化' } }, false) : original(input, options));
+  view(); await statement();
+  fireEvent.click(screen.getByRole('button', { name: '查看已下载数据' }));
+  await screen.findByText(/来源地址已经变化/);
+  expect(screen.queryByRole('button', { name: '检查并导入当前项目' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: '查看在线目录' }));
+  await statement(); expect(screen.getByRole('button', { name: '下载此版本' })).toBeTruthy();
+});
+
+it('本地登记响应不明时锁定模式切换，并以同一请求重试', async () => {
+  downloads = [download()];
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (input, options) => String(input).includes('/market/local-versions?') ? response({ versions }) : original(input, options));
+  view(); await statement();
+  fireEvent.click(screen.getByRole('button', { name: '查看已下载数据' }));
+  await screen.findByRole('button', { name: '检查并导入当前项目' });
+  rejection = 'CONTROL_UNAVAILABLE';
+  fireEvent.click(screen.getByRole('button', { name: '检查并导入当前项目' }));
+  await screen.findByRole('button', { name: '重试并读取原结果' });
+  expect(screen.getByRole('button', { name: '查看在线目录' }).hasAttribute('disabled')).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: '重试并读取原结果' }));
+  await screen.findByText('已导入当前项目');
+  const sent = requests.filter(item => item.path.endsWith('/datasets'));
+  expect(sent).toHaveLength(2); expect(sent[0]).toEqual(sent[1]); expect(sent[0].key).toBeTruthy();
+});
+
+it('换项目后忽略旧项目迟到的本地下载列表', async () => {
+  let finish!: (value: Response) => void;
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (input, options) => String(input).includes('/market/local-versions?project_id=project-one')
+    ? new Promise(resolve => { finish = resolve; }) : original(input, options));
+  const rendered = view(); await statement();
+  fireEvent.click(screen.getByRole('button', { name: '查看已下载数据' }));
+  await waitFor(() => expect(finish).toBeTruthy());
+  versions = [{ ...version('version-two', { name: '新项目数据' }), project_id: 'project-two' }];
+  rendered.rerender(<DatasetMarket projectId="project-two" onClose={rendered.onClose} onApplied={rendered.onApplied} onDatasetImported={rendered.onDatasetImported} />);
+  await screen.findByRole('heading', { name: '新项目数据' });
+  await act(async () => finish(response({ versions: [version('old-local', { name: '旧项目本地数据' })] })));
+  expect(screen.queryByRole('heading', { name: '旧项目本地数据' })).toBeNull();
+  expect(screen.getByRole('heading', { name: '新项目数据' })).toBeTruthy();
+  expect(requests.every(item => item.method === 'GET')).toBe(true);
+});

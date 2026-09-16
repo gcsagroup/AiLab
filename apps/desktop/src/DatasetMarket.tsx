@@ -7,7 +7,7 @@ import './DatasetMarket.css';
 
 type Source = { provider_id: string; source_label: string };
 export type MarketVersion = { id: string; project_id: string; provider_id: string; version_digest: string; metadata: { dataset_key: string; version: string; name: string; description: string; modality: 'text' | 'image'; schema: 'sft' | 'image_caption_v1'; sample_count: number | null; total_bytes: number; format: string; provider_text: string; source_url: string | null; updated_at: string | null; access: 'open' | 'restricted'; license: { reference: string | null; provider_text: string | null } | null; files: { path: string; size: number; sha256: string }[] } };
-type Catalog = { versions: MarketVersion[]; catalog_version: string };
+type Catalog = { versions: MarketVersion[]; catalog_version?: string };
 type Context = { id: string; task_id: string; draft_revision: number };
 type AccessStatus = 'waiting' | 'approved' | 'denied' | 'expired' | 'revoked';
 type ProviderResponse = { status: AccessStatus; provider_text: string; revision: number; updated_at: string; expires_at: string | null };
@@ -39,6 +39,7 @@ function mergeDownload(items: MarketDownload[], item: MarketDownload) {
 export function DatasetMarket({ projectId, task, onClose, onApplied, onDatasetImported }: Props) {
   const [sources, setSources] = useState<Source[]>([]); const [sourceId, setSourceId] = useState('');
   const [catalog, setCatalog] = useState<Catalog | null>(null); const [selectedId, setSelectedId] = useState('');
+  const [localOnly, setLocalOnly] = useState(false);
   const [query, setQuery] = useState(''); const [filter, setFilter] = useState('all');
   const [context, setContext] = useState<Context | null>(null); const [activity, setActivity] = useState<Activity>(emptyActivity);
   const [accessId, setAccessId] = useState(''); const [downloadId, setDownloadId] = useState('');
@@ -93,7 +94,7 @@ export function DatasetMarket({ projectId, task, onClose, onApplied, onDatasetIm
   useEffect(() => {
     const generation = ++epoch.current;
     busyRef.current = false; pending.current = null; setBusy(false); setContext(null); setConflict(false); setContextError(''); setError(''); setNotice('');
-    setSources([]); setSourceId(''); setCatalog(null); setSelectedId(''); setActivity(emptyActivity()); setForms({}); setQuery('');
+    setSources([]); setSourceId(''); setCatalog(null); setSelectedId(''); setActivity(emptyActivity()); setForms({}); setQuery(''); setLocalOnly(false);
     setFilter(task?.kind === 'text' || task?.kind === 'image' ? task.kind : 'all');
     if (task) {
       if (task.project_id !== projectId || task.operation !== 'train' || !['text', 'image'].includes(task.kind)) setError('此入口不属于当前项目的文本或图片训练任务。');
@@ -113,24 +114,25 @@ export function DatasetMarket({ projectId, task, onClose, onApplied, onDatasetIm
   useEffect(() => {
     if (!sourceId) return;
     let live = true; setLoading(true); setCatalog(null); setSelectedId(''); setActivity(emptyActivity()); setError('');
-    api<Catalog>('GET', `/market/catalog?project_id=${encodeURIComponent(projectId)}&provider_id=${encodeURIComponent(sourceId)}`).then(value => {
+    api<Catalog>('GET', `/market/${localOnly ? 'local-versions' : 'catalog'}?project_id=${encodeURIComponent(projectId)}&provider_id=${encodeURIComponent(sourceId)}`).then(value => {
       if (!live) return;
       setCatalog(value);
       const preferred = value.versions.filter(item => !task || item.metadata.modality === task.kind);
       setSelectedId(preferred.at(-1)?.id || value.versions.at(-1)?.id || '');
     }).catch(failure => { if (live) setError(errorMessage(failure)); }).finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
-  }, [projectId, sourceId, catalogReload]);
+  }, [projectId, sourceId, catalogReload, localOnly]);
   useEffect(() => {
     setActivity(emptyActivity()); setAccessId(''); setDownloadId(''); setNotice('');
     if (!selectedId) return;
     let live = true; setActivityLoading(true);
     api<Activity>('GET', `/market/versions/${selectedId}/activity`).then(value => {
       if (!live) return;
-      setActivity(value); setAccessId(value.access_requests.at(-1)?.id || ''); setDownloadId(value.downloads.at(-1)?.id || '');
+      const downloads = localOnly ? value.downloads.filter(item => item.state === 'completed' && item.complete) : value.downloads;
+      setActivity({ ...value, downloads }); setAccessId(value.access_requests.at(-1)?.id || ''); setDownloadId(downloads.at(-1)?.id || '');
     }).catch(failure => { if (live) setError(errorMessage(failure)); }).finally(() => { if (live) setActivityLoading(false); });
     return () => { live = false; };
-  }, [selectedId, activityReload]);
+  }, [selectedId, activityReload, localOnly]);
   useEffect(() => {
     if (!activeIds) return;
     let live = true; let timer: ReturnType<typeof setTimeout> | undefined;
@@ -162,15 +164,16 @@ export function DatasetMarket({ projectId, task, onClose, onApplied, onDatasetIm
     <ErrorNotice message={contextError || error} />{notice && <p className="market-notice" role="status">{notice}</p>}
     {pending.current && !busy && <div className="review-box"><p>上次操作的响应尚未确认。重试会使用原请求，不会重复创建申请或重新开始下载。</p><Button primary onClick={() => void execute(pending.current!)}>重试并读取原结果</Button></div>}
     {!sources.length ? <Empty title={loading ? '正在读取来源' : '尚未登记受控数据来源'} action={<Button disabled={locked} onClick={() => setSourceReload(value => value + 1)}><RefreshCw size={15} />重新读取来源</Button>}>此版本需要由本机宿主准备固定的测试提供方。</Empty> : <>
-      <div className="market-toolbar"><label>数据来源<select aria-label="数据来源" disabled={locked || loading} value={sourceId} onChange={event => setSourceId(event.target.value)}>{sources.map(item => <option key={item.provider_id} value={item.provider_id}>{item.source_label} · {item.provider_id}</option>)}</select></label><Button disabled={locked || loading} onClick={() => setCatalogReload(value => value + 1)}><RefreshCw size={15} />刷新目录</Button></div>
-      {loading ? <Empty title="正在读取提供方目录" /> : !catalog ? <Empty title="目录暂未读取" /> : <div className="market-columns"><section className="market-catalog" aria-label="数据目录"><div className="market-search"><Search size={16} /><input aria-label="搜索数据集" placeholder="搜索名称或描述" value={query} disabled={locked} onChange={event => setQuery(event.target.value)} /></div><label className="market-filter">数据类型<select aria-label="数据类型" disabled={locked} value={filter} onChange={event => setFilter(event.target.value)}><option value="all">全部类型</option><option value="text">文本</option><option value="image">图片</option></select></label><div className="market-list">{groups.length ? groups.map(item => { const versions = visible.filter(value => value.metadata.dataset_key === item.metadata.dataset_key); return <button className={data?.dataset_key === item.metadata.dataset_key ? 'selected' : ''} disabled={locked} key={item.metadata.dataset_key} onClick={() => { setSelectedId(versions.at(-1)!.id); setError(''); }}><strong>{item.metadata.name}</strong><span>{kindNames[item.metadata.modality]} · {versions.length} 个版本</span><small>{item.metadata.description}</small></button>; }) : <p className="muted">没有匹配的数据集。</p>}</div></section>
+      <div className="market-toolbar"><label>数据来源<select aria-label="数据来源" disabled={locked || loading} value={sourceId} onChange={event => setSourceId(event.target.value)}>{sources.map(item => <option key={item.provider_id} value={item.provider_id}>{item.source_label} · {item.provider_id}</option>)}</select></label><Button disabled={locked} onClick={() => setLocalOnly(value => !value)}>{localOnly ? '查看在线目录' : '查看已下载数据'}</Button><Button disabled={locked || loading} onClick={() => setCatalogReload(value => value + 1)}><RefreshCw size={15} />{localOnly ? '刷新已下载记录' : '刷新目录'}</Button></div>
+      {localOnly && <p className="market-notice" role="status">正在查看本机已下载版本，不连接提供方。申请、新下载和续传请返回在线目录；导入时仍会核对文件与来源。</p>}
+      {loading ? <Empty title={localOnly ? '正在读取已下载数据' : '正在读取提供方目录'} /> : !catalog ? <Empty title={localOnly ? '已下载记录暂未读取' : '目录暂未读取'} /> : <div className="market-columns"><section className="market-catalog" aria-label="数据目录"><div className="market-search"><Search size={16} /><input aria-label="搜索数据集" placeholder="搜索名称或描述" value={query} disabled={locked} onChange={event => setQuery(event.target.value)} /></div><label className="market-filter">数据类型<select aria-label="数据类型" disabled={locked} value={filter} onChange={event => setFilter(event.target.value)}><option value="all">全部类型</option><option value="text">文本</option><option value="image">图片</option></select></label><div className="market-list">{groups.length ? groups.map(item => { const versions = visible.filter(value => value.metadata.dataset_key === item.metadata.dataset_key); return <button className={data?.dataset_key === item.metadata.dataset_key ? 'selected' : ''} disabled={locked} key={item.metadata.dataset_key} onClick={() => { setSelectedId(versions.at(-1)!.id); setError(''); }}><strong>{item.metadata.name}</strong><span>{kindNames[item.metadata.modality]} · {versions.length} 个版本</span><small>{item.metadata.description}</small></button>; }) : <p className="muted">{localOnly && !query.trim() && filter === 'all' ? '此来源在当前项目还没有完整下载的数据。' : '没有匹配的数据集。'}</p>}</div></section>
       <section className="market-detail" aria-label="数据版本详情">{!selected || !data ? <Empty title="选择一个数据集查看版本" /> : <>
         <div className="section-title"><h3>{data.name}</h3><Badge>{kindNames[data.modality]}</Badge></div><p className="muted">{data.description}</p>
         <label>数据版本<select aria-label="数据版本" value={selectedId} disabled={locked || activityLoading} onChange={event => { setSelectedId(event.target.value); setError(''); }}>{catalog.versions.filter(item => item.metadata.dataset_key === data.dataset_key).map(item => <option key={item.id} value={item.id}>{item.metadata.version}</option>)}</select></label>
         <dl className="facts"><div><dt>数据格式</dt><dd>{data.format} · {data.schema === 'sft' ? '对话训练 SFT' : '图片与描述'}</dd></div><div><dt>样本数量</dt><dd>{data.sample_count === null ? '提供方未填写' : `${data.sample_count} 条`}</dd></div><div><dt>下载大小</dt><dd>{readableSize(data.total_bytes)} · {data.files.length} 个文件</dd></div><div><dt>更新时间</dt><dd>{data.updated_at ? formatDate(data.updated_at) : '提供方未填写'}</dd></div><div><dt>来源记录</dt><dd>{data.source_url || '提供方未填写链接'}</dd></div></dl>
         <details><summary>查看提供方原文与完整性信息</summary><h4>提供方说明</h4><p className="market-original">{data.provider_text || '提供方未填写'}</p><h4>原始许可材料</h4><p className="market-original">{data.license?.provider_text || '未提供许可原文'}</p><p className="muted">引用：{data.license?.reference || '未提供'}</p><p className="muted">下载前样例：提供方尚未公开；导入时会检查实际文件。</p><dl className="facts"><div><dt>版本摘要</dt><dd><code>{selected.version_digest}</code></dd></div></dl>{data.files.map(item => <p className="market-file" key={item.path}><strong>{item.path}</strong> · {readableSize(item.size)}<code>{item.sha256}</code></p>)}</details>
         {activityLoading ? <Empty title="正在读取此版本的申请与下载记录" /> : <>
-          <section className="market-access"><h4>访问与下载</h4>{data.access === 'open' ? <Badge tone="success">提供方开放下载</Badge> : <>
+          {!localOnly && <section className="market-access"><h4>访问与下载</h4>{data.access === 'open' ? <Badge tone="success">提供方开放下载</Badge> : <>
             <Badge tone={access?.provider_response.status === 'approved' && !expired ? 'success' : 'warning'}>{access ? accessNames[access.provider_response.status] : '需要申请访问'}</Badge>
             {activity.access_requests.length > 1 && <label>申请记录<select aria-label="申请记录" value={accessId} disabled={locked} onChange={event => setAccessId(event.target.value)}>{activity.access_requests.map(item => <option key={item.id} value={item.id}>{formatDate(item.created_at)} · {accessNames[item.provider_response.status]}</option>)}</select></label>}
             {access && <div className="market-provider-response"><p className="market-original">{access.provider_response.provider_text || '提供方没有附加说明。'}</p><small>提供方回复第 {access.provider_response.revision} 版 · {formatDate(access.provider_response.updated_at)}{access.provider_response.expires_at && <> · 有效期至 {formatDate(access.provider_response.expires_at)}</>}</small>{expired && <p className="warning">此回复的有效期已结束，当前不能下载。</p>}<Button disabled={locked} onClick={() => mutate('refresh', `/market/access-requests/${access.id}/refresh`, {})}><RefreshCw size={14} />刷新提供方状态</Button><details><summary>已提交内容与历史回复</summary><p className="market-original">用途：{access.sent.purpose}</p><p className="market-original">使用声明：{access.sent.user_statement}</p>{access.response_history.map((item, index) => <p key={index} className="market-original">第 {item.response.revision} 版 · {accessNames[item.response.status]}：{item.response.provider_text}</p>)}</details></div>}
@@ -180,7 +183,7 @@ export function DatasetMarket({ projectId, task, onClose, onApplied, onDatasetIm
           {data.access === 'restricted' && (!access || ['denied', 'expired', 'revoked'].includes(access.provider_response.status) || expired) && <><small className="muted">提交只发送提供方和数据版本、填写的用途与声明，以及用于避免重复申请的请求编号。</small><Button disabled={locked || !form.purpose.trim() || !form.statement.trim()} onClick={() => mutate('access', '/market/access-requests', { version_id: selected.id, purpose: form.purpose, user_statement: form.statement })}>{access ? '重新提交访问申请' : '提交访问申请'}</Button></>}
           <Button primary disabled={locked || !granted || !form.statement.trim() || activeDownload} onClick={() => mutate('start', '/market/downloads', { version_id: selected.id, user_statement: form.statement, ...(data.access === 'restricted' && access ? { access_id: access.id } : {}) })}><Download size={15} />{activity.downloads.length ? '新建一次下载' : '下载此版本'}</Button>
           {!granted && <small className="muted">提供方批准且仍在有效期内时才可下载，应用不会代为批准。</small>}
-          </section>
+          </section>}
           {activity.downloads.length > 0 && <section className="market-download" aria-label="下载与导入"><label>下载记录<select aria-label="下载记录" value={downloadId} disabled={locked} onChange={event => setDownloadId(event.target.value)}>{activity.downloads.map(item => <option key={item.id} value={item.id}>{formatDate(item.created_at)} · {downloadNames[item.state]}</option>)}</select></label>{download && <>
             <strong>{download.cancel_requested && selectedActive ? '正在停止下载，保留原字节' : downloadNames[download.state]}</strong><progress aria-label="下载进度" max={data.total_bytes} value={download.received_bytes} /><small>{readableSize(download.received_bytes)} / {readableSize(data.total_bytes)} · {percent.toFixed(1)}%</small>
             {download.error && <p className="warning">{download.error.message}</p>}

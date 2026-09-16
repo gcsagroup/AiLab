@@ -2,6 +2,8 @@
 
 [简体中文](README.md) · [繁體中文](../i18n/zh-TW/docs/README.md) · [English](../i18n/en/docs/README.md)
 
+源码进展：市场目录不可用时可明确查看本机完整下载，检查登记并用于原草稿。31 项前端、63 项后端及宿主定向测试通过，真实 HTTP 浏览器流程通过；固定 App 仍为 036，未包含本轮修复，原生验收与完整 M4 待完成。 [离线下载入口](implementation/2026-09-16-market-offline-downloads.md)
+
 036 固定公司签名候选已包含官方模型运行边界修复，整包与原生告知有限验收通过：官方目录及本地检查说明可见；1 项目／1 导入计划，未下载、确认导入或运行模型。正常退出与原资料保护恢复通过，完整 M2 和发行未通过。 [036 告知验收](implementation/2026-09-16-official-model-runtime-boundary.md)
 
 以下源码阶段与旧候选记录保留形成时状态。
