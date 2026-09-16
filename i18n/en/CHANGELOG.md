@@ -10,6 +10,12 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+<a id="人工补收恢复与生命周期修复构建前源码记录"></a>
+
+### Collection Recovery and Lifecycle Fixes (Pre-build Source Record)
+
+Source progress: fixes recover manual collection stuck in collecting after interruption and cover computation finishing first, failed-exit records, and stop-signal errors. The final integrated regression passed 221 tests. The fixed signed App remains 033 and does not contain these changes; no 034 build has occurred, and complete M1 and release status do not advance. [Collection recovery and source limits](docs/implementation/2026-09-16-collection-recovery-source-progress.md)
+
 <a id="数据划分读取与人工补收修复构建前源码记录"></a>
 
 ### Dataset Read and Manual Collection Fixes (Pre-build Source Record)

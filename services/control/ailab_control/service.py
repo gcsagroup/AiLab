@@ -161,6 +161,10 @@ class Service:
 
     def _recover(self):
         with self.store.transaction():
+            pending_collections = {}
+            for collection in self.store.list("collection"):
+                if collection["state"] == "collecting":
+                    pending_collections.setdefault(collection["attempt_id"], []).append(collection)
             for attempt in self.store.list("attempt"):
                 if attempt["state"] not in TERMINAL:
                     attempt["connection_state"] = "disconnected"
@@ -168,6 +172,21 @@ class Service:
                     attempt["state_version"] += 1
                     attempt["recovery_required"] = True
                     self.store.event(attempt, "warning", {"code": "CONTROL_RESULT_UNKNOWN", "message": "控制服务曾中断，原执行未重新启动；停止结果待核实。"})
+                elif (attempt["state"] in {"failed", "cancelled"}
+                      and attempt.get("compute_outcome") == "succeeded"
+                      and attempt.get("collection_state") == "collecting"
+                      and attempt.get("output_manifest_ref")):
+                    # 已取得资料目录独占锁，旧控制进程的本地补收不可能继续。
+                    # 补收引用已终结的计算；只释放收集状态，不改写原终态或重新执行。
+                    pending = pending_collections.get(attempt["id"], [])
+                    if (len(pending) == 1 and pending[0]["project_id"] == attempt["project_id"]
+                            and pending[0]["manifest_digest"] == attempt["output_manifest_ref"]["digest"]):
+                        collection = pending[0]
+                        error = {"code": "COLLECTION_INTERRUPTED", "message": "控制服务在产物补收期间中断，计算结果保留，可重新补收。"}
+                        collection.update(state="failed", error=error, finished_at=now())
+                        self.store.put("collection", collection)
+                        attempt.update(collection_state="failed", collection_version=attempt["collection_version"] + 1)
+                        self.store.event(attempt, "collection_changed", {"collection_id": collection["id"], "state": "failed", "error": error})
 
     def close(self):
         # 串行处理生命周期退出和显式关闭；后台收尾不取此锁，避免 join 互相等待。
@@ -917,7 +936,12 @@ class Service:
                 self.transition(attempt, "cancelling", "正在等待本次执行实际停止。")
                 process = self.processes.get(attempt_id)
                 if process:
-                    self._signal(process, signal.SIGKILL if force else signal.SIGTERM)
+                    try:
+                        self._signal(process, signal.SIGKILL if force else signal.SIGTERM)
+                    except OSError:
+                        # 信号被拒绝不是停止确认；保留取消意图和设备占用，允许再核实或重试。
+                        attempt["stop_status"] = "unknown"
+                        command.update(result="failed", code="CONTROL_SIGNAL_FAILED", message="停止信号未能发送，尚未确认执行进程停止。")
                 elif attempt["compute_outcome"] == "pending" and attempt.get("executor_type") != "export":
                     attempt.update(stop_status="confirmed", compute_outcome="cancelled", terminal_reason="CANCELLED_BEFORE_START")
                     command["result"] = "confirmed"
@@ -1047,6 +1071,14 @@ class Service:
                     attempt.update(stop_status="unknown", recovery_required=True)
                     self.store.event(attempt, "warning", {"code": "CONTROL_RESULT_UNKNOWN", "message": "主执行进程报告完成，但仍有同组进程存活；尚未收集产物或释放设备。"})
                     return
+                command = attempt.get("last_control", {})
+                if command.get("action") in {"pause", "resume"} and command.get("result") == "accepted":
+                    # 计算已抢先完成，原暂停／恢复接收回执不能永久显示为仍待执行。
+                    issued = self.store.get("training-control", command["command_id"])
+                    if issued.get("attempt_id") == attempt_id and issued.get("result") == "accepted":
+                        command.update(result="not_applicable", code="COMPUTE_COMPLETED", message="计算已完成，本次检查点控制未执行。", completed_at=now())
+                        self.store.put("training-control", command)
+                        self.store.event(attempt, "control_result", command)
                 self.transition(attempt, "finalizing", "计算完成，正在校验与保存产物。")
             self.collect(attempt_id)
         except BaseException as error:
@@ -1067,6 +1099,9 @@ class Service:
             with self.store.transaction():
                 attempt = self.store.get("attempt", attempt_id)
                 if attempt["state"] not in TERMINAL:
+                    # 前面的失败事务可能回滚退出字段；重新持久化实际观察到的退出证据。
+                    if process and process.poll() is not None and attempt.get("process", {}).get("pid") == process.pid:
+                        attempt["process"].update(returncode=process.returncode, exited_at=now())
                     fault = error if isinstance(error, Fault) else Fault("EXECUTION_FAILED", "执行或产物登记失败，请查看本次运行记录。", 500)
                     if process and self.group_present(process.pid):
                         attempt.update(stop_status="unknown", recovery_required=True)

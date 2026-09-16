@@ -35,7 +35,7 @@ def launch(directory, *extra, entrypoint=None, env_extra=None):
     deadline = time.monotonic() + 8
     while time.monotonic() < deadline:
         try:
-            if httpx.get(f"http://127.0.0.1:{connection['port']}/health", timeout=0.2).status_code == 200:
+            if httpx.get(f"http://127.0.0.1:{connection['port']}/health", timeout=0.2, trust_env=False).status_code == 200:
                 return child, connection
         except httpx.HTTPError:
             pass
@@ -54,7 +54,8 @@ def stop(child, kill=False):
 
 
 def client_for(connection):
-    return httpx.Client(base_url=f"http://127.0.0.1:{connection['port']}/api/v1", headers={"Authorization": "Bearer " + connection["token"]}, timeout=30)
+    # 此合同只访问本测试启动的回环服务，不能经由系统代理接收替代响应。
+    return httpx.Client(base_url=f"http://127.0.0.1:{connection['port']}/api/v1", headers={"Authorization": "Bearer " + connection["token"]}, timeout=30, trust_env=False)
 
 
 def test_real_loopback_token_file_and_process_exclusive_lock(tmp_path):
@@ -165,7 +166,8 @@ def test_real_sigkill_at_two_phase_launch_boundaries(tmp_path, phase):
             checked = client.post(f"/tasks/{task['id']}/preflight", json={"draft_revision": task["draft_revision"]}).json()
             assert checked["can_submit"], checked
             try:
-                client.post(f"/tasks/{task['id']}/attempts", json={"preflight_id": checked["id"], "expected_revision": task["draft_revision"]}, headers={"Idempotency-Key": "run"})
+                submitted = client.post(f"/tasks/{task['id']}/attempts", json={"preflight_id": checked["id"], "expected_revision": task["draft_revision"]}, headers={"Idempotency-Key": "run"})
+                assert submitted.status_code == 200, submitted.text
             except httpx.HTTPError:
                 pass
         child.wait(timeout=10)
