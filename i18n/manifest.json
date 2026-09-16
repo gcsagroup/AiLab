@@ -2,19 +2,19 @@
   "documents": [
     {
       "source": "CHANGELOG.md",
-      "source_sha256": "7daa39c48e8233a04154ff0a0b1200ac767b6032b238c050ce3e498b0e56bce4",
+      "source_sha256": "2be207d2560a39a351b804fd8757bb0b7ca2658f7adff38d79975f77b09c7315",
       "en": "i18n/en/CHANGELOG.md",
       "zh-TW": "i18n/zh-TW/CHANGELOG.md",
-      "zh-TW_sha256": "0c8f8195c96d497470aa6c89bee14171b651a09deec76842a73669f65d7a7dd1",
-      "en_sha256": "8e77005ef78449e00e80166dbfb606f90143f1733cbf58d2bb44eab645f9a20f"
+      "zh-TW_sha256": "b2899271e4e4d511ca5b73561ee57f229a874c98d4dba7a43217fbb3dbd63720",
+      "en_sha256": "cdd5f1c7955f54c6a0db293b056d8fc7af7fc069c4c62f4416d518f3ecfe8b22"
     },
     {
       "source": "README.md",
-      "source_sha256": "afff309f901a27a5cb7063655435f4dd6194048360f4e5516ff0b3aabc78001b",
+      "source_sha256": "9cc023a7405cce627f0e76c2bfdbf947a217caa4b582099eee3a00c35ba2f1f1",
       "en": "i18n/en/README.md",
       "zh-TW": "i18n/zh-TW/README.md",
-      "zh-TW_sha256": "79a612778453ca589ce4350feb785c78cba0a6b2ec3854eaa950d45a9087ddc6",
-      "en_sha256": "392ed33272f2ca993fdf28426f14219dc7f27951918db02e508022400fa483b2"
+      "zh-TW_sha256": "9773db09a8bd219b02fbba63df7fa2e25268c38f4958668e2a60a8bffaf0e46a",
+      "en_sha256": "267146a6f8c8dfd9b557ddc4aecb3a9ae7246764f6bc08b16c5f6cd2f0440013"
     },
     {
       "source": "adapters/media/ACCEPTANCE.md",
@@ -202,11 +202,11 @@
     },
     {
       "source": "docs/README.md",
-      "source_sha256": "5718c2125b95d7fd0624f7870a900643f79c7bc0e4aa317e8bcbba22927c5c65",
+      "source_sha256": "af28e2f35dc646623ac1ec2854a744ccc9af8536d143232fe4eeee1f07fcce8d",
       "en": "i18n/en/docs/README.md",
       "zh-TW": "i18n/zh-TW/docs/README.md",
-      "zh-TW_sha256": "f05f04a281e5d5d2efeda5eaee4afe8c0d069bf6c9c198c207bacb08e3a898c8",
-      "en_sha256": "2f8fa04c4ac53d4ed8ee7dcf5e4e19cc78012211ed4ff5104a174c056aa8195b"
+      "zh-TW_sha256": "d544cf4d8015310cdd0461551dd3c064e7640448af220c4f4c8fc85095a28ca4",
+      "en_sha256": "430b12da782fa92c53243642c5f0d5c77153a50a55a9be36f7eb898f8c933bb8"
     },
     {
       "source": "docs/USER_GUIDE.zh-CN.md",
@@ -362,11 +362,11 @@
     },
     {
       "source": "docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "source_sha256": "91afcfc071fa6bbc45087548fbcab88353ebd88483796d4cb0528a6621372b86",
+      "source_sha256": "1606a5f30c517b0860e669bf83f8cd694ef1f22b346c5ffcda17c47adb7e2cfd",
       "en": "i18n/en/docs/implementation/2026-09-10-current-delivery-matrix.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "zh-TW_sha256": "b279b64e83b13ad5add31ce72ec0b0dbfc43fca6e6f492c08336e1d936ffb990",
-      "en_sha256": "1761619744e3d59b76680b433223bd2631529d790ac6036604a68d75f0066b90"
+      "zh-TW_sha256": "0e5c8c35e2c87a79a1584164873000214954a17512cfd30c62408c9aad18e68d",
+      "en_sha256": "8dc9a86ab44de85b52c19e5903db1580db81fbca185fc2e666a9324753896609"
     },
     {
       "source": "docs/implementation/2026-09-10-execution-board.md",
@@ -745,6 +745,14 @@
       "en_sha256": "4e19f17bf489af2b34a93b75bf0772eb499374f86ad7efdd75403fbaf9bd38e5"
     },
     {
+      "source": "docs/implementation/2026-09-16-ver2-4-038-export-identity.md",
+      "en": "i18n/en/docs/implementation/2026-09-16-ver2-4-038-export-identity.md",
+      "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-16-ver2-4-038-export-identity.md",
+      "source_sha256": "e150a9489546091c9f4105b6b822a4dbc7b549b6a1ca652cd3c94907ada80744",
+      "en_sha256": "3471bb3d9349120ae818185c7fa149b5d87d9d15989000606d1ad6ae49281d26",
+      "zh-TW_sha256": "c29a21b4d10792aab5b7af927a169470cd5a1d9de1f1da2e55f95ade71f84982"
+    },
+    {
       "source": "docs/validation-report.md",
       "source_sha256": "028a913c1638b9d73b0d1db13819fc1d7dbffc39f8c296ca0e94af0563fa1038",
       "en": "i18n/en/docs/validation-report.md",
@@ -794,5 +802,5 @@
   ],
   "source_language": "zh-CN",
   "index": "i18n/README.md",
-  "index_sha256": "93e627676b2737dfd2ea27d63a36679a2fb4bdc75b737844aca311edc7eb3016"
+  "index_sha256": "56e30fafb242719a22ca550a1703aa4545c52e43f559334c3042021cac2f844b"
 }

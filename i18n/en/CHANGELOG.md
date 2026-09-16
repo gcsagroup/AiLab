@@ -10,6 +10,10 @@ This record distinguishes source changes, local signed candidates, and formal re
 
 ## Unreleased
 
+The fixed company-signed 038 candidate includes the complete export manifest identity fix. Rejection of an incorrect version after controlled registration failure and a successful new export passed in the packaged service, followed by native inspection, normal exit, and reopening of the formally restored library; the database was entirely unchanged after the second shutdown. No new model runs occurred; full M6, M0—M6, and release remain incomplete. [038 acceptance and boundaries](docs/implementation/2026-09-16-ver2-4-038-export-identity.md)
+
+The following records retain their state when written.
+
 Fixed source-level export recovery accepting changed manifest identity: verification now checks the complete frozen manifest and rejects incorrect objects or versions, missing fields, extra claims, and incorrect types. All 179 regression tests passed. The fix is not yet included in the fixed signed 037 App; native interruption recovery remains pending.
 
 Native revalidation of the startup tool’s system-launch and shutdown-sidecar fixes is complete. For the fixed 037 candidate, one round recorded host full readiness at 4.933 seconds and external observation at 5.029 seconds. Native Quit, operator acknowledgement, process disappearance, and the stopped snapshot passed; original library protection was restored, with no new model execution. The first-round sidecar failure remains preserved, and all 50 measurement tests passed. The 20 initial-visibility measurements and full-stage acceptance remain incomplete. [Native tool revalidation](scripts/desktop/README.md#同一候选的启动测量).
