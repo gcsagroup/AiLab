@@ -89,7 +89,7 @@ services/control/.venv/bin/python scripts/desktop/verify_startup.py \
   --output .artifacts/desktop/startup-acceptance-v1 --rounds 20
 ```
 
-The output directory must not already exist; each round separately saves its receipt, externally measured duration, and quit result. The target passes only if all 20 rounds complete within 3000 milliseconds each; failed rounds and old batches are retained. This measures independent process launches while preserving the OS file cache, not system restarts or clean installation. Before starting, it rejects version/signature mismatches, existing App processes, unfinished tasks, pending restores, and active downloads.
+The output directory must not already exist; each round separately saves its receipt, externally measured duration, and quit result. Reports use `schema_version: 2`; the former `twenty_launch_target_passed` field becomes `twenty_full_readiness_under_3000_ms`, still checking whether all 20 completed rounds take no more than 3000 milliseconds each. This value describes full readiness only; `initial_visibility_target_passed` remains `null` and `initial_visibility_evidence` is `not_measured`. The initial-visibility target still requires 20 independent measurements of the real interface. Failed rounds, slow samples, and old batches remain; historical reports are not rewritten. This measures independent process launches while preserving the OS file cache, not system restarts or clean installation. Before starting, it rejects version/signature mismatches, existing App processes, unfinished tasks, pending restores, and active downloads.
 
 <a id="本地候选更新与恢复"></a>
 

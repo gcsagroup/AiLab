@@ -46,15 +46,33 @@ def test_atomic_valid_receipt_and_unreadable_content(tmp_path):
     assert measurement.read_receipt(path, 123, VERSION, 1_000_000, 1_000_050) == valid_receipt()
 
 
-def test_target_requires_twenty_complete_launches_and_every_sample_under_three_seconds():
+def test_readiness_statistic_requires_twenty_complete_launches_without_claiming_initial_visibility():
     rounds = [{"status": "completed", "launch_to_receipt_observed_ms": 1000 + i} for i in range(20)]
-    assert measurement.summarize(rounds, 20)["twenty_launch_target_passed"]
-    assert not measurement.summarize(rounds[:19], 20)["twenty_launch_target_passed"]
-    assert not measurement.summarize(rounds[:1], 1)["twenty_launch_target_passed"]
+    assert measurement.summarize(rounds, 20)["twenty_full_readiness_under_3000_ms"]
+    assert not measurement.summarize(rounds[:19], 20)["twenty_full_readiness_under_3000_ms"]
+    assert not measurement.summarize(rounds[:1], 1)["twenty_full_readiness_under_3000_ms"]
+    for samples, requested in ((rounds, 20), (rounds[:19], 20), (rounds[:1], 1), ([], 20)):
+        summary = measurement.summarize(samples, requested)
+        assert summary["measurement_kind"] == "full_readiness_receipt_observed"
+        assert summary["initial_visibility_target_passed"] is None
+        assert summary["initial_visibility_evidence"] == "not_measured"
+        assert "twenty_launch_target_passed" not in summary
     rounds[-1]["launch_to_receipt_observed_ms"] = 3000.01
     summary = measurement.summarize(rounds, 20)
     assert summary["p95_ms"] == 1018 and summary["over_3000_ms"] == 1
-    assert not summary["twenty_launch_target_passed"]
+    assert not summary["twenty_full_readiness_under_3000_ms"]
+    assert summary["initial_visibility_target_passed"] is None
+
+
+def test_failed_slow_round_remains_incomplete_and_does_not_pass_readiness_statistic():
+    rounds = [{"status": "completed", "launch_to_receipt_observed_ms": 1200} for _ in range(19)]
+    rounds.append({"status": "failed", "launch_to_receipt_observed_ms": 5000, "error": "App 未正常退出"})
+    original = json.dumps(rounds)
+    summary = measurement.summarize(rounds, 20)
+    assert summary["completed"] == 19 and not summary["measurement_complete"]
+    assert not summary["twenty_full_readiness_under_3000_ms"]
+    assert summary["initial_visibility_target_passed"] is None
+    assert json.dumps(rounds) == original
 
 
 def test_selected_library_nonterminal_attempt_prevents_repeated_launches(tmp_path):

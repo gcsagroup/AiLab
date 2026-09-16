@@ -75,7 +75,7 @@ services/control/.venv/bin/python scripts/desktop/verify_startup.py \
   --output .artifacts/desktop/startup-acceptance-v1 --rounds 20
 ```
 
-输出目录必须不存在，每轮单独保存回执、外部耗时和退出结果。完整20轮全部不超过3000毫秒才判目标通过；失败轮和旧批次保留。这是独立进程启动测量，保留操作系统文件缓存，不代表系统重启或干净安装。启动前会拒绝版本或签名不符、已有App进程、未结束任务、恢复待处理和活动下载。
+输出目录必须不存在，每轮单独保存回执、外部耗时和退出结果。报告版本为 `schema_version: 2`；原 `twenty_launch_target_passed` 字段改为 `twenty_full_readiness_under_3000_ms`，仍统计完整20轮是否全部不超过3000毫秒。该值只描述完整就绪；`initial_visibility_target_passed` 保持 `null`，`initial_visibility_evidence` 为 `not_measured`，初显目标仍须独立的20次真实界面测量。失败轮、慢样本及旧批次保留，不回写历史报告。这是独立进程启动测量，保留操作系统文件缓存，不代表系统重启或干净安装。启动前会拒绝版本或签名不符、已有App进程、未结束任务、恢复待处理和活动下载。
 
 ## 本地候选更新与恢复
 

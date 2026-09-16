@@ -1,4 +1,4 @@
-"""逐轮启动固定候选 App，等待首屏回执和正常退出；不代替实际界面操作。"""
+"""逐轮测量固定候选的完整就绪回执；初次可见目标仍须独立界面证据。"""
 
 import argparse
 from contextlib import closing
@@ -111,12 +111,17 @@ def measure_one(executable, receipt_path, version, log, timeout, quit_timeout):
 
 def summarize(rounds, requested):
     values = [value["launch_to_receipt_observed_ms"] for value in rounds if value.get("status") == "completed"]
-    summary = {"requested": requested, "completed": len(values), "measurement_complete": len(values) == requested}
+    summary = {"requested": requested, "completed": len(values), "measurement_complete": len(values) == requested,
+               "measurement_kind": "full_readiness_receipt_observed",
+               "initial_visibility_target_passed": None,
+               "initial_visibility_evidence": "not_measured"}
     if values:
         ordered = sorted(values)
         summary.update(median_ms=statistics.median(values), p95_ms=ordered[math.ceil(len(values) * .95) - 1],
                        maximum_ms=max(values), over_3000_ms=sum(value > 3000 for value in values))
-    summary["twenty_launch_target_passed"] = requested >= 20 and len(values) == requested and max(values, default=math.inf) <= 3000
+    # 继续保留原 20 轮／3000ms 统计，但完整就绪迟于初显，不能据此判初显失败。
+    # 本脚本也未采集初显帧；快样本不代替冻结需求要求的独立界面验收。
+    summary["twenty_full_readiness_under_3000_ms"] = requested >= 20 and len(values) == requested and max(values, default=math.inf) <= 3000
     return summary
 
 
@@ -143,10 +148,10 @@ def main():
         check = subprocess.run(["/usr/bin/codesign", *args, str(app)], capture_output=True, text=True, timeout=60)
         if check.returncode or (args == ("-dvvv",) and "Authority=Apple Distribution: Global Cybersecurity Alliance Limited (R3JK7R29AC)" not in check.stderr):
             raise RuntimeError("候选 App 签名或组织校验失败")
-    report = {"schema_version": 1, "started_at": datetime.now(timezone.utc).isoformat(), "version": version,
+    report = {"schema_version": 2, "started_at": datetime.now(timezone.utc).isoformat(), "version": version,
               "app_path": str(app), "executable_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
               "library_before": assert_idle(DATA_ROOT), "rounds": [], "status": "running",
-              "scope": "同一已安装候选的独立进程启动；保留系统文件缓存，不是系统重启或干净安装。外部计时从 Popen 前至可见首屏回执读回，包含文件写入及最多约 5ms 的轮询等待；实际 UI 正常退出后再开始下一轮。"}
+              "scope": "同一已安装候选的独立进程启动；保留系统文件缓存，不是系统重启或干净安装。外部计时从 Popen 前至数据、环境和可见双帧完整就绪回执读回，包含文件写入及最多约 5ms 的轮询等待；不测主窗口初次可见，不判定其三秒目标。实际 UI 正常退出后再开始下一轮。"}
     output.mkdir(parents=True, mode=0o700)
     try:
         for index in range(arguments.rounds):
