@@ -6,6 +6,8 @@
 
 # Current Implementation, Evidence, and Remaining Delivery Matrix
 
+The same company-signed 039 candidate completed 12 native exports of real objects: all 64 content files and 12 manifests passed verification, preserving the original 507 resources. Formal restoration, schema migration, normal exit, and original-data protection checks passed, with no new model runs. Dataset-split export, reopening this library, and full AC27／M6 remain pending. [Twelve-export acceptance](2026-09-20-ver2-4-039-twelve-exports.md)
+
 The fixed company-signed 039 candidate includes the export directory-entry fix. Its actual packaged service rejected 4 invalid entry types, recovered a valid interrupted package, and completed a fresh export. Native inspection of failed and successful records, normal exit, and reopening of the formally restored library passed. No new models ran; full AC27, M6, M0—M6, and release remain incomplete. [039 acceptance and boundaries](2026-09-16-export-tree-integrity.md)
 
 The following records retain their state when written.
