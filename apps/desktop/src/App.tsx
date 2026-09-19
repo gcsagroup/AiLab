@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AudioLines, Boxes, ChevronRight, Database, FlaskConical, Folder, FolderHeart, History, Image, LayoutDashboard, MessagesSquare, Play, Plus, RefreshCw, Server, Settings2, Sparkles, Video } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
-import { api, collection, mergeRecords, canPickFile, errorMessage, pickWorkerPython, pickMediaPython, restartControl, useBundledWorker, useBundledMedia, invalidateNativeConnection, observeNativeConnection, pendingNativeConnectionChange } from './api';
+import { api, collection, mergeRecords, canPickFile, errorMessage, pickWorkerPython, pickMediaPython, restartControl, useBundledWorker, useBundledMedia, invalidateNativeConnection, observeNativeConnection, pendingNativeConnectionChange, beginBackupRecovery, readHostStatus, type NativeStatus } from './api';
 import type { Adapter, Attempt, Candidate, Capability, Dataset, Device, Draft, Kind, Material, Model, Operation, Project, Task, Work } from './types';
 import Workbench, { kindLabels } from './Workbench';
 import { MediaPreview } from './Media';
@@ -69,10 +69,13 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
   const [page, setPage] = useState<Page>('home');
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
+  const [recoveryMode, setRecoveryMode] = useState(false);
+  const recovery = useRef(false);
+  const recoveryOperationBusy = useRef(false);
   const librarySwitching = useRef(false); const libraryReadEpoch = useRef(0);
   const mounted = useRef(true);
   const contextStore = useRef<ProjectContexts | null>(null);
-  if (!contextStore.current) contextStore.current = new ProjectContexts(() => mounted.current && !librarySwitching.current);
+  if (!contextStore.current) contextStore.current = new ProjectContexts(() => mounted.current && !librarySwitching.current && !recovery.current);
   const contexts = contextStore.current;
   const [contextReadyProject, setContextReadyProject] = useState<string | null>(null);
   const [contextError, setContextError] = useState('');
@@ -103,7 +106,7 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
   const [aiOpen, setAiOpen] = useState(false); const [aiPanelTarget, setAIPanelTarget] = useState<HTMLDivElement | null>(null); const [error, setError] = useState('');
   const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [connected, setConnected] = useState(false);
   const [hostHealthy, setHostHealthy] = useState(false);
-  const environmentConnected = hostHealthy || connected;
+  const environmentConnected = !recoveryMode && (hostHealthy || connected);
   const [projectResourcesReady, setProjectResourcesReady] = useState<string | null>(null);
   const [projectResourcesLoaded, setProjectResourcesLoaded] = useState(false); const [projectResourcesError, setProjectResourcesError] = useState('');
   const [environmentReady, setEnvironmentReady] = useState(false);
@@ -116,7 +119,7 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
   const pageEpoch = useRef(0);
   const projectRef = useRef(projectId); projectRef.current = projectId;
 
-  const reload = useCallback(() => { if (!librarySwitching.current) setRefresh(value => value + 1); }, []);
+  const reload = useCallback(() => { if (!librarySwitching.current && !recovery.current) setRefresh(value => value + 1); }, []);
   const leaveTask = useRef<(() => Promise<boolean>) | null>(null);
   const navigationVersion = useRef(0);
   const taskOpenVersion = useRef(0);
@@ -126,7 +129,10 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
   currentView.current = { projectId, ready: contextReadyProject === projectId && (!selectedTask || selectedTask.project_id === projectId), view: rememberTaskSelection({
     ...contexts.view(projectId), page, kind, module_tab: moduleTab, data_tab: dataTab, task_id: selectedTask?.id || null, workflow_id: selectedWorkflow,
   }, selectedTask?.project_id === projectId ? selectedTask : null) };
-  const exitPreparation = useExitPreparation(prepareLibraryLeave);
+  const exitPreparation = useExitPreparation(async () => {
+    if (recovery.current && recoveryOperationBusy.current) throw new Error('备份恢复操作尚未完成，请等待文件检查或复制结束后再退出。');
+    await prepareLibraryLeave();
+  });
   function rememberView(id: string, view: ProjectView) {
     return contexts.remember(id, view).then(() => {
       if (mounted.current && !librarySwitching.current) setContextError('');
@@ -136,6 +142,7 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
     });
   }
   async function saveCurrentView() {
+    if (recovery.current) return;
     const isCurrent = captureLibraryRead();
     if (!contexts.loaded) {
       const stored = await api<LibraryViews>('GET', '/ui-context');
@@ -150,6 +157,7 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
   }
   async function prepareLibraryLeave() {
     if (librarySwitching.current) throw new Error('工作库正在切换，请等待完成后再试。');
+    if (recovery.current) return;
     if (leaveTask.current && !(await leaveTask.current())) throw new Error('草稿尚未保存或操作尚未完成，请返回任务处理后再试。');
     try { await saveCurrentView(); setContextError(''); }
     catch (e) { setContextError(`当前选择尚未保存：${errorMessage(e)}`); throw e; }
@@ -165,7 +173,32 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
     invalidateNativeConnection();
     librarySwitching.current = false; setLoading(false); setPageBusy({});
     if (projectId && projectResourcesReady !== projectId) setProjectResourcesError('项目内容读取已中断，请重试加载。');
-    void loadEnvironment();
+    if (!recovery.current) void loadEnvironment();
+  }
+  function applyRecoveryStatus(status: NativeStatus) {
+    recovery.current = status.recovery_mode === true; setRecoveryMode(recovery.current);
+    if (recovery.current) {
+      invalidateTaskEntry(); libraryReadEpoch.current += 1; environmentEpoch.current += 1; pageEpoch.current += 1;
+      environmentInFlight.current = false; setConnected(false); setHostHealthy(false); setLoading(false);
+      setEnvironmentReady(false); setEnvironmentBusy(false);
+    }
+  }
+  async function openBackupRecovery() {
+    setBusy(true); setError('');
+    librarySwitching.current = true; libraryReadEpoch.current += 1; environmentEpoch.current += 1; pageEpoch.current += 1;
+    try {
+      const current = recovery.current ? await readHostStatus() : null;
+      if (!current || current.state !== 'running') await beginBackupRecovery();
+      const status = await readHostStatus();
+      if (!status || !status.recovery_mode || status.state !== 'running') throw new Error(status?.message || '恢复服务尚未连接，请重试。');
+      applyRecoveryStatus(status); setModal('backup');
+    } catch (e) {
+      // 启动响应失败时，恢复区仍可能已建立；重新核对宿主，避免显示普通工作台。
+      const status = await readHostStatus().catch(() => null);
+      if (status?.recovery_mode) applyRecoveryStatus(status);
+      setError(errorMessage(e));
+    }
+    finally { librarySwitching.current = false; setBusy(false); setLoading(false); }
   }
   function invalidateTaskEntry() {
     if (!taskEntryInFlight.current) return;
@@ -183,7 +216,7 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
     return () => { mounted.current = false; libraryReadEpoch.current += 1; navigationVersion.current += 1; };
   }, []);
   useEffect(() => {
-    if (!projectId || contextReadyProject !== projectId || (selectedTask && selectedTask.project_id !== projectId)) return;
+    if (recovery.current || !projectId || contextReadyProject !== projectId || (selectedTask && selectedTask.project_id !== projectId)) return;
     void rememberView(projectId, currentView.current.view).catch(() => {});
   }, [contexts, contextAvailable, contextReadyProject, projectId, page, kind, moduleTab, dataTab, selectedTask?.id, selectedWorkflow]);
   useEffect(() => {
@@ -191,10 +224,12 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
     let disposed = false;
     let eventVersion = 0;
     let unlisten: (() => void) | undefined;
-    void listen<{ state: string; message: string; connection_id?: string }>('host-status', event => {
+    void listen<NativeStatus>('host-status', event => {
       if (librarySwitching.current) return;
       const version = ++eventVersion;
       const changed = observeNativeConnection(event.payload);
+      applyRecoveryStatus(event.payload);
+      if (recovery.current) { setError(event.payload.state === 'running' ? '' : event.payload.message || '恢复服务未连接。'); return; }
       if (event.payload.state === 'running') {
         if (changed) {
           invalidateTaskEntry();
@@ -215,7 +250,7 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
         invalidateTaskEntry();
         libraryReadEpoch.current += 1; environmentEpoch.current += 1; environmentInFlight.current = false; pageEpoch.current += 1;
         setHostHealthy(false); setConnected(false); setLoading(false); setPageBusy({});
-        setEnvironmentReady(false); setEnvironmentBusy(false); setError(event.payload.message);
+        setEnvironmentReady(false); setEnvironmentBusy(false); setError(event.payload.message || '本机服务未连接。');
       }
     }).then(stop => { if (disposed) stop(); else unlisten = stop; });
     return () => { disposed = true; unlisten?.(); };
@@ -228,6 +263,14 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
       setLoading(true);
       setCursors(previous => ({ ...previous, projects: null }));
       try {
+        if (recovery.current || librarySwitching.current) return;
+        const host = await readHostStatus();
+        if (!live || epoch !== libraryReadEpoch.current || librarySwitching.current) return;
+        if (host) {
+          applyRecoveryStatus(host);
+          if (recovery.current) return;
+          if (host.state !== 'running') throw new Error(host.message || '本机服务未连接。');
+        }
         const [result, stored] = await Promise.all([collection<Project>('/projects'), contexts.loaded ? null : api<LibraryViews>('GET', '/ui-context').then(value => ({ value, error: null })).catch(error => ({ value: null, error }))]);
         if (!live || epoch !== libraryReadEpoch.current) return;
         if (stored && !contexts.loaded) {
@@ -251,6 +294,7 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
     void connect(); return () => { live = false; };
   }, [refresh]);
   useEffect(() => {
+    if (recovery.current || librarySwitching.current) return;
     let live = true; const epoch = libraryReadEpoch.current; pageEpoch.current += 1; setPageBusy({}); setCursors(previous => ({ projects: previous.projects })); setProjectResourcesReady(projectId ? null : ''); setProjectResourcesError('');
     if (!projectId) { setModels([]); setModelDownloads([]); setAdapters([]); setCandidates([]); setEvaluationPlans([]); setDatasets([]); setTasks([]); setWorks([]); setMaterials([]); setWorkflowRuns([]); markStartup('resources_ready'); return; }
     async function loadProject() {
@@ -287,7 +331,7 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
     void loadProject(); return () => { live = false; };
   }, [projectId, refresh]);
   const loadEnvironment = useCallback(async (force = false) => {
-    if (environmentInFlight.current) return;
+    if (recovery.current || librarySwitching.current || environmentInFlight.current) return;
     const epoch = environmentEpoch.current;
     environmentInFlight.current = true; setEnvironmentBusy(true); setEnvironmentReady(false); setEnvironmentError('');
     markStartup('environment_started');
@@ -325,7 +369,7 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
     return cursors[name] ? <Button busy={pageBusy[name]} onClick={() => void loadMore(name, setter)}>加载更多{label}</Button> : null;
   }
   useEffect(() => {
-    if (!selectedTask || selectedTask.project_id !== projectId) return;
+    if (recovery.current || !selectedTask || selectedTask.project_id !== projectId) return;
     let live = true; const epoch = libraryReadEpoch.current;
     const currentDraft = editingDraft.current?.taskId === selectedTask.id ? editingDraft.current.draft : selectedTask.draft;
     const refs = [
@@ -533,7 +577,8 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
       </section>
     </>;
   }
-  return <LibraryReadContext.Provider value={captureLibraryRead}><div className="app-shell" inert={exitPreparation.preparing} aria-busy={exitPreparation.preparing}><aside className="sidebar"><div className="brand"><span className="brand-mark">A</span><div><strong>AiLab</strong><small>模型训练与运行</small></div></div><nav aria-label="主导航">{navigation.map(({ id, label, Icon }) => <button tabIndex={0} key={id} aria-current={page === id ? 'page' : undefined} onClick={() => void navigate(() => { setPage(id); setSelectedTask(null); setSelectedWorkflow(null); })}><Icon size={18} /><span>{label}</span></button>)}</nav><div className="sidebar-bottom"><button tabIndex={0} onClick={() => setModal('settings')}><Server size={17} />设备与环境</button><button tabIndex={0} onClick={() => setAiOpen(value => !value)}><Sparkles size={17} />AI 连接</button><span className={`connection ${connected ? 'online' : ''}`}><i />{connected ? '本机服务已连接' : '本机服务未连接'}</span><small>技术预览 · {APP_VERSION_LABEL}</small></div></aside><div className="app-work"><header className="topbar"><div className="project-selector"><Folder size={17} /><select aria-label="当前项目" disabled={!projectsLoaded} value={projectId} onChange={e => { const id = e.target.value; void navigate(() => changeProject(id)); }}>{projects.length ? projects.map(item => <option key={item.id} value={item.id}>{item.name}</option>) : <option value="">{projectsLoaded ? '尚未创建项目' : loading ? '正在读取工作库' : '工作库读取失败'}</option>}</select>{moreButton('projects', '项目', setProjects)}<button tabIndex={0} className="icon-button" aria-label="新建项目" onClick={() => setModal('project')} disabled={!connected}><Plus size={16} /></button></div><div className="top-actions"><Badge>本地优先</Badge><button tabIndex={0} className="header-button" onClick={() => setModal('queue')}><History size={16} /><span>任务队列</span></button><button tabIndex={0} className={`header-button ${aiOpen ? 'active' : ''}`} aria-pressed={aiOpen} onClick={() => setAiOpen(value => !value)}><Sparkles size={16} /><span>AI 辅助</span></button></div></header><div className={`main-and-ai ${aiOpen ? 'with-ai' : ''}`}><main><ErrorNotice message={error} /><ErrorNotice message={exitPreparation.error} /><ErrorNotice message={contextError || contextReadError} />{(contextError || contextReadError) && <Button onClick={() => void saveCurrentView().then(() => setContextError('')).catch(e => setContextError(`当前选择尚未保存：${errorMessage(e)}`))}>重试保存当前选择</Button>}<ErrorNotice message={projectResourcesError} />{projectResourcesError && <Button onClick={reload}><RefreshCw size={15} />重试加载</Button>}<ErrorNotice message={modal === 'settings' ? '' : environmentError} />{!connected ? <Empty title={loading ? '正在连接本机服务' : '本机服务尚未连接'} action={<Button onClick={async () => { if (canPickFile()) { try { await restartControl(); } catch (e) { setError(errorMessage(e)); } } reload(); }}><RefreshCw size={15} />重新连接</Button>}>启动控制服务后，项目与任务会从本机记录恢复。</Empty> : !projectId ? <Empty title="建立你的第一个项目" action={<Button primary onClick={() => setModal('project')}><Plus size={16} />新建项目</Button>}>用一个项目组织模型、数据与结果。随后可直接试用模型，或开始微调。</Empty> : !projectResourcesLoaded ? <Empty title={projectResourcesError ? '项目内容读取失败' : '正在读取项目内容'}>模型、数据、任务与作品读取完成后会在这里显示。</Empty> : selectedWorkflow ? <WorkflowRunView key={selectedWorkflow} runId={selectedWorkflow} models={models} works={works} onBack={() => { leaveTask.current = null; setSelectedWorkflow(null); }} onUpdated={reload} registerLeave={handler => { leaveTask.current = handler; }} onExport={work => setExporting({ object: { type: 'work', id: work.id, name: work.name || '工作流作品' } })} /> : selectedTask?.operation === 'transfer' ? <RemoteTransferTask key={selectedTask.id} task={selectedTask} onBack={() => setSelectedTask(null)} onChanged={reload} /> : selectedTask?.operation === 'quantize' ? <ConversionTask key={selectedTask.id} task={selectedTask} models={models} registerLeave={handler => { leaveTask.current = handler; }} onBack={() => { leaveTask.current = null; setSelectedTask(null); setPage('lab'); }} onUpdated={reload} onExport={object => setExporting({ object })} /> : selectedTask?.operation === 'evaluate' ? <EvaluationTask key={selectedTask.id} task={selectedTask} plans={evaluationPlans} adapters={adapters} models={models} candidates={candidates} registerLeave={handler => { leaveTask.current = handler; }} onBack={() => { leaveTask.current = null; setSelectedTask(null); setPage('lab'); }} onUpdated={reload} onExport={object => setExporting({ object })} /> : selectedTask ? <Workbench key={selectedTask.id} onDraftChanged={draft => { editingDraft.current = { taskId: selectedTask.id, draft }; }} aiPanelTarget={aiOpen ? aiPanelTarget : null} task={selectedTask} models={models} datasets={datasets} devices={devices} materials={materials} adapters={adapters} evaluationPlans={evaluationPlans} onCreateEvaluationPlan={() => setModal('evaluation-plan')} onRestoreTask={task => { leaveTask.current = null; setSelectedTask(task); setSelectedWorkflow(null); setPage('home'); reload(); }} onExport={object => setExporting({ object })} onBack={() => { leaveTask.current = null; setSelectedTask(null); }} registerLeave={handler => { leaveTask.current = handler; }} onTaskChanged={saved => setSelectedTask(current => current?.id === saved.id ? saved : current)} onImport={setModal} onUpdated={reload} /> : page === 'home' ? homeContent() : page === 'models' ? modelsContent() : page === 'data' ? dataContent() : page === 'lab' ? labContent() : assetsContent()}{connected && projectId && <div className="pagination-actions" aria-label="继续加载列表">
+  if (recoveryMode) return <main className="app-work" inert={exitPreparation.preparing} aria-busy={exitPreparation.preparing}><section className="review-box" aria-label="备份恢复工作区"><h1>从备份恢复工作库</h1><p>原工作库及失败证据会保留。这里仅用于检查和恢复备份；恢复到新目录后，需明确切换才会打开项目与历史。未切换就退出会保留原工作库选择；下次进入恢复会建立新会话，先前的恢复目录仍保留。</p><ErrorNotice message={error} /><ErrorNotice message={exitPreparation.error} /><Button primary busy={busy} onClick={() => void openBackupRecovery()}>选择备份继续恢复</Button></section>{modal === 'backup' && <BackupDialog restoreOnly onBusyChange={value => { recoveryOperationBusy.current = value; }} onClose={() => setModal(null)} onLibrarySwitchStart={beginLibrarySwitch} onLibrarySwitchFailed={failedLibrarySwitch} onLibraryChanged={onLibraryChanged} />}</main>;
+  return <LibraryReadContext.Provider value={captureLibraryRead}><div className="app-shell" inert={exitPreparation.preparing} aria-busy={exitPreparation.preparing}><aside className="sidebar"><div className="brand"><span className="brand-mark">A</span><div><strong>AiLab</strong><small>模型训练与运行</small></div></div><nav aria-label="主导航">{navigation.map(({ id, label, Icon }) => <button tabIndex={0} key={id} aria-current={page === id ? 'page' : undefined} onClick={() => void navigate(() => { setPage(id); setSelectedTask(null); setSelectedWorkflow(null); })}><Icon size={18} /><span>{label}</span></button>)}</nav><div className="sidebar-bottom"><button tabIndex={0} onClick={() => setModal('settings')}><Server size={17} />设备与环境</button><button tabIndex={0} onClick={() => setAiOpen(value => !value)}><Sparkles size={17} />AI 连接</button><span className={`connection ${connected ? 'online' : ''}`}><i />{connected ? '本机服务已连接' : '本机服务未连接'}</span><small>技术预览 · {APP_VERSION_LABEL}</small></div></aside><div className="app-work"><header className="topbar"><div className="project-selector"><Folder size={17} /><select aria-label="当前项目" disabled={!projectsLoaded} value={projectId} onChange={e => { const id = e.target.value; void navigate(() => changeProject(id)); }}>{projects.length ? projects.map(item => <option key={item.id} value={item.id}>{item.name}</option>) : <option value="">{projectsLoaded ? '尚未创建项目' : loading ? '正在读取工作库' : '工作库读取失败'}</option>}</select>{moreButton('projects', '项目', setProjects)}<button tabIndex={0} className="icon-button" aria-label="新建项目" onClick={() => setModal('project')} disabled={!connected}><Plus size={16} /></button></div><div className="top-actions"><Badge>本地优先</Badge><button tabIndex={0} className="header-button" onClick={() => setModal('queue')}><History size={16} /><span>任务队列</span></button><button tabIndex={0} className={`header-button ${aiOpen ? 'active' : ''}`} aria-pressed={aiOpen} onClick={() => setAiOpen(value => !value)}><Sparkles size={16} /><span>AI 辅助</span></button></div></header><div className={`main-and-ai ${aiOpen ? 'with-ai' : ''}`}><main><ErrorNotice message={error} /><ErrorNotice message={exitPreparation.error} /><ErrorNotice message={contextError || contextReadError} />{(contextError || contextReadError) && <Button onClick={() => void saveCurrentView().then(() => setContextError('')).catch(e => setContextError(`当前选择尚未保存：${errorMessage(e)}`))}>重试保存当前选择</Button>}<ErrorNotice message={projectResourcesError} />{projectResourcesError && <Button onClick={reload}><RefreshCw size={15} />重试加载</Button>}<ErrorNotice message={modal === 'settings' ? '' : environmentError} />{!connected ? <Empty title={loading ? '正在连接本机服务' : '本机服务尚未连接'} action={<><Button disabled={busy} onClick={async () => { if (canPickFile()) { try { await restartControl(); } catch (e) { setError(errorMessage(e)); } } reload(); }}><RefreshCw size={15} />重新连接</Button>{canPickFile() && <Button busy={busy} onClick={() => void openBackupRecovery()}>从备份恢复</Button>}</>}>启动控制服务后，项目与任务会从本机记录恢复。</Empty> : !projectId ? <Empty title="建立你的第一个项目" action={<Button primary onClick={() => setModal('project')}><Plus size={16} />新建项目</Button>}>用一个项目组织模型、数据与结果。随后可直接试用模型，或开始微调。</Empty> : !projectResourcesLoaded ? <Empty title={projectResourcesError ? '项目内容读取失败' : '正在读取项目内容'}>模型、数据、任务与作品读取完成后会在这里显示。</Empty> : selectedWorkflow ? <WorkflowRunView key={selectedWorkflow} runId={selectedWorkflow} models={models} works={works} onBack={() => { leaveTask.current = null; setSelectedWorkflow(null); }} onUpdated={reload} registerLeave={handler => { leaveTask.current = handler; }} onExport={work => setExporting({ object: { type: 'work', id: work.id, name: work.name || '工作流作品' } })} /> : selectedTask?.operation === 'transfer' ? <RemoteTransferTask key={selectedTask.id} task={selectedTask} onBack={() => setSelectedTask(null)} onChanged={reload} /> : selectedTask?.operation === 'quantize' ? <ConversionTask key={selectedTask.id} task={selectedTask} models={models} registerLeave={handler => { leaveTask.current = handler; }} onBack={() => { leaveTask.current = null; setSelectedTask(null); setPage('lab'); }} onUpdated={reload} onExport={object => setExporting({ object })} /> : selectedTask?.operation === 'evaluate' ? <EvaluationTask key={selectedTask.id} task={selectedTask} plans={evaluationPlans} adapters={adapters} models={models} candidates={candidates} registerLeave={handler => { leaveTask.current = handler; }} onBack={() => { leaveTask.current = null; setSelectedTask(null); setPage('lab'); }} onUpdated={reload} onExport={object => setExporting({ object })} /> : selectedTask ? <Workbench key={selectedTask.id} onDraftChanged={draft => { editingDraft.current = { taskId: selectedTask.id, draft }; }} aiPanelTarget={aiOpen ? aiPanelTarget : null} task={selectedTask} models={models} datasets={datasets} devices={devices} materials={materials} adapters={adapters} evaluationPlans={evaluationPlans} onCreateEvaluationPlan={() => setModal('evaluation-plan')} onRestoreTask={task => { leaveTask.current = null; setSelectedTask(task); setSelectedWorkflow(null); setPage('home'); reload(); }} onExport={object => setExporting({ object })} onBack={() => { leaveTask.current = null; setSelectedTask(null); }} registerLeave={handler => { leaveTask.current = handler; }} onTaskChanged={saved => setSelectedTask(current => current?.id === saved.id ? saved : current)} onImport={setModal} onUpdated={reload} /> : page === 'home' ? homeContent() : page === 'models' ? modelsContent() : page === 'data' ? dataContent() : page === 'lab' ? labContent() : assetsContent()}{connected && projectId && <div className="pagination-actions" aria-label="继续加载列表">
       {(selectedTask || page === 'models') && <>{moreButton('models', '模型', setModels)}{moreButton('adapters', '训练适配器', setAdapters)}{moreButton('candidates', '候选记录', setCandidates)}{moreButton('model-downloads', '模型准备记录', setModelDownloads)}</>}
       {(selectedTask || (page === 'data' && dataTab === 'local')) && moreButton('datasets', '数据', setDatasets)}
       {(selectedTask || page === 'lab') && moreButton('evaluation-plans', '评测方案', setEvaluationPlans)}

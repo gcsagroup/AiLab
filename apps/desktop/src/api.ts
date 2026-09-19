@@ -1,7 +1,8 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
 
 export type ApiFailure = { error: { code: string; message: string; details?: Record<string, unknown> } };
-type NativeStatus = { state: string; connection_id?: string };
+export type NativeStatus = { state: string; connection_id?: string; message?: string; recovery_mode?: boolean };
+export const readHostStatus = () => isTauri() ? invoke<NativeStatus>('host_status') : Promise.resolve(null);
 type NativeScope = { status: Promise<NativeStatus>; id?: string };
 let nativeScope: NativeScope | undefined;
 let nativeChanging = false;
@@ -87,6 +88,7 @@ export const canPickFile = () => isTauri();
 export type ImportKind = 'model' | 'dataset' | 'image-dataset' | 'material';
 export const pickImport = (kind: ImportKind | 'backup') => invokeBound<ImportSelection | null>('pick_import_path', connectionId => ({ kind, connectionId }));
 export const pickExportDirectory = () => invokeBound<ImportSelection | null>('pick_export_directory', connectionId => ({ connectionId }));
+export const beginBackupRecovery = () => changeNativeConnection('begin_backup_recovery');
 export const restartControl = () => changeNativeConnection('restart_control');
 export const recordFirstFrame = (view: 'empty_library' | 'project_home', frontend: import('./Startup').StartupPhases) => invoke('record_first_frame', { view, frontend });
 

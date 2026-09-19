@@ -4,6 +4,7 @@ mod control;
 mod credentials;
 mod exit_preparation;
 mod python_picker;
+mod recovery;
 mod startup;
 
 use base64::Engine;
@@ -14,7 +15,7 @@ use std::{
     fs,
     path::{Component, Path, PathBuf},
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
         Mutex,
     },
     time::{Duration, Instant},
@@ -33,6 +34,9 @@ struct HostState {
     exit_preparation: Mutex<exit_preparation::ExitPreparation>,
     switching: AtomicBool,
     credential_busy: AtomicBool,
+    recovery_mode: AtomicBool,
+    recovery_original: Mutex<Option<recovery::Session>>,
+    recovery_writes: AtomicUsize,
     startup: Mutex<startup::StartupMetrics>,
 }
 
@@ -111,9 +115,10 @@ fn load_host_settings(path: &Path) -> Result<HostSettings, String> {
     Ok(settings)
 }
 
-fn described_status(status: HostStatus, launch: &LaunchConfig) -> Value {
+fn described_status(status: HostStatus, launch: &LaunchConfig, recovering: bool) -> Value {
     let mut result = serde_json::to_value(status).expect("服务状态可以序列化");
     result["market_fixture_origin"] = json!(fixture_origin(launch));
+    result["recovery_mode"] = json!(recovering);
     result
 }
 
@@ -144,6 +149,12 @@ fn reserve_host_change<'a>(
         return Err(error(busy_code, busy_message));
     }
     let guard = SwitchingGuard(busy);
+    if state.recovery_writes.load(Ordering::SeqCst) != 0 {
+        return Err(error(
+            "RECOVERY_BUSY",
+            "正在校验或恢复备份，请完成后再切换或重启。",
+        ));
+    }
     // 先占本方门禁，再检查另一方；与凭据 Gate 的相同顺序配合，不能同时进入。
     if !std::ptr::eq(busy, &state.switching) && state.switching.load(Ordering::SeqCst) {
         return Err(error(
@@ -467,6 +478,8 @@ async fn proxy_connection(
     host_only: bool,
     connection: Connection,
 ) -> Result<Value, Value> {
+    recovery::request(state, &request, host_only)?;
+    let _recovery_write = recovery::reserve_write(state, &request)?;
     // 主机、端口和认证由 Rust 持有；关闭重定向，令牌不会跟随外部地址。
     let url = format!("http://127.0.0.1:{}{}", connection.port, request.path);
     let method = reqwest::Method::from_bytes(request.method.as_bytes())
@@ -664,6 +677,7 @@ async fn bridge_media(
     artifact_id: String,
     connection_id: String,
 ) -> Result<Value, Value> {
+    recovery::require_normal(state)?;
     let path = media_path(&artifact_id)?;
     let connection = bridge_connection(state, &connection_id)?;
     let result = async {
@@ -693,6 +707,7 @@ fn host_status(state: State<'_, HostState>) -> Result<Value, Value> {
             .map_err(|_| error("HOST_STATE_ERROR", "无法读取本地服务状态。"))?
             .status(),
         &launch,
+        state.recovery_mode.load(Ordering::SeqCst),
     ))
 }
 
@@ -703,6 +718,7 @@ fn record_first_frame(
     view: startup::FirstView,
     frontend: Option<startup::FrontendPhases>,
 ) -> Result<startup::StartupReceipt, Value> {
+    recovery::require_normal(&state)?;
     let visible = app.get_webview_window("main").is_some_and(|window| {
         window.is_visible().unwrap_or(false) && !window.is_minimized().unwrap_or(true)
     });
@@ -744,6 +760,7 @@ async fn restart_control(app: tauri::AppHandle) -> Result<Value, Value> {
             "CREDENTIAL_OPERATION_PENDING",
             "正在更新连接凭据，请完成后再重启服务。",
         )?;
+        recovery::verify_workspace(&state)?;
         let mut launch = state
             .launch
             .lock()
@@ -755,7 +772,10 @@ async fn restart_control(app: tauri::AppHandle) -> Result<Value, Value> {
         let mut result = process
             .start(&launch)
             .map_err(|message| error("CONTROL_START_FAILED", &message));
-        if result.is_err() && launch.data_dir != state.fallback.data_dir {
+        if result.is_err()
+            && !state.recovery_mode.load(Ordering::SeqCst)
+            && launch.data_dir != state.fallback.data_dir
+        {
             process.stop();
             let mut fallback = state.fallback.clone();
             configure_launch_fixture(&mut fallback, fixture_origin(&launch).as_deref());
@@ -773,7 +793,9 @@ async fn restart_control(app: tauri::AppHandle) -> Result<Value, Value> {
                 }
             }
         }
-        let result = result.map(|status| described_status(status, &launch));
+        let result = result.map(|status| {
+            described_status(status, &launch, state.recovery_mode.load(Ordering::SeqCst))
+        });
         if let Ok(status) = &result {
             let _ = app.emit("host-status", status);
         }
@@ -781,6 +803,31 @@ async fn restart_control(app: tauri::AppHandle) -> Result<Value, Value> {
     })
     .await
     .map_err(|_| error("CONTROL_START_FAILED", "本地服务重启失败。"))?
+}
+
+#[tauri::command]
+async fn begin_backup_recovery(app: tauri::AppHandle) -> Result<Value, Value> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<HostState>();
+        let _guard = reserve_host_change(
+            &state,
+            &state.switching,
+            "LIBRARY_SWITCH_PENDING",
+            "正在准备备份恢复，请稍候。",
+        )?;
+        let result = recovery::begin(&state);
+        if let Ok(status) = &result {
+            let _ = app.emit("host-status", status);
+        }
+        result
+    })
+    .await
+    .map_err(|_| {
+        error(
+            "RECOVERY_START_FAILED",
+            "独立备份恢复服务未能启动；原库保持不变。",
+        )
+    })?
 }
 
 #[tauri::command]
@@ -816,6 +863,8 @@ async fn use_restored_library(restore_id: String, app: tauri::AppHandle) -> Resu
         .and_then(Value::as_str)
         .ok_or_else(|| error("RESTORE_PATH_INVALID", "恢复记录没有有效目录。"))?;
     let selected = restored_path(Path::new(selected), &restore_id)?;
+    // 即使计划曾通过，也在切换前重新核对原库保护边界。
+    recovery::target(&state, &selected)?;
     let activation_result = proxy_host(
         &state,
         ApiRequest {
@@ -857,7 +906,7 @@ async fn use_restored_library(restore_id: String, app: tauri::AppHandle) -> Resu
         next.data_dir = selected.clone();
         let selection = LibrarySelection {
             data_dir: selected.clone(),
-            previous_data_dir: current.data_dir.clone(),
+            previous_data_dir: recovery::previous_library(&state, &current)?,
             restore_id,
         };
         let contents = serde_json::to_vec(&selection)
@@ -866,15 +915,46 @@ async fn use_restored_library(restore_id: String, app: tauri::AppHandle) -> Resu
             .process
             .lock()
             .map_err(|_| error("HOST_STATE_ERROR", "无法切换本地服务。"))?;
-        let result = process.switch_library(&current, &next, &state.selection_file, &contents);
+        let recovering = state.recovery_mode.load(Ordering::SeqCst);
+        recovery::verify_selection(&state)?;
+        let validation_message = |value: Value| {
+            value["error"]["message"]
+                .as_str()
+                .unwrap_or("恢复身份核对失败。")
+                .to_owned()
+        };
+        let result = process.switch_library_checked(
+            &current,
+            &next,
+            &state.selection_file,
+            &contents,
+            || recovery::verify_selection(&state).map_err(validation_message),
+            || recovery::verify_workspace(&state).map_err(validation_message),
+        );
         if result.is_ok() {
             *launch = next;
+            recovery::complete(&state)?;
         }
-        let status = described_status(process.status(), &launch);
+        let status = described_status(
+            process.status(),
+            &launch,
+            state.recovery_mode.load(Ordering::SeqCst),
+        );
         let _ = handle.emit("host-status", &status);
         result
             .map(|_| json!({"library_changed":true,"data_dir":selected,"status":status}))
-            .map_err(|message| error("LIBRARY_SWITCH_FAILED", &message))
+            .map_err(|message| {
+                error(
+                    "LIBRARY_SWITCH_FAILED",
+                    &if recovering {
+                        message
+                            .replace("已恢复连接原工作库", "已返回备份恢复工作区")
+                            .replace("原工作库暂时未能重连", "备份恢复工作区暂时未能重连")
+                    } else {
+                        message
+                    },
+                )
+            })
     })
     .await
     .map_err(|_| error("LIBRARY_SWITCH_FAILED", "切换工作库失败，请重新连接。"))?
@@ -893,6 +973,7 @@ async fn configure_market_fixture(
         "LIBRARY_SWITCH_PENDING",
         "正在更新宿主连接，请稍候。",
     )?;
+    recovery::require_normal(&state)?;
     {
         let launch = state
             .launch
@@ -905,7 +986,7 @@ async fn configure_market_fixture(
                 .map_err(|_| error("HOST_STATE_ERROR", "无法读取本地服务状态。"))?
                 .status();
             return Ok(
-                json!({"market_fixture_origin":origin,"status":described_status(status, &launch)}),
+                json!({"market_fixture_origin":origin,"status":described_status(status, &launch, state.recovery_mode.load(Ordering::SeqCst))}),
             );
         }
     }
@@ -962,7 +1043,11 @@ async fn configure_market_fixture(
         if switched.is_ok() {
             *launch = next;
         }
-        let status = described_status(process.status(), &launch);
+        let status = described_status(
+            process.status(),
+            &launch,
+            state.recovery_mode.load(Ordering::SeqCst),
+        );
         let _ = handle.emit("host-status", &status);
         switched
             .map(|_| json!({"market_fixture_origin":origin,"status":status}))
@@ -1012,6 +1097,9 @@ async fn pick_import_path(
         ));
     }
     let state = app.state::<HostState>();
+    if kind != "backup" {
+        recovery::require_normal(&state)?;
+    }
     select_path_grant(&state, &connection_id, false, async move {
         let selected = tauri::async_runtime::spawn_blocking(move || {
             let dialog = rfd::FileDialog::new();
@@ -1095,6 +1183,9 @@ where
             .map_err(|_| error(path_code, "所选路径已不存在或不可访问。"))?;
         if export && !canonical.is_dir() {
             return Err(error(path_code, "请选择已有目录。"));
+        }
+        if export {
+            recovery::target(state, &canonical)?;
         }
         let path = canonical.to_string_lossy().to_string();
         // 授权只能由原生选择器产生，api_request 无法调用此接口。
@@ -1202,6 +1293,7 @@ async fn select_python_environment<F>(
 where
     F: std::future::Future<Output = Result<Option<PathBuf>, Value>>,
 {
+    recovery::require_normal(state)?;
     let connection = bridge_connection(state, connection_id)?;
     let selected = complete_bridge_request(state, connection_id, selection.await)?;
     let result = async {
@@ -1281,6 +1373,7 @@ async fn update_environment(
         "HOST_CONFIGURATION_PENDING",
         "正在更新本地环境或连接，请完成后再设置执行环境。",
     )?;
+    recovery::require_normal(state)?;
     let current = native_connection_request(
         state,
         connection,
@@ -1423,6 +1516,52 @@ fn complete_exit_preparation(
     Ok(())
 }
 
+async fn prepare_recovery_stop(state: &HostState) -> Result<(), Value> {
+    if !state.recovery_mode.load(Ordering::SeqCst) {
+        return Ok(());
+    }
+    let connected = state
+        .process
+        .lock()
+        .map_err(|_| error("HOST_STATE_ERROR", "无法读取恢复服务状态。"))?
+        .connection()
+        .is_some();
+    if !connected {
+        return Ok(());
+    }
+    // HTTP 超时不代表后台复制已结束。停机前再次由控制服务确认空闲并冻结写入。
+    let response = proxy_host(
+        state,
+        ApiRequest {
+            method: "POST".into(),
+            path: "/api/v1/host/reconfiguration".into(),
+            body: Some(json!({})),
+            idempotency_key: None,
+        },
+    )
+    .await;
+    if response
+        .as_ref()
+        .is_ok_and(|value| value.get("ready").and_then(Value::as_bool) == Some(true))
+    {
+        return Ok(());
+    }
+    let _ = proxy_host(
+        state,
+        ApiRequest {
+            method: "DELETE".into(),
+            path: "/api/v1/host/reconfiguration".into(),
+            body: Some(json!({})),
+            idempotency_key: None,
+        },
+    )
+    .await;
+    Err(error(
+        "RECOVERY_BUSY",
+        "恢复服务尚未确认复制结束，应用已保留，请稍后重试退出。",
+    ))
+}
+
 fn request_exit(app: &tauri::AppHandle) {
     let state = app.state::<HostState>();
     if state.exiting.load(Ordering::SeqCst) || state.exit_dialog.swap(true, Ordering::SeqCst) {
@@ -1449,6 +1588,7 @@ fn request_exit(app: &tauri::AppHandle) {
                 .and_then(|mut preparation| {
                     if state.switching.load(Ordering::SeqCst)
                         || state.credential_busy.load(Ordering::SeqCst)
+                        || state.recovery_writes.load(Ordering::SeqCst) != 0
                         || state.exiting.load(Ordering::SeqCst)
                     {
                         None
@@ -1460,7 +1600,7 @@ fn request_exit(app: &tauri::AppHandle) {
                 rfd::MessageDialog::new()
                     .set_parent(&window)
                     .set_title("应用已保留")
-                    .set_description("正在切换工作库或更新宿主连接，请完成后重试退出。")
+                    .set_description("正在恢复备份、切换工作库或更新宿主连接，请完成后重试退出。")
                     .set_buttons(rfd::MessageButtons::Ok)
                     .show();
                 state.exit_dialog.store(false, Ordering::SeqCst);
@@ -1480,12 +1620,21 @@ fn request_exit(app: &tauri::AppHandle) {
             } else {
                 None
             };
+            let recovery_ready = received != Some(true)
+                || tauri::async_runtime::block_on(prepare_recovery_stop(&state)).is_ok();
             let exit = state
                 .exit_preparation
                 .lock()
                 .ok()
                 .is_some_and(|mut preparation| {
-                    let exit = preparation.finish(request_id, received) == Some(true);
+                    let exit = preparation.finish(
+                        request_id,
+                        if recovery_ready {
+                            received
+                        } else {
+                            Some(false)
+                        },
+                    ) == Some(true);
                     if exit {
                         // 与清除 pending 同锁完成，不能在停服前插入切库或重配置。
                         state.exiting.store(true, Ordering::SeqCst);
@@ -1505,9 +1654,11 @@ fn request_exit(app: &tauri::AppHandle) {
                 rfd::MessageDialog::new()
                     .set_parent(&window)
                     .set_title("应用已保留")
-                    .set_description(
-                        "草稿或当前选择尚未保存，应用已保留，请处理界面中的提示后重试退出。",
-                    )
+                    .set_description(if recovery_ready {
+                        "草稿或当前选择尚未保存，应用已保留，请处理界面中的提示后重试退出。"
+                    } else {
+                        "恢复服务尚未确认复制结束，应用已保留，请稍后重试退出。"
+                    })
                     .set_buttons(rfd::MessageButtons::Ok)
                     .show();
                 state.exit_dialog.store(false, Ordering::SeqCst);
@@ -1531,6 +1682,7 @@ pub fn run() {
             host_status,
             record_first_frame,
             restart_control,
+            begin_backup_recovery,
             pick_import_path,
             pick_export_directory,
             pick_worker_python,
@@ -1626,6 +1778,9 @@ pub fn run() {
                 exit_preparation: Mutex::new(exit_preparation::ExitPreparation::default()),
                 switching: AtomicBool::new(false),
                 credential_busy: AtomicBool::new(false),
+                recovery_mode: AtomicBool::new(false),
+                recovery_original: Mutex::new(None),
+                recovery_writes: AtomicUsize::new(0),
                 startup,
             });
             let handle = app.handle().clone();
@@ -1649,7 +1804,11 @@ pub fn run() {
                     let Ok(launch) = state.launch.lock() else {
                         break;
                     };
-                    let status = described_status(status, &launch);
+                    let status = described_status(
+                        status,
+                        &launch,
+                        state.recovery_mode.load(Ordering::SeqCst),
+                    );
                     drop(launch);
                     if previous.as_ref() != Some(&status) {
                         let _ = handle.emit("host-status", &status);
@@ -1770,6 +1929,9 @@ mod tests {
             exit_preparation: Mutex::new(exit_preparation::ExitPreparation::default()),
             switching: AtomicBool::new(false),
             credential_busy: AtomicBool::new(false),
+            recovery_mode: AtomicBool::new(false),
+            recovery_original: Mutex::new(None),
+            recovery_writes: AtomicUsize::new(0),
             startup: Mutex::new(startup::StartupMetrics::new(
                 Instant::now(),
                 dir.path().join("startup.json"),
@@ -1899,12 +2061,13 @@ mod tests {
         );
         assert_eq!(launch.args.len(), 4);
         assert_eq!(launch.data_dir, PathBuf::from("/restored/library"));
-        let status = described_status(HostStatus::stopped("已停止"), &launch);
+        let status = described_status(HostStatus::stopped("已停止"), &launch, false);
         assert_eq!(status["market_fixture_origin"], "http://127.0.0.1:3456");
         configure_launch_fixture(&mut launch, None);
         assert_eq!(launch.args, vec!["--bundled-worker", "/app/worker"]);
         assert!(
-            described_status(HostStatus::stopped("已停止"), &launch)["market_fixture_origin"]
+            described_status(HostStatus::stopped("已停止"), &launch, false)
+                ["market_fixture_origin"]
                 .is_null()
         );
         for method in ["GET", "POST", "DELETE"] {

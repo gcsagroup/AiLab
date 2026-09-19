@@ -6,6 +6,8 @@
 
 # Current Implementation, Evidence, and Remaining Delivery Matrix
 
+Source implementation and isolated tests for cold-start recovery are complete. Recovery mode permits only backup inspection, independent restoration, and explicit switching. The fixed App remains Ver2.4（039）; the new entry is not yet in a signed candidate, and native acceptance of the planned Ver2.5（040） and full AC-22／M6 remain pending. [Source progress](2026-09-20-cold-start-recovery-source-progress.md)
+
 The same company-signed 039 candidate completed controlled empty-library native migration rollback, healthy legacy-backup restoration, and reopening. Healthy A retained 8 resources; the repaired library passed migration 1→2→3→4 and test-project reopening. All 51 migration/backup tests passed, with no model runs. Cold-start offline restoration, failed upgrade with business data, and full AC-22/M6 remain pending. [Migration recovery acceptance](2026-09-20-ver2-4-039-migration-recovery.md)
 
 The same company-signed 039 candidate reopened the original 12-export library and added 1 export of an existing controlled dataset split, followed by reopening. Both of the 2 libraries and their export packages remained byte-identical across reopening. The 4 original/revision audio and video files played to the end in an independent player, and the image opened independently. No new model ran; full AC27, M6, and release remain incomplete. [Twelve-export acceptance](2026-09-20-ver2-4-039-twelve-exports.md)

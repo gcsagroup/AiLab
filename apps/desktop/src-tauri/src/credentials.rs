@@ -258,6 +258,7 @@ impl<'a> Gate<'a> {
         if state.switching.load(Ordering::SeqCst) {
             return Err(error("LIBRARY_SWITCH_PENDING", "正在切换工作库，请稍候。"));
         }
+        super::recovery::require_normal(state)?;
         Ok(guard)
     }
 }

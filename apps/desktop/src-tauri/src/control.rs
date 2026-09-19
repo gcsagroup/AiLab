@@ -118,8 +118,28 @@ impl ControlProcess {
         selection_file: &std::path::Path,
         selection: &[u8],
     ) -> Result<HostStatus, String> {
+        self.switch_library_checked(
+            current,
+            next,
+            selection_file,
+            selection,
+            || Ok(()),
+            || Ok(()),
+        )
+    }
+
+    pub fn switch_library_checked(
+        &mut self,
+        current: &LaunchConfig,
+        next: &LaunchConfig,
+        selection_file: &std::path::Path,
+        selection: &[u8],
+        before_commit: impl FnOnce() -> Result<(), String>,
+        before_rollback: impl FnOnce() -> Result<(), String>,
+    ) -> Result<HostStatus, String> {
         self.stop();
         let switched = self.start(next).and_then(|status| {
+            before_commit()?;
             let stamp = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
@@ -146,6 +166,11 @@ impl ControlProcess {
             Ok(status) => Ok(status),
             Err(reason) => {
                 self.stop();
+                if let Err(validation) = before_rollback() {
+                    return Err(format!(
+                        "{reason} {validation} 原工作库暂时未能重连，请点击重新连接。"
+                    ));
+                }
                 match self.start(current) {
                     Ok(_) => Err(format!("{reason} 已恢复连接原工作库。")),
                     Err(_) => Err(format!("{reason} 原工作库暂时未能重连，请点击重新连接。")),

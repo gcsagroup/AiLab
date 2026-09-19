@@ -118,6 +118,9 @@ impl ScopeFixture {
             exit_preparation: Mutex::new(exit_preparation::ExitPreparation::default()),
             switching: AtomicBool::new(false),
             credential_busy: AtomicBool::new(false),
+            recovery_mode: AtomicBool::new(false),
+            recovery_original: Mutex::new(None),
+            recovery_writes: AtomicUsize::new(0),
             startup: Mutex::new(startup::StartupMetrics::new(
                 Instant::now(),
                 directory.path().join("startup.json"),
@@ -923,4 +926,270 @@ fn picker_late_http_results_are_discarded_and_environment_gate_stays_held() {
             }
         }
     }
+}
+
+fn recovery_fixture() -> ScopeFixture {
+    let mut fixture = ScopeFixture::new();
+    fixture.state.process.lock().unwrap().stop();
+    let canonical = fixture.state.fallback.data_dir.canonicalize().unwrap();
+    fixture.state.fallback.data_dir = canonical.clone();
+    fixture.state.launch.lock().unwrap().data_dir = canonical;
+    fixture.state.selection_file = fixture
+        .directory
+        .path()
+        .canonicalize()
+        .unwrap()
+        .join("selection.json");
+    fs::write(&fixture.state.selection_file, b"original selector").unwrap();
+    let status = recovery::begin(&fixture.state).unwrap();
+    assert_eq!(status["recovery_mode"], true);
+    fixture
+}
+
+#[test]
+fn cold_recovery_reuses_session_without_changing_original_selection() {
+    let fixture = recovery_fixture();
+    let first = fixture.state.launch.lock().unwrap().data_dir.clone();
+    let id = fixture.connection_id();
+    recovery::begin(&fixture.state).unwrap();
+    assert_eq!(id, fixture.connection_id());
+    fixture.state.process.lock().unwrap().stop();
+    recovery::begin(&fixture.state).unwrap();
+    assert_ne!(id, fixture.connection_id());
+    assert_eq!(first, fixture.state.launch.lock().unwrap().data_dir);
+    assert_eq!(
+        fs::read(&fixture.state.selection_file).unwrap(),
+        b"original selector"
+    );
+    assert_eq!(
+        recovery::previous_library(&fixture.state, &fixture.state.launch.lock().unwrap()).unwrap(),
+        fixture.state.fallback.data_dir
+    );
+    assert_eq!(
+        fs::read_dir(fixture.state.fallback.data_dir.join("recovery-sessions"))
+            .unwrap()
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn cold_recovery_rejects_healthy_library_and_protected_targets() {
+    let healthy = ScopeFixture::new();
+    assert_code(recovery::begin(&healthy.state), "CONTROL_ALREADY_RUNNING");
+    assert!(!healthy
+        .state
+        .fallback
+        .data_dir
+        .join("recovery-sessions")
+        .exists());
+    let fixture = recovery_fixture();
+    for path in [
+        &fixture.state.fallback.data_dir,
+        &fixture.state.launch.lock().unwrap().data_dir,
+    ] {
+        assert_eq!(
+            recovery::target(&fixture.state, path).unwrap_err()["error"]["code"],
+            "RECOVERY_TARGET_INVALID"
+        );
+    }
+    let external = fixture.directory.path().canonicalize().unwrap();
+    assert!(recovery::target(&fixture.state, &external).is_ok());
+    let plan = request(
+        "POST",
+        "/api/v1/restore-plans",
+        Some(json!({"target_dir": fixture.state.fallback.data_dir})),
+    );
+    assert!(recovery::request(&fixture.state, &plan, false).is_err());
+}
+
+#[test]
+fn cold_recovery_blocks_normal_bridge_media_and_environment_before_side_effects() {
+    tauri::async_runtime::block_on(async {
+        let fixture = recovery_fixture();
+        let id = fixture.connection_id();
+        let scratch = fixture.state.launch.lock().unwrap().data_dir.clone();
+        for path in ["/api/v1/projects", "/api/v1/settings", "/api/v1/ui-context"] {
+            assert_code(
+                bridge_request(&fixture.state, scoped(request("GET", path, None), &id)).await,
+                "RECOVERY_ONLY",
+            );
+        }
+        assert_code(
+            bridge_media(&fixture.state, ARTIFACT_ID.into(), id.clone()).await,
+            "RECOVERY_ONLY",
+        );
+        let picked = AtomicBool::new(false);
+        let result = select_python_environment(&fixture.state, &id, "worker_python", async {
+            picked.store(true, Ordering::SeqCst);
+            Ok(None)
+        })
+        .await;
+        assert_code(result.map(|v| json!(v)), "RECOVERY_ONLY");
+        assert!(!picked.load(Ordering::SeqCst));
+        assert!(!scratch.join("requests.jsonl").exists());
+        bridge_request(
+            &fixture.state,
+            scoped(request("GET", "/api/v1/restores", None), &id),
+        )
+        .await
+        .unwrap();
+    });
+}
+
+#[test]
+fn cold_recovery_copy_excludes_exit_switch_restart_and_other_copy() {
+    let fixture = recovery_fixture();
+    let request = request("POST", "/api/v1/restores", Some(json!({})));
+    let guard = recovery::reserve_write(&fixture.state, &request).unwrap();
+    assert_eq!(fixture.state.recovery_writes.load(Ordering::SeqCst), 1);
+    assert!(recovery::reserve_write(&fixture.state, &request).is_err());
+    assert!(reserve_host_change(&fixture.state, &fixture.state.switching, "BUSY", "busy").is_err());
+    assert!(reserve_host_change(
+        &fixture.state,
+        &fixture.state.credential_busy,
+        "BUSY",
+        "busy"
+    )
+    .is_err());
+    assert!(!fixture.state.switching.load(Ordering::SeqCst));
+    drop(guard);
+    assert_eq!(fixture.state.recovery_writes.load(Ordering::SeqCst), 0);
+    let (id, receiver) = fixture
+        .state
+        .exit_preparation
+        .lock()
+        .unwrap()
+        .begin(Duration::from_secs(5))
+        .unwrap();
+    assert!(recovery::reserve_write(&fixture.state, &request).is_err());
+    fixture
+        .state
+        .exit_preparation
+        .lock()
+        .unwrap()
+        .finish(id, receiver.try_recv().ok());
+    assert!(recovery::reserve_write(&fixture.state, &request).is_ok());
+}
+
+#[test]
+fn cold_recovery_stop_requires_backend_idle_even_after_request_has_returned() {
+    tauri::async_runtime::block_on(async {
+        let fixture = recovery_fixture();
+        let scratch = fixture.state.launch.lock().unwrap().data_dir.clone();
+        let overrides = scratch.join("response-overrides.json");
+        fs::write(&overrides, json!({"POST /api/v1/host/reconfiguration": {"status":409,"body":{"error":{"code":"HOST_RECONFIGURATION_BUSY"}}}}).to_string()).unwrap();
+        assert_eq!(fixture.state.recovery_writes.load(Ordering::SeqCst), 0);
+        assert!(prepare_recovery_stop(&fixture.state).await.is_err());
+        assert_eq!(
+            fixture.state.process.lock().unwrap().status().state,
+            "running"
+        );
+        let requests = fs::read_to_string(scratch.join("requests.jsonl")).unwrap();
+        assert!(requests.contains("DELETE"));
+        fs::write(
+            &overrides,
+            json!({"POST /api/v1/host/reconfiguration": {"status":200,"body":{"ready":true}}})
+                .to_string(),
+        )
+        .unwrap();
+        assert!(prepare_recovery_stop(&fixture.state).await.is_ok());
+    });
+}
+
+#[test]
+fn cold_recovery_switch_keeps_session_on_failure_and_commits_original_parent_on_success() {
+    let fixture = recovery_fixture();
+    let current = fixture.state.launch.lock().unwrap().clone();
+    let mut broken = current.clone();
+    broken.executable = fixture.directory.path().join("missing-executable");
+    broken.data_dir = fixture.directory.path().join("failed-restored");
+    let result = fixture
+        .state
+        .process
+        .lock()
+        .unwrap()
+        .switch_library_checked(
+            &current,
+            &broken,
+            &fixture.state.selection_file,
+            b"new",
+            || Ok(()),
+            || recovery::verify_workspace(&fixture.state).map_err(|e| e.to_string()),
+        );
+    assert!(result.is_err());
+    assert!(fixture.state.recovery_mode.load(Ordering::SeqCst));
+    assert_eq!(
+        fixture.state.process.lock().unwrap().status().state,
+        "running"
+    );
+    assert_eq!(
+        fs::read(&fixture.state.selection_file).unwrap(),
+        b"original selector"
+    );
+    let mut restored = current.clone();
+    restored.data_dir = fixture.directory.path().join("healthy-restored");
+    let selection = LibrarySelection {
+        data_dir: restored.data_dir.clone(),
+        previous_data_dir: recovery::previous_library(&fixture.state, &current).unwrap(),
+        restore_id: format!("restore-{}", "a".repeat(32)),
+    };
+    fixture
+        .state
+        .process
+        .lock()
+        .unwrap()
+        .switch_library_checked(
+            &current,
+            &restored,
+            &fixture.state.selection_file,
+            &serde_json::to_vec(&selection).unwrap(),
+            || recovery::verify_selection(&fixture.state).map_err(|e| e.to_string()),
+            || recovery::verify_workspace(&fixture.state).map_err(|e| e.to_string()),
+        )
+        .unwrap();
+    *fixture.state.launch.lock().unwrap() = restored;
+    recovery::complete(&fixture.state).unwrap();
+    assert!(!fixture.state.recovery_mode.load(Ordering::SeqCst));
+    let saved: Value =
+        serde_json::from_slice(&fs::read(&fixture.state.selection_file).unwrap()).unwrap();
+    assert_eq!(
+        saved["previous_data_dir"],
+        fixture.state.fallback.data_dir.to_string_lossy().as_ref()
+    );
+    assert!(recovery::require_normal(&fixture.state).is_ok());
+}
+
+#[test]
+fn cold_recovery_rechecks_selector_after_new_service_started_and_rolls_back() {
+    let fixture = recovery_fixture();
+    let current = fixture.state.launch.lock().unwrap().clone();
+    let mut next = current.clone();
+    next.data_dir = fixture.directory.path().join("new-service");
+    let result = fixture
+        .state
+        .process
+        .lock()
+        .unwrap()
+        .switch_library_checked(
+            &current,
+            &next,
+            &fixture.state.selection_file,
+            b"overwrite",
+            || {
+                fs::write(&fixture.state.selection_file, b"external selection").unwrap();
+                recovery::verify_selection(&fixture.state).map_err(|e| e.to_string())
+            },
+            || recovery::verify_workspace(&fixture.state).map_err(|e| e.to_string()),
+        );
+    assert!(result.is_err());
+    assert_eq!(
+        fs::read(&fixture.state.selection_file).unwrap(),
+        b"external selection"
+    );
+    assert!(fixture.state.recovery_mode.load(Ordering::SeqCst));
+    assert_eq!(
+        fixture.state.process.lock().unwrap().status().state,
+        "running"
+    );
 }
