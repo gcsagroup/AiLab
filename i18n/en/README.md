@@ -10,7 +10,11 @@ A local-first desktop workbench for model training and inference. Organize model
 
 ## Current status
 
-The current fixed company-signed candidate is **Ver2.4（038）**, signed by **Global Cybersecurity Alliance Limited**. It is a development candidate; full M0—M6, clean installation, notarization, and formal distribution acceptance remain incomplete.
+The current fixed company-signed candidate is **Ver2.4（039）**, signed by **Global Cybersecurity Alliance Limited**. It is a development candidate; full M0—M6, clean installation, notarization, and formal distribution acceptance remain incomplete.
+
+The fixed company-signed 039 candidate includes the export directory-entry fix. Its actual packaged service rejected 4 invalid entry types, recovered a valid interrupted package, and completed a fresh export. Native inspection of failed and successful records, normal exit, and reopening of the formally restored library passed. No new models ran; full AC27, M6, M0—M6, and release remain incomplete. [039 acceptance and boundaries](docs/implementation/2026-09-16-export-tree-integrity.md)
+
+The following records retain their state when written.
 
 Subsequent source fix: the actual packaged 038 service still incorrectly accepts a symbolic link for the manifest; negative evidence is retained. Source now rejects manifest links, dangling links, directory links, and special files, with 186 related regressions passing. This is not yet included in a new signed candidate; full M6 and release status do not advance. [Directory-entry fix and negative evidence](docs/implementation/2026-09-16-export-tree-integrity.md)
 
