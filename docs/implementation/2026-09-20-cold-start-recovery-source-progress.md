@@ -31,3 +31,19 @@ Computer Use 在实际前端源码的浏览器夹具中验证恢复入口、备�
 本轮仅覆盖受控空库与小型便携备份，没有新增模型计算。复制期间退出拒绝仍只有源码与浏览器夹具证据；大文件复制竞争、含业务数据的失败升级、干净安装、旧 App 回滚、完整 AC-22／M6、公证与正式发行仍待完成。
 
 [最终读回](../../.artifacts/cold-start-recovery-ver2-5-040-v1/root-readback.json) [保留的监视器失败](../../.artifacts/cold-start-recovery-ver2-5-040-v1/native-reopen-002/monitor/report.json) [重开复验](../../.artifacts/cold-start-recovery-ver2-5-040-v1/native-reopen-003/readback.json) [恢复界面](../../.artifacts/cold-start-recovery-ver2-5-040-v1/native-001/06-failed-switch-returned.jpg)
+
+## 未切换退出与再次进入恢复
+
+同一 Ver2.5（040）签名包继续验证“正式恢复但不切换→空闲退出→重开原故障库→新恢复会话”。共完成 4 次原生菜单确认退出、建立 4 个独立恢复会话，所有会话的原库均为 `B`；各次启动及最终停机时选择器仍指向 `B`。正式恢复目录 `D` 未激活、没有启动迁移，主数据库摘要与恢复回执一致，回执中的原数据库摘要对应健康备份清单。第四轮停机后，`D` 与先前的 `S1`、`S2`、`S3` 文件树保持不变，新会话界面没有自动加载旧恢复记录。
+
+`B` 主数据库字节保持，原迁移备份、回执及支持目录保留，日志只追加；本轮新增 4 份预期的失败回滚迁移回执。本次一致性备份的字节摘要与主数据库不同，验证分别绑定已接受的备份内容及主数据库，未将二者混为同一份字节证据。未启动的 `D` 只新增空锁文件供下一轮守卫保护，该变化已在停机快照中记录。
+
+50 项保护记录中 47 项原样保持；原选择文件恢复原对象、文件编号与字节，允许改名元数据及 2 份启动回执更新。4 个旧库与 12 个模型源文件保持。根代理在停机后对 20 个锁文件核对同一文件编号，并成功取得非阻塞排他锁，确认这些锁已释放；这不等于全程持锁的连续证明。
+
+进程监视器第 1、4 轮成功，第 2、3 轮的 `failed_preserved` 结果及原始进程行完整保留。准备阶段遗漏既有支持目录的冻结失败、冻结期间辅助脚本摘要变化引起的守卫拒绝也保留，随后使用独立配置明确承接。原守卫仍按固定 2 轮合同审核，因此在恢复原选择文件后因保留的失败报告退出，退出码为 1；不能将其表述为守卫成功。根代理随后独立核对全部轮次、停机资料、选择器及锁释放，审核通过，退出码为 0。App 退出码仍未知。
+
+第 4 轮实际记录到 1 个同父占位子进程，在相隔约 0.305 秒的下一次观察中消失；这个间隔不是测得的进程寿命，其完整可执行身份未验证。最终 `all_observed_control_identities_verified` 与 `continuous_executable_identity_observation_verified` 均为 `false`。已知进程的括号名称观测缺口处理本轮只有测试证据，实际 `known_identity_observation_gaps` 为空，不能宣称在本轮原生操作中触发验证。
+
+45 项监视器测试与 10 项守卫辅助测试通过。本轮未重新构建签名包，新增模型执行和原用户库 SQL 均为 0。原生复制忙碌时退出拒绝、大文件复制竞争、含业务数据的失败升级、完整 AC-22／M6、公证与正式发行仍未完成；原型、研究资产和全部失败证据保留。
+
+[独立停机审计](../../.artifacts/cold-start-recovery-ver2-5-040-v1/exit-persistence/root-readback.json) [守卫终态](../../.artifacts/cold-start-recovery-ver2-5-040-v1/exit-persistence/guard-terminal.json) [监视器第四轮](../../.artifacts/cold-start-recovery-ver2-5-040-v1/exit-persistence/monitor-004/report.json) [未切换的恢复结果](../../.artifacts/cold-start-recovery-ver2-5-040-v1/exit-persistence/04-restored-unswitched.jpg) [新恢复会话](../../.artifacts/cold-start-recovery-ver2-5-040-v1/exit-persistence/14-fourth-recovery-ready.jpg)

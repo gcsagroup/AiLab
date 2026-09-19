@@ -39,3 +39,21 @@ Computer Use 在實際前端原始碼的瀏覽器夾具中驗證恢復入口、�
 本輪僅涵蓋受控空庫與小型便攜備份，沒有新增模型計算。複製期間退出拒絕仍只有原始碼與瀏覽器夾具證據；大檔案複製競爭、含業務資料的失敗升級、乾淨安裝、舊 App 回復、完整 AC-22／M6、公證與正式發行仍待完成。
 
 [最終讀回](../../../../.artifacts/cold-start-recovery-ver2-5-040-v1/root-readback.json) [保留的監視器失敗](../../../../.artifacts/cold-start-recovery-ver2-5-040-v1/native-reopen-002/monitor/report.json) [重開複驗](../../../../.artifacts/cold-start-recovery-ver2-5-040-v1/native-reopen-003/readback.json) [恢復介面](../../../../.artifacts/cold-start-recovery-ver2-5-040-v1/native-001/06-failed-switch-returned.jpg)
+
+<a id="未切换退出与再次进入恢复"></a>
+
+## 未切換退出與再次進入恢復
+
+同一 Ver2.5（040）簽名包繼續驗證「正式恢復但不切換→閒置退出→重開原故障庫→新恢復會話」。共完成 4 次原生選單確認退出、建立 4 個獨立恢復會話，所有會話的原庫均為 `B`；各次啟動及最終停機時選擇器仍指向 `B`。正式恢復目錄 `D` 未啟用、沒有啟動遷移，主資料庫摘要與恢復回執一致，回執中的原資料庫摘要對應健康備份清單。第四輪停機後，`D` 與先前的 `S1`、`S2`、`S3` 檔案樹保持不變，新會話介面沒有自動載入舊恢復記錄。
+
+`B` 主資料庫位元組保持，原遷移備份、回執及支援目錄保留，日誌只追加；本輪新增 4 份預期的失敗回復遷移回執。本次一致性備份的位元組摘要與主資料庫不同，驗證分別綁定已接受的備份內容及主資料庫，未將二者混為同一份位元組證據。未啟動的 `D` 只新增空鎖檔案供下一輪守衛保護，該變化已在停機快照中記錄。
+
+50 項保護記錄中 47 項原樣保持；原選擇檔案恢復原物件、檔案編號與位元組，允許改名中繼資料及 2 份啟動回執更新。4 個舊庫與 12 個模型來源檔案保持。根代理在停機後對 20 個鎖檔案核對同一檔案編號，並成功取得非阻塞排他鎖，確認這些鎖已釋放；這不等於全程持鎖的連續證明。
+
+進程監視器第 1、4 輪成功，第 2、3 輪的 `failed_preserved` 結果及原始進程行完整保留。準備階段遺漏既有支援目錄的凍結失敗、凍結期間輔助腳本摘要變化引起的守衛拒絕也保留，隨後使用獨立設定明確承接。原守衛仍按固定 2 輪合同審核，因此在恢復原選擇檔案後因保留的失敗報告退出，退出碼為 1；不能將其表述為守衛成功。根代理隨後獨立核對全部輪次、停機資料、選擇器及鎖釋放，審核通過，退出碼為 0。App 退出碼仍未知。
+
+第 4 輪實際記錄到 1 個同父占位子進程，在相隔約 0.305 秒的下一次觀察中消失；這個間隔不是測得的進程壽命，其完整可執行身份未驗證。最終 `all_observed_control_identities_verified` 與 `continuous_executable_identity_observation_verified` 均為 `false`。已知進程的括號名稱觀測缺口處理本輪只有測試證據，實際 `known_identity_observation_gaps` 為空，不能宣稱在本輪原生操作中觸發驗證。
+
+45 項監視器測試與 10 項守衛輔助測試通過。本輪未重新建置簽名包，新增模型執行和原使用者庫 SQL 均為 0。原生複製忙碌時退出拒絕、大檔案複製競爭、含業務資料的失敗升級、完整 AC-22／M6、公證與正式發行仍未完成；原型、研究資產和全部失敗證據保留。
+
+[獨立停機審核](../../../../.artifacts/cold-start-recovery-ver2-5-040-v1/exit-persistence/root-readback.json) [守衛終態](../../../../.artifacts/cold-start-recovery-ver2-5-040-v1/exit-persistence/guard-terminal.json) [監視器第四輪](../../../../.artifacts/cold-start-recovery-ver2-5-040-v1/exit-persistence/monitor-004/report.json) [未切換的恢復結果](../../../../.artifacts/cold-start-recovery-ver2-5-040-v1/exit-persistence/04-restored-unswitched.jpg) [新恢復會話](../../../../.artifacts/cold-start-recovery-ver2-5-040-v1/exit-persistence/14-fourth-recovery-ready.jpg)
