@@ -2,7 +2,9 @@
 
 # Source progress for cold-start backup recovery
 
-When cold startup leaves no healthy control service, users can explicitly enter an independent backup recovery workspace. Source implementation and isolated tests are complete; the fixed company-signed App remains Ver2.4（039） and has not been rebuilt or replaced. The planned Ver2.5（040） signed bundle and native acceptance remain pending, with no promotion of full AC-22, M6, or formal release status.
+When cold startup leaves no healthy control service, users can explicitly enter an independent backup recovery workspace. Source implementation and isolated tests are complete, and the entry is included in the fixed company-signed App Ver2.5（040）. Bundle checks passed; native flow acceptance, full AC-22, M6, and formal release remain incomplete.
+
+040 was built at the fixed path, and all 7 signed targets passed strict verification. The embedded frontend and control service match the frozen source. The 039 rollback copy, 50 original-data protection records, 4 old libraries, and 12 model source files remained unchanged; all 15 version and rollback-tool tests passed. No models ran or original user databases were queried, and notarization has not been performed. The source-stage records below retain their original test scope. [Build and protection](../../../../.artifacts/integration-ver2-5-040-v1/completed.json) [Bundle verification](../../../../.artifacts/integration-ver2-5-040-v1/root-frozen-check.json)
 
 <a id="行为与原资料保护"></a>
 
