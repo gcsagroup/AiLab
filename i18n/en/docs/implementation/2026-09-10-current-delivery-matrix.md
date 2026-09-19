@@ -6,7 +6,7 @@
 
 # Current Implementation, Evidence, and Remaining Delivery Matrix
 
-The fixed company-signed candidate is now Ver2.5（040） and includes cold-start backup recovery. Bundle, signature, and embedded-source checks passed, and the 039 rollback copy is retained. Recovery mode permits only backup inspection, independent restoration, and explicit switching. Native flow acceptance for 040, full AC-22／M6, notarization, and formal release remain incomplete. [Source progress](2026-09-20-cold-start-recovery-source-progress.md)
+The company-signed Ver2.5（040） candidate passed native cold-start recovery with controlled empty libraries: failed switching returned to the recovery workspace, and healthy-backup migration, project persistence, and same-library reopening passed with the database and migration receipts preserved. The initial reopen process-monitor failure is retained; revalidation with the improved tool passed. No new models ran. Failed upgrades containing business data, full AC-22／M6, notarization, and formal release remain incomplete. [Cold-start recovery acceptance](2026-09-20-cold-start-recovery-source-progress.md)
 
 The same company-signed 039 candidate completed controlled empty-library native migration rollback, healthy legacy-backup restoration, and reopening. Healthy A retained 8 resources; the repaired library passed migration 1→2→3→4 and test-project reopening. All 51 migration/backup tests passed, with no model runs. Cold-start offline restoration, failed upgrade with business data, and full AC-22/M6 remain pending. [Migration recovery acceptance](2026-09-20-ver2-4-039-migration-recovery.md)
 
