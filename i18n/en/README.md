@@ -10,7 +10,9 @@ A local-first desktop workbench for model training and inference. Organize model
 
 ## Current status
 
-The current fixed company-signed candidate is **Ver2.5（040）**, signed by **Global Cybersecurity Alliance Limited**. It is a development candidate; full M0—M6, clean installation, notarization, and formal distribution acceptance remain incomplete.
+The current fixed company-signed candidate is **Ver2.5（042）**, signed by **Global Cybersecurity Alliance Limited**. It is a development candidate; full M0—M6, clean installation, notarization, and formal distribution acceptance remain incomplete.
+
+Company-signed Ver2.5（042） preserves both cold-start migration and fallback failure causes and passed native message and direct-exit verification. Candidate 040 completed fault rollback, backup restoration, text re-export, and reopening with 2 projects, 507 resources, and 31 historical attempts, and rejected quitting while restoration was busy. No new models ran; full M6, actual NVIDIA, quality, 5-user acceptance, and release acceptance remain incomplete. [Business recovery and delivery progress](docs/implementation/2026-09-23-m6-business-recovery.md)
 
 The company-signed Ver2.5（040） candidate passed native cold-start recovery with controlled empty libraries: failed switching returned to the recovery workspace, and healthy-backup migration, project persistence, and same-library reopening passed with the database and migration receipts preserved. The initial reopen process-monitor failure is retained; revalidation with the improved tool passed. No new models ran. Subsequent native checks confirmed that exiting without switching and reopening kept the original failed library selected, created a new recovery session, and preserved restored directories. Monitor and guard contract failures remain retained; independent stopped-state auditing passed. Failed upgrades containing business data, full AC-22／M6, notarization, and formal release remain incomplete. [Cold-start recovery acceptance](docs/implementation/2026-09-20-cold-start-recovery-source-progress.md)
 
