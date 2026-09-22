@@ -769,23 +769,23 @@ async fn restart_control(app: tauri::AppHandle) -> Result<Value, Value> {
             .process
             .lock()
             .map_err(|_| error("HOST_STATE_ERROR", "无法重启本地服务。"))?;
-        let mut result = process
-            .start(&launch)
-            .map_err(|message| error("CONTROL_START_FAILED", &message));
-        if result.is_err()
-            && !state.recovery_mode.load(Ordering::SeqCst)
+        let result = if !state.recovery_mode.load(Ordering::SeqCst)
             && launch.data_dir != state.fallback.data_dir
         {
-            process.stop();
             let mut fallback = state.fallback.clone();
             configure_launch_fixture(&mut fallback, fixture_origin(&launch).as_deref());
-            result = process
-                .start(&fallback)
-                .map_err(|message| error("CONTROL_START_FAILED", &message));
-            if result.is_ok() {
-                *launch = fallback;
-            }
+            process
+                .start_with_fallback(&launch, &fallback)
+                .map(|(status, used_fallback)| {
+                    if used_fallback {
+                        *launch = fallback;
+                    }
+                    status
+                })
+        } else {
+            process.start(&launch)
         }
+        .map_err(|message| error("CONTROL_START_FAILED", &message));
         if let Ok(status) = &result {
             if let Some(pid) = status.pid {
                 if let Ok(mut startup) = state.startup.lock() {

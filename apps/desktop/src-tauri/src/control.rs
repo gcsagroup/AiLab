@@ -193,6 +193,29 @@ impl ControlProcess {
         result
     }
 
+    pub fn start_with_fallback(
+        &mut self,
+        current: &LaunchConfig,
+        fallback: &LaunchConfig,
+    ) -> Result<(HostStatus, bool), String> {
+        let primary_error = match self.start(current) {
+            Ok(status) => return Ok((status, false)),
+            Err(message) => message,
+        };
+        if current.data_dir == fallback.data_dir {
+            return Err(primary_error);
+        }
+        match self.start(fallback) {
+            Ok(status) => Ok((status, true)),
+            Err(fallback_error) => {
+                // 回退失败不能覆盖最初的迁移原因，轮询状态与命令返回保持一致。
+                let message = format!("{primary_error} 默认工作库也未能启动：{fallback_error}");
+                self.status.message = message.clone();
+                Err(message)
+            }
+        }
+    }
+
     fn start_with_timeout(
         &mut self,
         config: &LaunchConfig,
@@ -677,6 +700,49 @@ mod tests {
         assert!(service.connection().is_some());
         assert_eq!(fs::read(&selection).unwrap(), b"original");
         service.stop();
+    }
+
+    #[test]
+    fn cold_start_preserves_migration_error_when_default_library_also_fails() {
+        let (_current_dir, current) = fixture("import os,json\nprint(json.dumps({'status':'failed','code':'DATABASE_MIGRATION_FAILED','pid':os.getpid()}),flush=True)\nraise SystemExit(1)\n");
+        let (_fallback_dir, fallback) = fixture("raise SystemExit(1)\n");
+        let mut service = ControlProcess::default();
+        let failure = service
+            .start_with_fallback(&current, &fallback)
+            .unwrap_err();
+        assert_eq!(failure, "数据库迁移失败，运行器未启动。请保留工作库，检查迁移备份与回执后重试。 默认工作库也未能启动：服务启动响应格式无效。");
+        assert_eq!(service.status().message, failure);
+        assert_eq!(service.status().state, "failed");
+        assert!(service.child.is_none() && service.connection().is_none());
+    }
+
+    #[test]
+    fn cold_start_uses_default_library_only_after_selected_library_fails() {
+        let (_current_dir, current) = fixture("import os,json\nprint(json.dumps({'status':'failed','code':'DATABASE_MIGRATION_FAILED','pid':os.getpid()}),flush=True)\nraise SystemExit(1)\n");
+        let (_fallback_dir, fallback) = fixture(HEALTHY);
+        let mut service = ControlProcess::default();
+        let (status, used_fallback) = service.start_with_fallback(&current, &fallback).unwrap();
+        assert!(used_fallback);
+        assert_eq!(status.state, "running");
+        assert_eq!(service.connection().unwrap().port, status.port.unwrap());
+        service.stop();
+        let (status, used_fallback) = service.start_with_fallback(&fallback, &current).unwrap();
+        assert!(!used_fallback);
+        assert_eq!(status.state, "running");
+        service.stop();
+    }
+
+    #[test]
+    fn cold_start_does_not_retry_the_same_failed_library() {
+        let (directory, current) = fixture("import os,json\nfrom pathlib import Path\nwith Path(__file__).with_suffix('.starts').open('a') as log: log.write('started\\n')\nprint(json.dumps({'status':'failed','code':'DATABASE_MIGRATION_FAILED','pid':os.getpid()}),flush=True)\nraise SystemExit(1)\n");
+        let mut service = ControlProcess::default();
+        let failure = service.start_with_fallback(&current, &current).unwrap_err();
+        assert!(!failure.contains("默认工作库"));
+        assert_eq!(
+            fs::read_to_string(directory.path().join("service.starts")).unwrap(),
+            "started\n"
+        );
+        assert!(service.child.is_none());
     }
 
     #[test]
