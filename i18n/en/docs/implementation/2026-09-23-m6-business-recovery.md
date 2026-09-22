@@ -100,6 +100,18 @@ The first two cancellation-tool rounds failed before sending cancellation: one r
 
 Final independent checks verified all mutated, partial, and successful packages. Original protected records, model sources, and the historical restored business database were unchanged. All 14 lock-release probes passed and this round's services stopped. These results close packaged HTTP failure-regression subitems for 042 only. This round did not trigger the failures through native UI or repeat every fault combination for every real historical object type; it does not establish full AC-27, AC-22, or M6. [042 export-failure verification](../../../../.artifacts/m6-20260923-v1/export-faults042/root-readback.json)
 
+<a id="042-二十次独立启动与初显"></a>
+
+## Twenty independent launches and initial visibility on 042
+
+CUA launched the company-signed 042 package normally from the fixed path on the same installed Apple environment, producing 20 distinct App processes. Each round began with no App or control service, waited for full readiness, confirmed quit through the native dialog, and verified both processes had exited. The formally restored library contained 2 projects, 607 resources, and 56 historical attempts. No models ran. Operating-system caches were retained; this did not simulate a clean installation, cold system caches, or large datasets.
+
+All 20 initial screenshots were individually reviewed and showed the main window, project, and evaluation configuration. Monotonic elapsed-time upper bounds from the CUA launch request through completed screenshot capture were all below 3000 milliseconds, with a maximum of 1259.864 milliseconds. They include automation overhead and establish the initial-visibility target for these 20/20 launches only. They are not exact earliest-frame timings and do not support publishing an initial-visibility median or P95. Separate packaged full-readiness receipts measured a minimum of 3585.120, median of 3632.153, nearest-rank P95 of 3848.259, and maximum of 4048.046 milliseconds. Each receipt matched that round's App and control-service PIDs. Full readiness exceeding 3 seconds is not an initial-visibility failure.
+
+The screenshots also exposed a real defect: rounds 1, 7–12, 14, 16, and 17 briefly displayed “No text output for this run” before the complete execution record loaded. All 20 fully ready interfaces showed the original failed evaluation report. Initial-visibility acceptance does not conceal this misleading loading message; the next candidate must fix and revalidate it. No quality evaluation was rerun and no failed result was changed to a pass.
+
+The complete package files, permissions, and signature passed verification. All database bytes and 607 resources were unchanged. The original selector object and bytes were restored; 47 protected records and 12 model-source identities were unchanged; all 14 lock-release probes passed. The process-identity monitor passed 45 tests, and the 20 actual rounds recorded no identity-observation gaps. Evidence includes each screenshot, native quit dialog, process records, phase receipts, and stopped-state readback. This closes only the installed-environment initial-visibility subitem for 042. Full interface performance, clean machines, NVIDIA, quality, real users, and M6 release gates remain open. [042 twenty-launch verification](../../../../.artifacts/m6-20260923-v1/startup042/root-readback.json)
+
 <a id="m6-仍需关闭的条件"></a>
 
 ## Remaining M6 gates
