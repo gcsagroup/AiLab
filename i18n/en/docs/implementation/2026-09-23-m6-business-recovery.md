@@ -76,6 +76,16 @@ After independent execution, reopening 042 showed all 12 new exports. The old ev
 
 All 19 positive/negative file-auditor cases and 45 process-monitor tests passed; generation stayed within this round's fixed count. Post-update re-export, independent loading of 3 text exports, and media playback subitems are complete. Image process exit, full AC-22／AC-27, and M6 remain open. [Post-update exports and protection](../../../../.artifacts/m6-20260923-v1/postupdate042/root-readback.json) [Independent use and retained failure](../../../../.artifacts/m6-20260923-v1/postupdate042/independent-001/readback.json) [Native media playback](../../../../.artifacts/m6-20260923-v1/postupdate042/playback.json)
 
+<a id="图片退出观察器修正后的独立复验"></a>
+
+## Independent image rerun after correcting exit observation
+
+The previous helper checked and cleaned up same-group children immediately after the main process exited, without a natural-exit observation window. The revised observer waits at most 2 seconds and records group members. It passes only when the main process succeeds, the group disappears naturally, and no cleanup signal is sent. Persistent processes, timeouts, and nonzero exits still fail; disappearance after cleanup is not counted as natural exit. All 5 real-subprocess tests passed without loading models.
+
+A separate no-model pipe probe used the fixed 042 bundled resource tracker. Its child remained briefly after the parent exited, then disappeared naturally after approximately 0.113 seconds without cleanup signals. This demonstrates that an immediate check can be premature. The previous image run did not record member identities, so this experiment cannot establish that run's cause or rewrite its failed receipt.
+
+A separate, single-image rerun then froze the same complete 042 package, new export, exact TinySD dependency, and script hashes, with a budget of 1 generation, 0 training runs, and 0 quality reevaluations. The image LoRA generated with the same MPS, 512×512, 20-step recipe. This run's main process exited with code 0, its group was already absent at main-process exit, and neither SIGTERM nor forced termination was used. The image was fully decoded and viewed. Models, adapter, exports, database, and original protected records remained unchanged. This new independent-use run passed while the old failure remains retained. The product package was neither modified nor rebuilt, and model quality, full AC-22／AC-27, and M6 are not promoted. [Single-image rerun](../../../../.artifacts/m6-20260923-v1/image-exit042/image-001/report.json) [No-model process observation](../../../../.artifacts/m6-20260923-v1/image-exit042/tracker-probe/tracker.process.json)
+
 <a id="m6-仍需关闭的条件"></a>
 
 ## Remaining M6 gates
