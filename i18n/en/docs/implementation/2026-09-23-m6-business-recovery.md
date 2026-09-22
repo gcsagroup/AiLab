@@ -46,11 +46,25 @@ After normal exit and reopening the same library, the UI showed all 12 exports c
 
 The independent file auditor passed 19 positive and negative tests, and the process monitor passed 45 tests; the actual export packages from this round were also verified. Auditing makes no SQL connections and launches no App or model; stopped-database readback runs separately under a lock in the isolated restored library. Preparation initially required full path fields to match a different restored library; this was corrected to verify fixed object identities first and then freeze this library's complete records. The reopening closeout script initially used an incorrect monitor-report filename and passed after correction. These two tooling errors are not product failures and do not erase earlier acceptance failures. [042 twelve-export and protection verification](../../../../.artifacts/m6-20260923-v1/exports042/root-readback.json) [Export content audit](../../../../.artifacts/m6-20260923-v1/exports042/first-export-audit.json) [Reading and decoding](../../../../.artifacts/m6-20260923-v1/exports042/media-readback.json)
 
+<a id="固定路径实际更新与旧包回退"></a>
+
+## Actual updates and old-package rollback at the fixed path
+
+Complete company-signed archives of 040 and 042 were retained, and 040→042→040→042 was actually exercised at the same fixed App path. Preparing the old installation first preserved the current 042 object, then placed a fully verified 040 clone at that path; this is acceptance setup, not product rollback. The subsequent two upgrades and intervening rollback used the unmodified production update tool, without bypassing signature, plan digest, version, or database compatibility checks.
+
+The four native launches displayed 040, 042, 040, and 042 respectively. Each read the original failed evaluation and the existing 12-export history, then exited normally through native confirmation. After every shutdown, database bytes and all business rows matched the initial state: 559 resources and 44 historical attempts were retained, with 0 new attempts. The fixed path ended on 042, with its main executable, control executable, and full package matching the frozen candidate; the original current package, archives, and packages retained by update transactions were preserved.
+
+Both transaction database backups passed integrity, schema-version, and complete business-row checks, and their file hashes matched their receipts. These backups contain the database and library selection, excluding payload files. Separately, all 733 original full-backup files, 732 restored payload files, and the existing 12 export packages remained unchanged. This round only inspected existing exports; it did not re-execute every export after updating, and package replacement on the same machine is not clean-machine installation.
+
+All 27 update contract tests passed, as did 45 tests for each of the 040 and 042 monitors. The initial preparation script compared all version-object fields too strictly and passed after correction. The first monitor rejected a guard launched with a relative script path before starting the App; that failure is retained. The original guard was released normally, and a separate round used an absolute path. The subsequent four process monitors completed, proving only each round's process lifecycle, without claiming App exit codes or continuous locking.
+
+Finally, the original library selector object and bytes were restored, 47 protected records remained fully unchanged, and 14 lock-release probes passed. Model sources and the existing fault library were unchanged, with no new recovery sessions, model executions, or SQL connections to original user libraries. Actual local updating and compatible old-package rollback are complete as subitems; clean installation, distribution-channel acceptance, and full AC-22／M6 remain incomplete. [Update, rollback, and protection verification](../../../../.artifacts/m6-20260923-v1/update042/root-readback.json)
+
 <a id="m6-仍需关闭的条件"></a>
 
 ## Remaining M6 gates
 
-- Complete clean installation, update and old-App rollback, every applicable export after upgrade/restoration, long-task and network-fault checks, and UI/performance regression on the same final candidate.
+- Complete clean-machine installation and update/rollback on the same final candidate, then finish all applicable post-upgrade exports, independent use, long-task and network-fault checks, and UI/performance regression.
 - Validate actual NVIDIA Linux hardware and the same LoRA through NVIDIA→Apple; existing training, quantization, and media quality failures remain.
 - Have 5 actual target users complete their first result, save it, and resume after restart from zero resources; participants and device details are still pending.
 - Confirm the distribution channel and complete its signing, notarization, and independent-installation acceptance; a company signature is not notarized release evidence.
