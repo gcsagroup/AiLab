@@ -32,6 +32,20 @@ Verified rollback archives preserve both 040 and 041. Candidate 042 completed a 
 
 The first 042 monitor observed a second App instance after Quit and retains `failed_preserved`. Rounds are not combined, and unverified short-lived processes are not treated as verified. After stopping the current instance, a separate round checked only processes after Quit; monitoring completed with no new recovery session. The trigger for the second instance was not independently established; the first failure remains a failure.
 
+<a id="042-恢复库十二项重新导出"></a>
+
+## Twelve re-exports from the restored library on 042
+
+The same company-signed 042 package selected and exported 12 historical objects through ordinary native entries in the healthy restored library: original text, image, video, and audio works; text, video, and audio revisions; the original model and MLX 4-bit quantized model; text and image LoRAs; and the original evaluation report. This round did not migrate again: the library remained at version 4, with no new model training, inference, or evaluation.
+
+Object versions, source recipes, dependencies, export plans, and frozen snapshots were checked individually, along with all 64 payload files and 12 manifests. Resources increased from 511 to 559, adding exactly 12 plans, 12 tasks, 12 export attempts, and 12 export records; existing projects, resources, events, and idempotency records were preserved. Sizes and hashes matched for all 733 original backup files and 732 restored payload files.
+
+Text and subtitles in 7 work packages were independently readable, and images, audio, and video passed complete decoding; the evaluation report retained its quality failure. This step did not perform playback or human quality assessment, nor independently run models or adapters. Adapter packages explicitly exclude their base models, and the two adapter types require matching MLX／Diffusers environments respectively; the manifest field `independent_use=not_verified` remains unchanged.
+
+After normal exit and reopening the same library, the UI showed all 12 exports complete, while the failed evaluation remained failed and candidate registration unavailable. After another exit, database bytes, all business rows, and the export tree were identical to the first shutdown. Both separate process monitors completed, establishing only process lifecycle; neither a known App exit code nor continuous locking is claimed. The original selector object and bytes were restored, 47 protected records remained fully unchanged, and 14 lock-release probes passed. The existing fault library and model sources were unchanged, with no new recovery session.
+
+The independent file auditor passed 19 positive and negative tests, and the process monitor passed 45 tests; the actual export packages from this round were also verified. Auditing makes no SQL connections and launches no App or model; stopped-database readback runs separately under a lock in the isolated restored library. Preparation initially required full path fields to match a different restored library; this was corrected to verify fixed object identities first and then freeze this library's complete records. The reopening closeout script initially used an incorrect monitor-report filename and passed after correction. These two tooling errors are not product failures and do not erase earlier acceptance failures. [042 twelve-export and protection verification](../../../../.artifacts/m6-20260923-v1/exports042/root-readback.json) [Export content audit](../../../../.artifacts/m6-20260923-v1/exports042/first-export-audit.json) [Reading and decoding](../../../../.artifacts/m6-20260923-v1/exports042/media-readback.json)
+
 <a id="m6-仍需关闭的条件"></a>
 
 ## Remaining M6 gates

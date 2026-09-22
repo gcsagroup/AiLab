@@ -2,19 +2,19 @@
   "documents": [
     {
       "source": "CHANGELOG.md",
-      "source_sha256": "79470dfef942218e4fd57b844024cfd795c1eb385842fae3f528d6ef48fbbc17",
+      "source_sha256": "a5e6895e9a030427e193228b898730119d0c9e3d34fde247bcbac564e41d0f39",
       "en": "i18n/en/CHANGELOG.md",
       "zh-TW": "i18n/zh-TW/CHANGELOG.md",
-      "zh-TW_sha256": "ee11645ca45095160e0ec747c382f9470d4996b781a5b4a1552e9ed9676c23b5",
-      "en_sha256": "28c814116bf1bdc90866424ff2b46f9c4cd3a4e32ed58ef1c08fdd216af69eec"
+      "zh-TW_sha256": "4e3d4c282b35cde1cc99886715f8b3c43d60a5c3392fcb2d52619f81952c06c5",
+      "en_sha256": "5e8294b95f25e5113278033b805ef974e83e6278227dbcaeb37a0da4bb1bc355"
     },
     {
       "source": "README.md",
-      "source_sha256": "e605bab2bfcb023bc2a912bf7575d11adbb048655ccccfcfa69c597114b3a24e",
+      "source_sha256": "4860e51daaa947ded0ed449ee48a49c5fd39aea2b0b9881dfdd74eb182bb0c55",
       "en": "i18n/en/README.md",
       "zh-TW": "i18n/zh-TW/README.md",
-      "zh-TW_sha256": "283d496f2844864c77686cc92b76b661c30620b1c002791a151867e0aed52397",
-      "en_sha256": "789401a7c6e08923d1f1999838abc3bc19ee320ff0be5c63fddac7001042ca8f"
+      "zh-TW_sha256": "a60602a87eacff429a4cb45ee00d88c5d8a57f9ac45a2c60a50527530ccf4ded",
+      "en_sha256": "74016d794c0c40c8ed110dbf5d29e19bbeba5b7beace654ab4efbb775f6e01dd"
     },
     {
       "source": "adapters/media/ACCEPTANCE.md",
@@ -202,11 +202,11 @@
     },
     {
       "source": "docs/README.md",
-      "source_sha256": "d275f25e422960a0711528630946b59e39b89091faf2c17db80dec5c0c6aa097",
+      "source_sha256": "dd98767c79de732ebac9f9a2e9e80c3dd62aa00f98b846803fe16fd0e3d54d75",
       "en": "i18n/en/docs/README.md",
       "zh-TW": "i18n/zh-TW/docs/README.md",
-      "zh-TW_sha256": "5c924a9402195d6490684000fa60b3080f7ad5451dede741067b22283b5c88db",
-      "en_sha256": "d2c434b727727aae88e7f66ff382167d0ff6c36fd8fbed8a1c812d966df4f335"
+      "zh-TW_sha256": "b6481ed10a8b532da4bc4f43603e294a16b8e43bc92db3a37d32af9faca760f7",
+      "en_sha256": "df6ccf31fc09e49c3370652c42e536f7aad7c6c46409813a1727bce1f02ad444"
     },
     {
       "source": "docs/USER_GUIDE.zh-CN.md",
@@ -362,11 +362,11 @@
     },
     {
       "source": "docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "source_sha256": "be8b6a5c10ac300d62fdea3f39c6bdeb5151c3145ec177dafd8c5fe8bec8571f",
+      "source_sha256": "e9844b7ca89f80a90185c6fd5d234938efd9151c7cb53956c034d2da56a2c46d",
       "en": "i18n/en/docs/implementation/2026-09-10-current-delivery-matrix.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "zh-TW_sha256": "1bd97c5c062cd1b4caf7915548b9a12bc971c4b6890b68990b715314452d1ae8",
-      "en_sha256": "0b91335a675d3b13b7dab30814bd83423a367ab68d35d9fc2a56f0c4320b3cec"
+      "zh-TW_sha256": "4740ec8d8e3332ac689bb5ca13b165f295f9c8ecdac662fe47862f5d87a97cc2",
+      "en_sha256": "76731cd9be15dd58c72cf0d4785f6eeae5005233f85bab2d741830fc406b9ff1"
     },
     {
       "source": "docs/implementation/2026-09-10-execution-board.md",
@@ -788,9 +788,9 @@
       "source": "docs/implementation/2026-09-23-m6-business-recovery.md",
       "en": "i18n/en/docs/implementation/2026-09-23-m6-business-recovery.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-23-m6-business-recovery.md",
-      "source_sha256": "fde44270ce4028f6efe87e5a3d815d7099142f791eba27a985ad9dc271fd5b7d",
-      "zh-TW_sha256": "6e96c8098629fa2f129ca9b01b457ec318f8558592a5d9051e356535e7d985fc",
-      "en_sha256": "8cd12724f022109def2ee5798164af678509f42e2c7e4a1e72215c401331cbc0"
+      "source_sha256": "8845ef78ce9ad8aaa88852844bfd4832348b7cf7601e605dfa39947a676ff251",
+      "zh-TW_sha256": "ec7b16ba182691b1b35da054e3a99d6ba1d8da26c7ff6825e83488f9aa996348",
+      "en_sha256": "1da0d4c3a829151df1e9285f3a533bf2aa08a18ca3db939fefc6be3e5b9632b8"
     },
     {
       "source": "docs/validation-report.md",
