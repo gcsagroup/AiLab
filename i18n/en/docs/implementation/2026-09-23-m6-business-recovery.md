@@ -124,6 +124,18 @@ Initial-visibility screenshot upper bounds were below 3 seconds in 20/20 rounds,
 
 The first sampling helper retained a closure bound to the 042 directory, temporarily overwriting old evidence with the new capture. The actual new capture was moved to 043, and the original retained memory buffers restored the 042 screenshot, timing, and accessibility text; the original screenshot hash and timing values were verified. The premature check caused by reading the old receipt is retained separately and does not show that this round’s startup receipt arrived early. Subsequent sampling uses an explicit directory, candidate checks, and exclusive writes. The helper error caused no additional App launch. [Sampling-directory correction](../../../../.artifacts/m6-20260923-v1/startup043/helper-directory-correction.json)
 
+<a id="043-实际更新与回退"></a>
+
+## Actual update and rollback on 043
+
+The same fixed path completed 042→043→042→043. Setup first prepared the old installation from a verified archive while retaining the original 043 package. The official candidate-update tool then performed 2 updates and 1 rollback. Initial old-installation setup is not counted as a product rollback. The same formally restored historical business library was used throughout, with no product-package edits, rebuilds, or model runs.
+
+Each of the 4 rounds verified the native version, original failed evaluation, and blocked candidate-registration state, then read the 12 most recent existing export records in the task queue. After native quit confirmation in each round, all 607 resources, 56 historical attempts, business rows, and database bytes were unchanged. Historical “export completed” states were not treated as successful new exports in this round.
+
+Both of the 2 formal transaction backups matched baseline schema, integrity, and business rows. They contain the database and library-selection settings only, excluding asset files. The final fixed-path package is 043. The original retained package, both signed archives, and transaction-retained packages matched their frozen identities. The file tree of the existing 12 export packages and historical asset hashes were unchanged. The original selector object and bytes were restored; 47 protected records and 12 model-source identities were unchanged; all 14 lock-release probes passed; and this round’s App and control-service processes stopped. The update tool passed 27 contract tests.
+
+This round completes actual update, rollback, historical-record reading, and data-preservation subitems for 043 in an installed environment. It adds no failed-migration injection, clean-machine installation, or new exports of all object types after upgrade, and does not establish full AC-22, AC-27, or M6. [043 update and rollback verification](../../../../.artifacts/m6-20260923-v1/update043/root-readback.json)
+
 <a id="m6-仍需关闭的条件"></a>
 
 ## Remaining M6 gates
