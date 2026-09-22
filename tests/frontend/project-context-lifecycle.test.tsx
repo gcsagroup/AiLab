@@ -128,6 +128,22 @@ it('首次选择读取失败仍可编辑任务，迟到重试读取其他项目�
   expect(requests.filter(request => request.method !== 'GET').every(request => request.path === '/ui-context' || request.path === `/tasks/${taskId('project-a')}/draft`)).toBe(true);
 });
 
+it('已有项目但选择读取失败后断线，退出仍拒绝跳过未完成的保存', async () => {
+  getContext = () => { throw new Error('选择记录暂时不可读'); };
+  await start();
+  const previousInvoke = vi.mocked(invoke).getMockImplementation()!;
+  vi.mocked(invoke).mockImplementation(async (command, args) => {
+    if (command === 'host_status') return { state: 'failed', message: '连接已断开' };
+    return previousInvoke(command, args);
+  });
+  await act(async () => { host.listeners.get('host-status')!({ payload: { state: 'failed', message: '连接已断开' } }); });
+  await screen.findByText('本机服务未连接');
+  await act(async () => { host.listeners.get('prepare-exit')!({ payload: { request_id: 42, cancelled: false } }); });
+  await waitFor(() => expect(acknowledgements).toHaveLength(1));
+  expect(acknowledgements[0].success).toBe(false);
+  expect(saved).toEqual({ project_id: null, projects: {} });
+});
+
 it('选乙项目后模型列表仍待决，退出成功回执必须等乙项目原任务选择保存且不写空对象', async () => {
   const viewB = { ...defaultProjectView(), task_id: taskId('project-b') };
   saved = { project_id: 'project-a', projects: { 'project-a': defaultProjectView(), 'project-b': viewB } };

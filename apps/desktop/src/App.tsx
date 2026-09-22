@@ -131,6 +131,9 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
   }, selectedTask?.project_id === projectId ? selectedTask : null) };
   const exitPreparation = useExitPreparation(async () => {
     if (recovery.current && recoveryOperationBusy.current) throw new Error('备份恢复操作尚未完成，请等待文件检查或复制结束后再退出。');
+    // 冷启动从未载入工作库时没有可保存的选择；已载入项目或草稿仍走完整保存。
+    if (!connected && !projectsLoaded && !contexts.loaded && !currentView.current.projectId
+      && !selectedTaskRef.current && !selectedWorkflow && !leaveTask.current && !librarySwitching.current) return;
     await prepareLibraryLeave();
   });
   function rememberView(id: string, view: ProjectView) {

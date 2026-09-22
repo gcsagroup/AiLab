@@ -116,6 +116,13 @@ it('切库失败保留恢复区和重选入口，不补发环境或偏好请求'
   fireEvent.click(screen.getByRole('button', { name: '恢复另一份备份' }));
   await screen.findByRole('button', { name: '选择备份' }); expectRecoveryOnly();
 });
+it('冷启动失败且从未载入工作库时可直接退出，不要求先恢复或保存选择', async () => {
+  render(<App />); await screen.findByText('迁移未完成，原数据已保留');
+  await emit('prepare-exit', { request_id: 40, cancelled: false });
+  await waitFor(() => expect(invoke).toHaveBeenCalledWith('complete_exit_preparation', { requestId: 40, success: true }));
+  expect(requests).toEqual([]);
+  expect(commands('begin_backup_recovery')).toHaveLength(0);
+});
 it('恢复区原生退出完成应答，不保存普通工作库偏好', async () => {
   await openRecovery(); await emit('prepare-exit', { request_id: 41, cancelled: false });
   await waitFor(() => expect(invoke).toHaveBeenCalledWith('complete_exit_preparation', { requestId: 41, success: true }));
