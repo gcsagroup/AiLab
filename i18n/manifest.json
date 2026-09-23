@@ -810,11 +810,11 @@
     },
     {
       "source": "prototype/reference-2026-09-09/README.md",
-      "source_sha256": "22f908c9d52345fd71a5c67abe0d59803bde848a239bb5939a72dc0192f257c6",
+      "source_sha256": "a2a7be056800b8a45174ecfd10caee35ec766769040e0809543cd097a885296e",
       "en": "i18n/en/prototype/reference-2026-09-09/README.md",
       "zh-TW": "i18n/zh-TW/prototype/reference-2026-09-09/README.md",
-      "zh-TW_sha256": "2573be36a85a75fcafad0fa0b97324fe793907dba00d629578954220e70f64be",
-      "en_sha256": "bbf304f9998557eb05d3fb2f5f08c5fec9aa6a1ab1f1032c59bf8eb7ab1d59b5"
+      "zh-TW_sha256": "686a90aec58c5f39ad17a594dd9386bebcaa708a2ae937562a71cf7ed3955211",
+      "en_sha256": "1b48e1557e6d05807d120db2d101eaf183fac60307a1f4054c584d837abc9021"
     },
     {
       "source": "scripts/desktop/MEDIA_RUNTIME_PLAN.md",
