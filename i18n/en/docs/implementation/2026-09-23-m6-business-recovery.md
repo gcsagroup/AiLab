@@ -4,7 +4,9 @@
 
 **Current M6 progress (2026-09-23)**: the fixed company-signed candidate is Ver2.5(045). Using the formal source-group workflow, this run trained once on 48 samples with 24 LoRA layers for 192 steps, then independently compared the base and candidate on 32 newly frozen questions: total passes rose from 3/32 to 17/32 and business passes from 0/8 to 3/8. All four category thresholds still failed; no qualified candidate was registered. Per-sample observations, report export, shutdown, and original-data protection checks passed, along with 77 relevant tests. The dark-title cause, qualifying quality, NVIDIA, 5 real users, clean installation, and distribution remain open. M6 is incomplete.
 
-**045 additional local-runtime acceptance**: 20 complete native launch/quit samples passed. A separate run completed 362 formal packaged-service requests: 272 generations succeeded and 90 returned device busy. All owned processes exited normally, and original data and the fixed package were preserved. The low-memory preset traded slower first tokens for lower medium/long-input peaks; the low-latency preset did not improve every metric. In 75 open-ended outputs, token sequences differed from the same-weight default; repeats within each configuration were consistent. No new quality acceptance is established. The dark-title cause, clean installation, full AC-23/AC-24, and M6 remain open.
+**045 additional local-runtime acceptance**: 20 complete native launch/quit samples passed. A separate run completed 362 formal packaged-service requests: 272 generations succeeded and 90 returned device busy. All owned processes exited normally, and original data and the fixed package were preserved. The low-memory preset traded slower first tokens for lower medium/long-input peaks; the low-latency preset did not improve every metric. In 75 open-ended outputs, token sequences differed from the same-weight default; repeats within each configuration were consistent. Those performance inputs do not establish semantic quality acceptance. The dark-title cause, clean installation, full AC-23/AC-24, and M6 remain open.
+
+**045 public preset regression**: a separate run completed 36 generations through the formal packaged service. On the existing 6 fixed questions, every preset scored 4/6 with original weights and 5/6 with quantized weights. All three presets produced identical token sequences for the same weight/question, with no additional regression. Existing arithmetic and bare-JSON errors remain. This passes only the public fixed-question subset, not training quality, quantization quality, or full M6 acceptance.
 
 <a id="历史业务恢复实机证据"></a>
 
@@ -304,6 +306,20 @@ Every request started an independent model process, with loading and generation 
 After normal shutdown, independent readback checked all raw metrics, model manifests, generation parameters, executor identity, caches, and database integrity. All 50 original protection records, model source files, and the complete App file tree were preserved; all owned processes, process groups, and listeners were released. The 20 relevant contract tests and 5 statistical boundary checks passed; documentation tests run separately. This adds formal-API load evidence in the installed environment, not native interaction latency, clean installation, quality acceptance, NVIDIA, or full AC-24/M6 acceptance.
 
 [Frozen load plan](../../../../.artifacts/m6-20260923-v1/performance045/plan.json) · [Full readback and distributions](../../../../.artifacts/m6-20260923-v1/performance045/root-readback.json) · [Shared-host activity](../../../../.artifacts/m6-20260923-v1/performance045/concurrent-host-activity.json)
+
+<a id="045-预设公开固定题回归"></a>
+
+## 045 public fixed-question preset regression
+
+A separate directory froze a budget of 36 runs in advance, reusing the original prompts and strict scoring rules of the existing 6 public questions: arithmetic, number extraction, bare JSON, and code retrieval from the start/middle/end of long text. Original BF16 and existing 4-bit weights each compared default, low-memory, and low-latency presets. Auto KV chunk sizes were 2048, 512, and 4096, with maximum output 128, seed 0, and temperature 0. There were no warmups, training, requantization, or additional retries, and no tuning against exposed training or quantization-admission holdouts.
+
+All 36 requests completed normally and reached a natural stop. Every initial cache layer was empty; shutdown readback verified actual parameters, packaged-executor identity, and raw outputs. Each preset scored 4/6 with original weights and 5/6 with quantized weights. Original weights still answered the arithmetic question with 32; both weights wrapped JSON in code fences, which failed the original rule. Number extraction and long-text retrieval passed. Every answer is retained, and execution success is not counted as a correct answer.
+
+The two optimized presets produced identical token sequences in all 24 comparisons against the current same-weight default, with no question changing from correct under default to incorrect under optimization. The current default's 12 outputs also matched historical default records. This conclusion covers only the public fixed questions. It does not explain output differences on open-ended performance inputs, establish blind evaluation, or guarantee general quality. Existing LoRA, weight-quantization, and media quality failures remain unchanged.
+
+The 8 scoring-boundary checks passed. All owned processes, process groups, and listeners were released normally, and the isolated database passed integrity checks. All 50 original protection records, model source files, and the complete fixed App file tree were preserved; no original-library SQL was read. Full AC-24 and M6 remain open.
+
+[Frozen questions and rules](../../../../.artifacts/m6-20260923-v1/preset-quality045/plan.json) · [Per-question outputs and independent readback](../../../../.artifacts/m6-20260923-v1/preset-quality045/root-readback.json) · [Scoring-boundary checks](../../../../.artifacts/m6-20260923-v1/preset-quality045/scoring-tests.json)
 
 <a id="m6-仍需关闭的条件"></a>
 
