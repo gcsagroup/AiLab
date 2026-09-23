@@ -4,7 +4,7 @@
 
 **Current M6 progress (2026-09-23)**: the fixed company-signed candidate is Ver2.5(045). Using the formal source-group workflow, this run trained once on 48 samples with 24 LoRA layers for 192 steps, then independently compared the base and candidate on 32 newly frozen questions: total passes rose from 3/32 to 17/32 and business passes from 0/8 to 3/8. All four category thresholds still failed; no qualified candidate was registered. Per-sample observations, report export, shutdown, and original-data protection checks passed, along with 77 relevant tests. The dark-title cause, qualifying quality, NVIDIA, 5 real users, clean installation, and distribution remain open. M6 is incomplete.
 
-**045 additional startup acceptance**: with the system cache retained, 20 complete native launch/quit samples passed. The largest upper bound through the initial screenshot was 0.759 seconds; full readiness had a median of 3.646 seconds and P95 of 3.686 seconds. Another 1 round lacked a timing receipt because the sampling script quit too early; its failure is retained. Original data, models, and the fixed package are unchanged. Dark-title captures still show low contrast, but the independent whole-screen capture did not include the title; the cause remains unresolved. These results do not establish clean installation, full AC-23/AC-24, or M6 acceptance.
+**045 additional local-runtime acceptance**: 20 complete native launch/quit samples passed. A separate run completed 362 formal packaged-service requests: 272 generations succeeded and 90 returned device busy. All owned processes exited normally, and original data and the fixed package were preserved. The low-memory preset traded slower first tokens for lower medium/long-input peaks; the low-latency preset did not improve every metric. In 75 open-ended outputs, token sequences differed from the same-weight default; repeats within each configuration were consistent. No new quality acceptance is established. The dark-title cause, clean installation, full AC-23/AC-24, and M6 remain open.
 
 <a id="历史业务恢复实机证据"></a>
 
@@ -275,6 +275,35 @@ After shutdown, database bytes and all tables remained unchanged: 668 resources,
 An earlier independent diagnosis of the 045 dark title still found black, low-contrast title text in tool window captures. Preview successfully captured the whole screen, but another foreground window obscured the target title, so it could not identify the cause. The system screenshot-tool entry timed out and was not repeatedly retried. The temporary unsaved whole-screen image was discarded, system appearance was restored to its original automatic mode, the App quit normally, and data-protection checks passed. Evidence still cannot distinguish product rendering from capture differences. No speculative window-configuration change was made, and full AC-23 acceptance remains open.
 
 [Startup sampling readback](../../../../.artifacts/m6-20260923-v1/startup045/root-readback.json) · [Sampling correction record](../../../../.artifacts/m6-20260923-v1/startup045/sampling-correction.json) · [Title diagnosis readback](../../../../.artifacts/m6-20260923-v1/title045/root-readback.json)
+
+<a id="045-固定负载性能与成对请求"></a>
+
+## 045 fixed-load performance and paired requests
+
+The fixed 045 package's formal control API and MLX executor compared the original BF16 and existing 4-bit weights using default, low-memory, and low-latency presets. All used auto KV precision, with chunk sizes of 2048, 512, and 4096 respectively; failed q4 KV was not reopened. Real template tokenization produced 62, 1022, and 3582 input tokens for short, medium, and long inputs. Maximum output was 128, seed 0, temperature 0, and top-p 1. Each weight/preset submitted 30 fixed requests under each single-request and paired-request load, with 10 of each length. Order was frozen in advance and rotated presets.
+
+The 362 submissions included 2 warmups. All 180 formal single requests succeeded. Each of 90 request pairs admitted 1 and rejected 1 with `DEVICE_BUSY`, yielding 272 successful generations and 90 rejections in total. Every success produced 128 engine tokens, with every initial cache layer empty. Raw execution timestamps showed no overlapping model processes. Rejections are not inference successes, and these results do not establish parallel model inference support.
+
+The table shows only long-input single requests, with 10 observations per row; the readback report retains distributions for all lengths and paired loads. First-token timing starts before creation of the new cache and excludes model loading and control-API overhead. Generation peak is the MLX counter including loaded weights, not whole-system memory. The end-to-end observed upper bound spans submission through terminal-state readback, including API revalidation, execution, collection, and polling. P95 uses nearest rank, which equals the row maximum at this sample count.
+
+| Weights | Preset | Median first token ms | First token P95 ms | Median generation peak MiB | Median observed end-to-end s |
+|---|---|---|---|---|---|
+| BF16 | Default | 146.288 | 148.050 | 1668.306 | 5.564 |
+| BF16 | Low memory | 172.941 | 180.064 | 1312.182 | 5.612 |
+| BF16 | Low latency | 137.990 | 250.439 | 1648.244 | 5.569 |
+| 4-bit | Default | 147.494 | 148.611 | 1047.650 | 4.076 |
+| 4-bit | Low memory | 177.986 | 192.004 | 641.775 | 4.117 |
+| 4-bit | Low latency | 137.987 | 139.853 | 1187.525 | 4.070 |
+
+The low-memory preset lowered generation peaks for medium and long inputs but delayed the first token; short-input peaks did not decrease. The low-latency preset lowered long-input median first-token time, but worsened the original weights' tail latency and increased quantized-weight memory peaks. Observed end-to-end time did not improve consistently either. These are tradeoffs on this load, not general speed or memory guarantees.
+
+Among formal generations, 75 token sequences differed from the same-weight, same-input default baseline. Differences occurred for quantized weights with medium-input low-memory settings, and for both weights with long-input low-memory/low-latency settings. Repeats within the same configuration remained identical. These open-ended performance inputs had no predefined semantic scoring rule. Different text does not prove quality degradation, and it cannot establish absence of quality regression. Existing training and quantization quality failures remain unchanged. No training, requantization, or historical quality-holdout rerun occurred.
+
+Every request started an independent model process, with loading and generation recorded separately. System caches were retained; no resident-model hot reuse was exercised. Contract tests, documentation checks, and publication activity also ran on the shared development host during early sampling. These interference records are retained, so this is not an idle dedicated-host benchmark. No additional model workload ran alongside the sampling and no outlier samples were removed.
+
+After normal shutdown, independent readback checked all raw metrics, model manifests, generation parameters, executor identity, caches, and database integrity. All 50 original protection records, model source files, and the complete App file tree were preserved; all owned processes, process groups, and listeners were released. The 20 relevant contract tests and 5 statistical boundary checks passed; documentation tests run separately. This adds formal-API load evidence in the installed environment, not native interaction latency, clean installation, quality acceptance, NVIDIA, or full AC-24/M6 acceptance.
+
+[Frozen load plan](../../../../.artifacts/m6-20260923-v1/performance045/plan.json) · [Full readback and distributions](../../../../.artifacts/m6-20260923-v1/performance045/root-readback.json) · [Shared-host activity](../../../../.artifacts/m6-20260923-v1/performance045/concurrent-host-activity.json)
 
 <a id="m6-仍需关闭的条件"></a>
 
