@@ -210,6 +210,14 @@ The native window title remained black against the dark frame, with insufficient
 
 The original system appearance was Automatic. After temporary Light and Dark selections, the UI restored Automatic. Both app lifecycles quit normally, and database bytes matched the starting state. All 668 resources, 69 attempts, and business commands were preserved, along with the original subtitle revision, video, exports, and diagnostic files. Restoration of the original selector, 47 protected records, and release checks for 14 locks passed. Full AC-23, the historical blank-scrolling root cause, and M6 remain open. [Appearance and data-protection readback](../../../../.artifacts/m6-20260923-v1/appearance044/root-readback.json) [Dark title after activation](../../../../.artifacts/m6-20260923-v1/appearance044/dark-fresh-launch-activated.jpg)
 
+<a id="044-标题独立采集复核"></a>
+
+## Independent title capture recheck in 044
+
+The same 044 candidate was used to examine the dark title. A screenshot shortcut did not produce an image that Preview could open from the clipboard. A subsequent capture through Preview's native screenshot entry did not isolate the target application window and was closed without saving. Neither attempt counts as a successful independent window capture. Application rendering and capture-path causes remain unresolved; no product change or rebuild was made.
+
+System appearance was restored to Automatic, and one native app lifecycle quit normally. The stopped database exactly matched its starting state, preserving 668 resources, 69 attempts, and 44 business commands. The complete App inventory, original payloads, previous exports, and diagnostic archive were preserved; checks passed for 47 protected records and release of 14 locks. The first offline check incorrectly treated the selected, temporarily disabled appearance button as unselected. That failure was preserved and the assertion corrected without altering the original AX record. No additional appearance gate passed in this round; full AC-23 and M6 remain open. [Diagnosis and restoration verification](../../../../.artifacts/m6-20260923-v1/title044/root-readback.json)
+
 <a id="m6-仍需关闭的条件"></a>
 
 ## Remaining M6 gates
