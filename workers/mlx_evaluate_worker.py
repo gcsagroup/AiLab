@@ -16,6 +16,28 @@ from adapters.mlx_text.recipe import build_recipe
 from workers import mlx_worker as worker
 
 
+def collect_prediction(responses, check_cancel):
+    """原样收集文本及 MLX 结束回执；没有结束信号时明确记为未知。"""
+    chunks, token_ids, first_token_seconds = [], [], None
+    generated_tokens, finish_reason = 0, "unknown"
+    started = time.perf_counter()
+    with contextlib.closing(responses):
+        for response in responses:
+            check_cancel()
+            if first_token_seconds is None:
+                first_token_seconds = time.perf_counter() - started
+            chunks.append(response.text)
+            token_ids.append(int(response.token))
+            generated_tokens = int(response.generation_tokens)
+            finish_reason = response.finish_reason or "unknown"
+    return "".join(chunks), {
+        "output_token_ids": token_ids, "generated_tokens": generated_tokens,
+        "stream_response_count": len(token_ids), "finish_reason": finish_reason,
+        "first_token_seconds": first_token_seconds,
+        "generation_seconds": time.perf_counter() - started,
+    }
+
+
 def run_evaluate(snapshot, effective, output, emit, check_cancel):
     rows, criteria, plan_digest = load_plan(snapshot)
     source = output / "evaluation-snapshot.json"
@@ -54,9 +76,11 @@ def run_evaluate(snapshot, effective, output, emit, check_cancel):
     config = {} if model_evaluation else json.loads((Path(snapshot["adapter_path"]) / "adapter_config.json").read_text())
     report = summarize(rows, criteria, passes["baseline"]["outputs"], passes["candidate"]["outputs"], model_plan_bound(snapshot) if model_evaluation else config.get("evaluation_plan_digest") == plan_digest)
     report.update(evaluation_plan_digest=plan_digest, evaluation_dataset_manifest_digest=snapshot["evaluation_dataset_manifest_digest"], evaluation_criteria_manifest_digest=snapshot["evaluation_criteria_manifest_digest"], model_manifest_digest=snapshot["model_manifest_digest"], adapter_manifest_digest=snapshot.get("adapter_manifest_digest"), adapter_training_recipe_digest=snapshot.get("adapter_training_recipe_digest"), independent_loads={name: result["identity"] for name, result in passes.items()}, rules_implementation_sha256=worker.sha256(Path(__file__).resolve().parents[1] / "adapters/mlx_text/evaluation.py"))
+    report.update(observations={name: result["observations"] for name, result in passes.items()},
+                  observation_scope="逐题保留 MLX 实际词元与结束回执，包含结束词元；stop 为引擎停止，length 为输出上限，unknown 为缺少结束信号。单轮计时不代表性能验收。")
     if model_evaluation:
         report.update(evaluation_kind="quantized_model", prospective_basis="first_quantized_model_evaluation", candidate_model_manifest_digest=snapshot["candidate_model_manifest_digest"], model_comparison=snapshot["model_comparison"], model_comparison_digest=snapshot["model_comparison_digest"], quality_plan_ref_digest=snapshot["quality_plan_ref"]["digest"], model_evaluation_recipe_digest=effective["model_evaluation_recipe_digest"],
-                      observations={name: result["observations"] for name, result in passes.items()}, performance_scope="同机顺序各加载一次；逐题时间与内存仅作本次观测，未作冷热缓存及重复采样性能验收。",
+                      performance_scope="同机顺序各加载一次；逐题时间与内存仅作本次观测，未作冷热缓存及重复采样性能验收。",
                       quality_scope="仅代表此量化模型首次固定文本规则集的独立对照；不代表其他任务或普遍质量、速度收益。")
         for issue in report["blocking"]:
             if issue["code"] == "POSTHOC_EVALUATION":
@@ -112,15 +136,9 @@ def pass_main():
                 prompt = tokenizer.apply_chat_template([{"role": "user", "content": row["prompt"]}], tokenize=True, add_generation_prompt=True)
                 if len(prompt) + criteria["generation"]["max_tokens"] > 4096:
                     raise EvaluationError("CONTEXT_TOO_LONG", "评测样本超出输入输出总词元限制")
-                chunks, first_token_seconds, generated_tokens = [], None, 0
-                generation_started = time.perf_counter()
-                for token in stream_generate(model, tokenizer, prompt, max_tokens=criteria["generation"]["max_tokens"], sampler=make_sampler(temp=0)):
-                    worker.check_cancel()
-                    if first_token_seconds is None: first_token_seconds = time.perf_counter() - generation_started
-                    generated_tokens += 1
-                    chunks.append(token.text)
-                observations[row["id"]] = {"prompt_tokens": len(prompt), "generated_tokens": generated_tokens, "first_token_seconds": first_token_seconds, "generation_seconds": time.perf_counter() - generation_started}
-                outputs[row["id"]] = "".join(chunks)
+                responses = stream_generate(model, tokenizer, prompt, max_tokens=criteria["generation"]["max_tokens"], sampler=make_sampler(temp=0))
+                outputs[row["id"]], observation = collect_prediction(responses, worker.check_cancel)
+                observations[row["id"]] = {"prompt_tokens": len(prompt), **observation}
                 worker.emit("metric", variant=args.variant, completed_samples=index, total_samples=len(rows), sample_id=row["id"])
             worker.verify_snapshot_manifest(model_path, snapshot["model_manifest"], snapshot["model_manifest_digest"], "MODEL")
             if model_evaluation:

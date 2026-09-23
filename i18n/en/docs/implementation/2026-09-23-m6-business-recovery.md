@@ -218,6 +218,16 @@ The same 044 candidate was used to examine the dark title. A screenshot shortcut
 
 System appearance was restored to Automatic, and one native app lifecycle quit normally. The stopped database exactly matched its starting state, preserving 668 resources, 69 attempts, and 44 business commands. The complete App inventory, original payloads, previous exports, and diagnostic archive were preserved; checks passed for 47 protected records and release of 14 locks. The first offline check incorrectly treated the selected, temporarily disabled appearance button as unselected. That failure was preserved and the assertion corrected without altering the original AX record. No additional appearance gate passed in this round; full AC-23 and M6 remain open. [Diagnosis and restoration verification](../../../../.artifacts/m6-20260923-v1/title044/root-readback.json)
 
+<a id="评测逐题结束原因与词元记录修复"></a>
+
+## Per-sample evaluation termination and token recording fix
+
+Source evaluation now retains actual token IDs, the engine token count, stream response count, and termination reason for each sample. Both LoRA and quantized-model reports retain observations from both passes. `stop`, `length`, and `unknown` for a missing terminal receipt are distinct. Counts include the end token and are not inferred from visible characters. Text is still concatenated from the original stream; generation settings, scoring rules, and admission thresholds are unchanged. Cancellation or executor failure is not published as normal termination.
+
+9 new observation tests first reproduced the gaps. After the fix, all 290 MLX tests and 48 relevant control-service tests passed. Two short technical generations used the fixed Qwen2.5-0.5B on Apple GPU: both returned `Apple`; a 1-token limit produced `length`, while a 16-token limit produced 2 tokens including the end marker and `stop`. Collected text exactly matched the original stream, and model file hashes were preserved. No training or historical holdout rerun occurred, and no new quality pass is claimed. The fixed App remains 044 and does not yet include this change; packaged and native validation of the next candidate remains pending.
+
+[Source verification](../../../../.artifacts/evaluation-observations-20260923-v1/source-verification.json) · [Real generation observations](../../../../.artifacts/evaluation-observations-20260923-v1/real-probe.json)
+
 <a id="m6-仍需关闭的条件"></a>
 
 ## Remaining M6 gates

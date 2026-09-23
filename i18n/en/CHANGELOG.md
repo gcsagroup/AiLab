@@ -2,6 +2,8 @@
 
 # Changelog
 
+**Per-sample evaluation termination and token recording fix（2026-09-23）**：9 new observation tests first reproduced the gaps. After the fix, all 290 MLX tests and 48 relevant control-service tests passed. Two short technical generations used the fixed Qwen2.5-0.5B on Apple GPU: both returned `Apple`; a 1-token limit produced `length`, while a 16-token limit produced 2 tokens including the end marker and `stop`. Collected text exactly matched the original stream, and model file hashes were preserved. No training or historical holdout rerun occurred, and no new quality pass is claimed. The fixed App remains 044 and does not yet include this change; packaged and native validation of the next candidate remains pending. [M6](docs/implementation/2026-09-23-m6-business-recovery.md#评测逐题结束原因与词元记录修复)
+
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md)
 
 This record distinguishes source changes, local signed candidates, and formal releases. The versions below are development candidates or historical development records. They do not establish public release, notarization, or complete M0—M6 acceptance. Refer to the corresponding stage documents for detailed procedures, failures, and evidence boundaries.
