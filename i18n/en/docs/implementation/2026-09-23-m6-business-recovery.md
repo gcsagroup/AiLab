@@ -2,7 +2,7 @@
 
 # M6 business-library recovery and cold-start error fix
 
-**Current M6 progress (2026-09-23)**: the fixed company-signed candidate is Ver2.5(045). Evaluation now records per-sample tokens and actual termination reasons, retaining both passes in LoRA and quantized-model reports; 290 MLX tests and 48 relevant control-service tests passed. The package completed 8 technical generations across both passes, and native history restoration, normal exit, and data-protection checks passed. These samples were not used for quality admission. The restored library remains at 668 resources / 69 attempts. The dark-title cause, model quality, NVIDIA, 5 real users, clean installation, and distribution gates remain open. M6 is incomplete.
+**Current M6 progress (2026-09-23)**: the fixed company-signed candidate is Ver2.5(045). Using the formal source-group workflow, this run trained once on 48 samples with 24 LoRA layers for 192 steps, then independently compared the base and candidate on 32 newly frozen questions: total passes rose from 3/32 to 17/32 and business passes from 0/8 to 3/8. All four category thresholds still failed; no qualified candidate was registered. Per-sample observations, report export, shutdown, and original-data protection checks passed, along with 77 relevant tests. The dark-title cause, qualifying quality, NVIDIA, 5 real users, clean installation, and distribution remain open. M6 is incomplete.
 
 <a id="历史业务恢复实机证据"></a>
 
@@ -235,6 +235,30 @@ Source evaluation now retains actual token IDs, the engine token count, stream r
 045 was built once at the fixed path, preserving the 044 rollback package. The complete App inventory, frozen source, actual embedded MLX evaluation code, and 7 company-signed targets passed verification. A new set of 4 explicitly pending-manual-review technical samples ran through separate baseline and old experimental-adapter processes, totaling 8 short generations capped at 16 tokens each. No historical holdout was read, training performed, or candidate registered. Each pass recorded 3 `stop` and 1 `length` outcomes. All token IDs, counts, termination reasons, and per-sample report outputs matched. The report remained `needs_review`, with `eligible=false` and the posthoc-plan admission block intact. This technical check does not establish quality improvement. [045 package verification](../../../../.artifacts/integration-ver2-5-045-v1/root-frozen-check.json) [Packaged technical verification](../../../../.artifacts/evaluation-observations-20260923-v1/packaged-045/readback.json)
 
 Native startup restored the original task, its previous answer `3`, and the disabled saved-work button, followed by normal exit through the confirmation dialog. The native session added no model run or business command. The stopped database exactly matched its starting state, preserving 668 resources, 69 attempts, and 44 commands. Previous payloads, exports, and diagnostics were preserved; the original selector was restored, and checks passed for 47 protected records and release of 14 locks. 045 was separately archived. This closes the evaluation-observation gap and verifies limited native reading; it does not transfer all prior-candidate acceptance to the new package. The dark-title cause, qualifying model quality, cross-hardware evidence, real users, installation/distribution, and full M6 remain open. [Native and data-protection readback](../../../../.artifacts/m6-20260923-v1/evaluation045/root-readback.json)
+
+<a id="045-正式来源组训练与新质量评测"></a>
+
+## 045 formal source-group training and new quality evaluation
+
+Using the same fixed 045 package, an isolated library completed import, source-group splitting, training, evaluation, and export through the formal HTTP API. No product code changed and no rebuild occurred. The initial draft proposed directly using the previous 64 training samples, but API inspection found that new training now requires source-group evidence; the draft was therefore revised before model execution and retained. The original training index defines 32 question-family groups. Seed 37 and a validation fraction of 2500 basis points produced 48 training and 16 validation samples; both rewrites in a family stay together. Original content was preserved, with 453 supervised answer tokens on the training side and no truncation. Validation loss was not run, and validation samples were not used for gradients or model selection.
+
+A separate set of 32 previously unrun quality questions, with 8 per category, retained the original rules and thresholds and was frozen and bound through the formal API before training. The same author wrote the questions and could see the answers, so this only represents the synthetic set. String deduplication, similarity, and formula checks do not establish blind evaluation or real-customer coverage. Among training parameters, only layer coverage changed from 4 to 24; the remaining budget stayed fixed. Since the actual training subset also changed, results cannot be attributed to layers alone or directly compared with totals on older questions.
+
+The single fresh initialization completed 192 steps and produced 96 LoRA tensors with 540672 parameters; all 48 B matrices contained nonzero updates. Only the final artifact was evaluated, without extra steps, reinitialization, or intermediate checkpoint selection. Earlier experiment budgets and failures remain intact. After independently loading the original base and candidate, raw outputs were rescored as follows.
+
+| Category | Base | Candidate | Original threshold | Conclusion |
+|---|---|---|---|---|
+| Business | 0/8 | 3/8 | At least 7/8 and a net gain of at least 2 questions | Gain passed; absolute pass rate failed |
+| Format | 0/8 | 4/8 | 8/8 | Failed |
+| Normal regression | 3/8 | 7/8 | 8/8 with no overall decline | Failed |
+| Target behavior | 0/8 | 3/8 | 8/8 | Failed |
+| Total | 3/32 | 17/32 | All four categories must pass | Failed |
+
+The base stopped naturally on 30 questions and reached the limit on 2; the candidate stopped naturally on all 32. Raw tokens and termination receipts match the report. Business facts still failed: an amount due of 232 became 60, shipping was listed but omitted from the total, and a refund amount was invented without a unit price. The candidate also failed an ordering question that the base answered correctly, so a higher total does not mean every regression sample was preserved. All category thresholds failed, the report remains `eligible=false`, and no qualified candidate was registered. These candidate failures cannot be attributed to output truncation.
+
+The hashes of all 11 exported content files and the full evaluation report matched. After shutdown, the isolated library integrity, frozen data, and base hashes were checked; all 50 original protection records were preserved, and control and model processes exited normally. All 77 relevant source-group and evaluation contract tests passed, with existing dependency warnings. The runner initially mistook generated package markers for workspace files and was rejected by offline checks; correction and revalidation preceded freezing and training, consuming no extra model budget. This run used packaged services only, with no new native UI acceptance or SQL access to the original library.
+
+[Frozen plan](../../../../.artifacts/m3-order-sft/layer-candidate-v4/frozen-plan.json) · [Per-question report and execution record](../../../../.artifacts/m3-order-sft/real-v4-packaged-045-run-001/report.json) · [Stopped-state and quality readback](../../../../.artifacts/m3-order-sft/layer-candidate-v4/root-readback.json)
 
 <a id="m6-仍需关闭的条件"></a>
 
