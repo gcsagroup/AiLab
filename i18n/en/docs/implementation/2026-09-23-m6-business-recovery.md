@@ -4,6 +4,8 @@
 
 **Current M6 progress (2026-09-23)**: the fixed company-signed candidate is Ver2.5(045). Using the formal source-group workflow, this run trained once on 48 samples with 24 LoRA layers for 192 steps, then independently compared the base and candidate on 32 newly frozen questions: total passes rose from 3/32 to 17/32 and business passes from 0/8 to 3/8. All four category thresholds still failed; no qualified candidate was registered. Per-sample observations, report export, shutdown, and original-data protection checks passed, along with 77 relevant tests. The dark-title cause, qualifying quality, NVIDIA, 5 real users, clean installation, and distribution remain open. M6 is incomplete.
 
+**045 additional startup acceptance**: with the system cache retained, 20 complete native launch/quit samples passed. The largest upper bound through the initial screenshot was 0.759 seconds; full readiness had a median of 3.646 seconds and P95 of 3.686 seconds. Another 1 round lacked a timing receipt because the sampling script quit too early; its failure is retained. Original data, models, and the fixed package are unchanged. Dark-title captures still show low contrast, but the independent whole-screen capture did not include the title; the cause remains unresolved. These results do not establish clean installation, full AC-23/AC-24, or M6 acceptance.
+
 <a id="历史业务恢复实机证据"></a>
 
 ## Native historical-business recovery evidence
@@ -259,6 +261,20 @@ The base stopped naturally on 30 questions and reached the limit on 2; the candi
 The hashes of all 11 exported content files and the full evaluation report matched. After shutdown, the isolated library integrity, frozen data, and base hashes were checked; all 50 original protection records were preserved, and control and model processes exited normally. All 77 relevant source-group and evaluation contract tests passed, with existing dependency warnings. The runner initially mistook generated package markers for workspace files and was rejected by offline checks; correction and revalidation preceded freezing and training, consuming no extra model budget. This run used packaged services only, with no new native UI acceptance or SQL access to the original library.
 
 [Frozen plan](../../../../.artifacts/m3-order-sft/layer-candidate-v4/frozen-plan.json) · [Per-question report and execution record](../../../../.artifacts/m3-order-sft/real-v4-packaged-045-run-001/report.json) · [Stopped-state and quality readback](../../../../.artifacts/m3-order-sft/layer-candidate-v4/root-readback.json)
+
+<a id="045-原生启动采样与标题诊断"></a>
+
+## 045 native startup sampling and title diagnosis
+
+Using the same fixed company-signed 045 App and the existing formally restored business library, 21 native launches and confirmed quits were performed. In round 1, the inline sampling script omitted the wait for the startup receipt. The UI result was already read back, but quitting early caused the observer to record a failure. The quit-button and process-disappearance evidence is retained, and this round does not count as a complete startup measurement. After correcting the sampling workflow, rounds 2–21 all include current App and control-process identities, startup-phase receipts, initial screenshots, final UI text, and native quit confirmations, providing 20 complete records. The product was neither modified nor rebuilt.
+
+All 20 initial screenshots show the historical output, with no false empty state in those captures. Capture duration includes CUA automation overhead; its largest upper bound was 0.759 seconds, not an exact first-frame latency. Receipts recorded after data and environment readiness have a median of 3.646 seconds, P95 of 3.686 seconds, and a maximum of 3.705 seconds. Initial visibility and full readiness are recorded separately; screenshot duration must not be presented as full-readiness time. These are process-cold launches in the installed Apple environment with system cache retained. They do not cover a cold system cache, clean installation, all interactions, long tasks, or full AC-24.
+
+After shutdown, database bytes and all tables remained unchanged: 668 resources, 69 historical attempts, 1051 events, and 44 commands; new model runs and business commands were both 0. All 47 original protection records were preserved, and 14 protection locks were released and probed again. The original library selector's identity and bytes were restored. Model source files, earlier exports, the complete App file tree, and the previously checked package report matched. All 45 pure-input observer tests passed. An initial attempt to load the sampling function from a string was rejected by CUA before the App launched; execution used a directly declared function instead. That rejection and the missing first-round timing receipt are not classified as product defects.
+
+An earlier independent diagnosis of the 045 dark title still found black, low-contrast title text in tool window captures. Preview successfully captured the whole screen, but another foreground window obscured the target title, so it could not identify the cause. The system screenshot-tool entry timed out and was not repeatedly retried. The temporary unsaved whole-screen image was discarded, system appearance was restored to its original automatic mode, the App quit normally, and data-protection checks passed. Evidence still cannot distinguish product rendering from capture differences. No speculative window-configuration change was made, and full AC-23 acceptance remains open.
+
+[Startup sampling readback](../../../../.artifacts/m6-20260923-v1/startup045/root-readback.json) · [Sampling correction record](../../../../.artifacts/m6-20260923-v1/startup045/sampling-correction.json) · [Title diagnosis readback](../../../../.artifacts/m6-20260923-v1/title045/root-readback.json)
 
 <a id="m6-仍需关闭的条件"></a>
 
