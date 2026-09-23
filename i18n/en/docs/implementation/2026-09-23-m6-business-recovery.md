@@ -2,7 +2,7 @@
 
 # M6 business-library recovery and cold-start error fix
 
-**Current M6 progress (2026-09-23)**: the fixed company-signed candidate is Ver2.5(043), fixing the false empty-output message while execution summaries load. All 656 frontend tests passed, along with 20 independent native launches and normal exits; initial-visibility screenshot upper bounds were all below 3 seconds. The historical restored library retained 607 resources / 56 attempts. Recovery, update/rollback, real-object export, and failure-regression evidence from 042 retains its original version scope. NVIDIA, model quality, real users, clean installation, and distribution gates remain open. M6 is incomplete.
+**Current M6 progress (2026-09-23)**: the fixed company-signed candidate is Ver2.5(043), with the false empty-output message during execution-summary loading fixed and all 656 frontend tests passing. All 20 native launches and normal exits passed, with initial-visibility screenshot upper bounds below 3 seconds. The 4 rounds covering formal update, rollback, and another update passed. After upgrade, 12 new exports, 4 independent generations with natural exit, playback of 4 media files, and consistency after reopening passed. The restored library now contains 655 resources / 68 attempts. Historical quality failures remain unchanged. Applicable NVIDIA, model-quality, real-user, clean-installation, and distribution acceptance remain open. M6 is incomplete.
 
 <a id="历史业务恢复实机证据"></a>
 
@@ -135,6 +135,20 @@ Each of the 4 rounds verified the native version, original failed evaluation, an
 Both of the 2 formal transaction backups matched baseline schema, integrity, and business rows. They contain the database and library-selection settings only, excluding asset files. The final fixed-path package is 043. The original retained package, both signed archives, and transaction-retained packages matched their frozen identities. The file tree of the existing 12 export packages and historical asset hashes were unchanged. The original selector object and bytes were restored; 47 protected records and 12 model-source identities were unchanged; all 14 lock-release probes passed; and this round’s App and control-service processes stopped. The update tool passed 27 contract tests.
 
 This round completes actual update, rollback, historical-record reading, and data-preservation subitems for 043 in an installed environment. It adds no failed-migration injection, clean-machine installation, or new exports of all object types after upgrade, and does not establish full AC-22, AC-27, or M6. [043 update and rollback verification](../../../../.artifacts/m6-20260923-v1/update043/root-readback.json)
+
+<a id="043-升级后导出与独立使用"></a>
+
+## Exports and independent use after the 043 update
+
+The same fixed 043 package after formal update produced 12 new native exports of historical objects: the original and quantized models, both adapter types, four original work types, three revisions, and the evaluation report. Identity, version, dependencies, and hashes matched for all 64 payload files and 12 manifests. The restored library grew from 607 resources / 56 attempts to 655 resources / 68 attempts, adding exactly 48 export-related resources and 12 export attempts while preserving original business records and events.
+
+With the App stopped, bundled runtimes independently ran 3 short text generations and 1 image-adapter generation from the new export directories. All passed. Image generation used MPS, 512×512, and 20 steps; its process exited with code 0, and the process and process group disappeared naturally without termination signals. No training or quality evaluation was added. The original failed evaluation and experimental status were retained. Independent use does not establish model quality, and the export manifests retain `independent_use=not_verified`.
+
+All 7 work packages passed text reading and full media decoding. The 4 original and revised audio/video files entered playback in QuickTime and reached their endpoints; image files were visually inspected. The first revised-video opening lacked sufficient control-state observations. That record was retained, and reopening yielded complete playback evidence. Human voice-quality assessment and external subtitle rendering remain unverified.
+
+After reopening the same library, all 12 new exports and the original quality failure remained visible. Following another normal quit, database bytes and business rows matched exactly. New and old export trees, 732 original payloads, and 733 backup files were unchanged. The original selector object and bytes were restored; 47 protected records and 12 model-source identities were unchanged; all 14 lock-release probes passed. Both native launches ended with normal quits, with no new recovery sessions. The auditor passed 19 positive/negative cases, and the process observer passed 5 tests. A relative preparation-script path was rejected before launch; the selector was restored and an absolute path used. This occurred before App launch and was not counted as a product failure.
+
+This round closes new exports after upgrade, independent use, and preservation after reopening for the installed 043 environment. NVIDIA, quality, real users, clean installation, distribution, and other applicable acceptance remain open; full AC-27 and M6 are not signed off. [043 exports and protection verification](../../../../.artifacts/m6-20260923-v1/postupdate043/root-readback.json) [Independent generation](../../../../.artifacts/m6-20260923-v1/postupdate043/independent-001/readback.json) [Media playback](../../../../.artifacts/m6-20260923-v1/postupdate043/playback.json)
 
 <a id="m6-仍需关闭的条件"></a>
 
