@@ -275,10 +275,13 @@ def test_submit_snapshot_events_save_work_and_restart(rig):
     assert f"id: {current['last_event_sequence']}" in sse.text
     work = post(client, "/works", {"attempt_id": attempt["id"], "name": "持久作品"}, "work-one")
     assert work == post(client, "/works", {"attempt_id": attempt["id"], "name": "持久作品"}, "work-one")
+    assert current["saved_work_artifact_ids"] == []
+    assert client.get(f"/api/v1/attempts/{attempt['id']}").json()["saved_work_artifact_ids"] == [work["artifact_id"]]
     service.close()
     reopened = Service(service.settings)
     assert reopened.store.get("work", work["id"])["text"] == current["output_text"]
     assert reopened.store.get("attempt", attempt["id"])["state"] == "succeeded"
+    assert reopened.public(reopened.store.get("attempt", attempt["id"]))["saved_work_artifact_ids"] == [work["artifact_id"]]
     reopened.close()
 
 

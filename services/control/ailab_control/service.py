@@ -259,6 +259,10 @@ class Service:
             result["output_text_truncated"] = value.get("output_text_truncated", False) or len(original_text) > INLINE_TEXT_LIMIT
             result["allowed_actions"] = self.actions(value)
             result["artifacts"] = [self.public(item) for item in self.store.list("artifact", value["project_id"]) if item["attempt_id"] == value["id"]]
+            # 从持久登记恢复保存状态；不能依赖前端分页列表或上次页面内存。
+            artifact_ids = {item["id"] for item in result["artifacts"]}
+            result["saved_work_artifact_ids"] = sorted({item["artifact_id"] for item in self.store.list("work", value["project_id"])
+                                                       if item.get("attempt_id") == value["id"] and item.get("artifact_id") in artifact_ids})
         return result
 
     def actions(self, attempt):
