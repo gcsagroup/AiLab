@@ -362,11 +362,11 @@
     },
     {
       "source": "docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "source_sha256": "32537a1adb66ec5600314db035d884dab9998ba77c2608039edae3629e913a70",
+      "source_sha256": "9ef05ac59aae27ea9523734c09c827e2f6a79107c983a7fd6af4f8ba256a0bb4",
       "en": "i18n/en/docs/implementation/2026-09-10-current-delivery-matrix.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-10-current-delivery-matrix.md",
-      "zh-TW_sha256": "50428570b065c663171871e922c327f4096e67eded376081f7138b4ec6111533",
-      "en_sha256": "402ccede1747d77d14374100e185cb1d080d37769f06efc2d04ec65e1aa71db4"
+      "zh-TW_sha256": "270dfb617f734586e8eed89655ce061bc8e18e437450c2021ccef8d33041d54a",
+      "en_sha256": "b5032c11580361ce2185358a21140a9802e5f850e9c6479364fac205e92dc672"
     },
     {
       "source": "docs/implementation/2026-09-10-execution-board.md",
