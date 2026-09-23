@@ -337,6 +337,10 @@ Independent shutdown readback confirmed byte-for-byte preservation of 668 resour
 
 [046 package and source verification](../../../../.artifacts/integration-ver2-5-046-v1/root-frozen-check.json) · [First-round interruption and data recovery](../../../../.artifacts/m6-20260923-v1/title046/root-interrupted-readback.json) · [Independent short-round acceptance](../../../../.artifacts/m6-20260923-v1/title046-complete/root-readback.json) · [Independent title crop](../../../../.artifacts/m6-20260923-v1/title046-complete/independent-title-crop.png)
 
+**046 full automated regression**: all 662 frontend tests passed. The first control-service run had 1150 passes and 1 failure, with 5 warnings retained. Its error log confirmed that the test fixture read an empty exit-code file before writing had finished. Only fixture exit-code publication changed to an atomic operation; strict assertions for exit codes, checkpoints, and stop status remain. After the fix, all 10 lifecycle tests and 1151 full control-service tests passed, with 5 warnings still present. The source change affects tests only, and the fixed App was not rebuilt. Readback confirmed original data, model source files, the isolated business database, and the complete package were preserved. Automated tests do not replace remaining native, cross-hardware, quality, or real-user acceptance.
+
+[Original full result](../../../../.artifacts/m6-20260923-v1/regression046/control.log) · [Original fixture error](../../../../.artifacts/m6-20260923-v1/regression046/first-failure/worker.stderr.log) · [Full result after the fix](../../../../.artifacts/m6-20260923-v1/regression046/control-after.log) · [Data and package readback](../../../../.artifacts/m6-20260923-v1/regression046/after-protection-readback.json)
+
 <a id="m6-仍需关闭的条件"></a>
 
 ## Remaining M6 gates

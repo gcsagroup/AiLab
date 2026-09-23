@@ -337,6 +337,10 @@
 
 [046 整包與原始碼核對](../../../../.artifacts/integration-ver2-5-046-v1/root-frozen-check.json) · [首輪中斷與資料還原](../../../../.artifacts/m6-20260923-v1/title046/root-interrupted-readback.json) · [獨立短輪驗收](../../../../.artifacts/m6-20260923-v1/title046-complete/root-readback.json) · [獨立標題裁剪](../../../../.artifacts/m6-20260923-v1/title046-complete/independent-title-crop.png)
 
+**046 全量自動回歸**：前端 662 項全部通過。控制服務首輪為 1150 項通過、1 項失敗，保留 5 條警告；失敗日誌確認測試夾具讀到了尚未寫完的空退出碼檔案。只將夾具的退出碼改為原子發布，保持嚴格的退出碼、檢查點與停止狀態斷言；修復後 10 項生命週期測試和 1151 項全量控制服務測試通過，仍有 5 條警告。原始碼變更僅涉及測試，固定 App 未重新建置；原資料、模型來源檔案、隔離業務庫與完整套件經核對保持。自動測試不替代剩餘原生、跨硬體、品質或真實使用者驗收。
+
+[首次完整結果](../../../../.artifacts/m6-20260923-v1/regression046/control.log) · [夾具錯誤原記錄](../../../../.artifacts/m6-20260923-v1/regression046/first-failure/worker.stderr.log) · [修復後完整結果](../../../../.artifacts/m6-20260923-v1/regression046/control-after.log) · [資料與套件核對](../../../../.artifacts/m6-20260923-v1/regression046/after-protection-readback.json)
+
 <a id="m6-仍需关闭的条件"></a>
 
 ## M6 仍須完成的條件

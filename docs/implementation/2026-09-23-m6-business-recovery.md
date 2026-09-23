@@ -287,6 +287,10 @@
 
 [046 整包与源码核对](../../.artifacts/integration-ver2-5-046-v1/root-frozen-check.json) · [首轮中断与资料恢复](../../.artifacts/m6-20260923-v1/title046/root-interrupted-readback.json) · [独立短轮验收](../../.artifacts/m6-20260923-v1/title046-complete/root-readback.json) · [独立标题裁剪](../../.artifacts/m6-20260923-v1/title046-complete/independent-title-crop.png)
 
+**046 全量自动回归**：前端 662 项全部通过。控制服务首轮为 1150 项通过、1 项失败，保留 5 条警告；失败日志确认测试夹具读到了尚未写完的空退出码文件。只将夹具的退出码改为原子发布，保持严格的退出码、检查点与停止状态断言；修复后 10 项生命周期测试和 1151 项全量控制服务测试通过，仍有 5 条警告。源码变更仅涉及测试，固定 App 未重新构建；原资料、模型源文件、隔离业务库与完整包经核对保持。自动测试不替代剩余原生、跨硬件、质量或真实用户验收。
+
+[首次完整结果](../../.artifacts/m6-20260923-v1/regression046/control.log) · [夹具错误原记录](../../.artifacts/m6-20260923-v1/regression046/first-failure/worker.stderr.log) · [修复后完整结果](../../.artifacts/m6-20260923-v1/regression046/control-after.log) · [资料与包核对](../../.artifacts/m6-20260923-v1/regression046/after-protection-readback.json)
+
 ## M6 仍需关闭的条件
 
 - 在同一最终候选完成干净机器安装与更新／回退，补齐升级后的全部适用导出、独立使用、长任务、异常网络及界面性能回归。

@@ -193,7 +193,8 @@ def test_paused_owned_process_crash_preserves_checkpoint_and_fails(training_run,
         publish(directory/'fixture-event.json',event)
         paused=wait_attempt(client,attempt['id'],lambda a:a['state']=='paused')
         checkpoint=service.store.get('checkpoint',paused['checkpoint_id']);raw=manifest.read_bytes()
-        (directory/'fixture-exit').write_text('3')
+        # 与事件一样原子发布，避免夹具先读到已创建但尚未写入的空文件。
+        publish(directory/'fixture-exit',3)
         done=wait_attempt(client,attempt['id'])
         assert done['state']=='failed' and done['terminal_reason']=='WORKER_FAILED'
         assert done['compute_outcome']=='failed' and process.poll()==3
@@ -307,7 +308,7 @@ def test_resuming_cancel_and_late_resume_ack_preserve_cancel_result(training_run
         assert current['last_control']==cancel['last_control'] and current['stop_status']=='pending'
         assert process.poll() is None and service.group_present(process.pid)
         assert current['checkpoint_id']==paused['checkpoint_id'] and len(service.store.list('checkpoint'))==1
-        (directory/'fixture-exit').write_text('130')
+        publish(directory/'fixture-exit',130)
         done=wait_attempt(client,attempt['id'])
         assert done['state']=='cancelled' and done['stop_status']=='confirmed' and done['process']['returncode']==130
         assert done['terminal_reason']=='USER_CANCELLED' and not service.store.list('artifact')
