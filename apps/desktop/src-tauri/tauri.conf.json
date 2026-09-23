@@ -14,8 +14,7 @@
       "width": 1440,
       "height": 960,
       "minWidth": 320,
-      "minHeight": 640,
-      "backgroundColor": "#f6f7fa"
+      "minHeight": 640
     }],
     "security": {
       "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data: blob:; media-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'"
