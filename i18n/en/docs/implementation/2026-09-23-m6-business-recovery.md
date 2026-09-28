@@ -8,6 +8,14 @@
 - Quality remains unqualified: the 7B LoRA scored 31/32 and failed the format gate, with no qualified candidate registered. Image structure defects remain, and subjective audio review is missing. Execution, file integrity and completed playback do not replace quality qualification.
 - Remaining work includes clean installation and full upgrade acceptance of the same candidate, the complete UI and optimization matrices, the same qualified artifact chain from designated NVIDIA training to Apple, 5 real users, and notarization/distribution acceptance. Passing local subitems does not change these gates.
 
+<a id="051-包内诊断脱敏"></a>
+
+## 051 packaged diagnostic redaction
+
+Production APIs previewed and exported diagnostic summaries of six existing export attempts from the isolated library newly restored and migrated by 051. The ZIP matched the preview digest. An independent standard-library program verified both files, field allowlists, version and six states, confirming exclusion of raw business identifiers, user paths, project/model names and the current session token. A corrupted ZIP copy was rejected, while the original archive remained unchanged. Only two diagnostic command records were added; prior business rows and original data-protection records were preserved. Owned processes and temporary tokens were cleaned up. All 95 diagnostic tests passed, retaining 2 dependency warnings.
+
+This closes the current package's production-API diagnostic-redaction subitem. It adds no native UI interaction and does not change clean-installation or full AC-22/M6 status. [051 diagnostic export audit](../../../../.artifacts/apple-diagnostics051-20260929/root-readback.json) · [Independent ZIP allowlist audit](../../../../.artifacts/apple-diagnostics051-20260929/independent-result.json)
+
 <a id="051-恢复迁移回滚与恢复后导出"></a>
 
 ## 051 restoration, migration rollback and post-restore exports
