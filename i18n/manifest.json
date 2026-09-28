@@ -788,9 +788,9 @@
       "source": "docs/implementation/2026-09-23-m6-business-recovery.md",
       "en": "i18n/en/docs/implementation/2026-09-23-m6-business-recovery.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-23-m6-business-recovery.md",
-      "source_sha256": "4270fa6e1772eb599f2e7a128d156d2c865c2e375847244607e67c4e42542c75",
-      "zh-TW_sha256": "0bf21a39e66dc2b412f9a701c7470e1f37e861d56908cc62a9c440609cdd50c9",
-      "en_sha256": "e20d11c37ca525c144c9818c3bde8dfbe5032ede19482e34a7ed04066d214f59"
+      "source_sha256": "3635b4c94fb5729a8697c6644bd038943e74182fb051412c91ab9c4e0a14c549",
+      "zh-TW_sha256": "dc73e72a4159d8bab67eec275044a5983a67e8025c0c2f2bac54b31a38f58c82",
+      "en_sha256": "842dd3d5000d619d2cfc14d877f42be24b956e4c7dfd70de112d12dd305c8f89"
     },
     {
       "source": "docs/validation-report.md",
