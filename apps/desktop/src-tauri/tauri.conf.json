@@ -28,7 +28,7 @@
     "icon": ["icons/icon.icns", "icons/icon.png"],
     "resources": ["resources/control/**/*", "resources/workers/**/*", "resources/adapters/**/*", "resources/services/**/*", "resources/mlx/**/*", "resources/diffusers/**/*", "resources/kokoro/**/*", "resources/media-tools/**/*"],
     "macOS": {
-      "bundleVersion": "48",
+      "bundleVersion": "49",
       "minimumSystemVersion": "26.0",
       "signingIdentity": "Apple Distribution: Global Cybersecurity Alliance Limited (R3JK7R29AC)",
       "hardenedRuntime": true,
