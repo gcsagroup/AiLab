@@ -369,7 +369,8 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
     finally { if (epoch === pageEpoch.current) setPageBusy(previous => ({ ...previous, [name]: false })); }
   }
   function moreButton<T extends { id: string }>(name: string, label: string, setter: React.Dispatch<React.SetStateAction<T[]>>) {
-    return cursors[name] ? <Button busy={pageBusy[name]} onClick={() => void loadMore(name, setter)}>加载更多{label}</Button> : null;
+    // 保留等待中的键盘焦点；重复操作由 loadMore 的在途状态拦截。
+    return cursors[name] ? <Button aria-disabled={Boolean(pageBusy[name])} aria-busy={Boolean(pageBusy[name])} onClick={() => void loadMore(name, setter)}>加载更多{label}</Button> : null;
   }
   useEffect(() => {
     if (recovery.current || !selectedTask || selectedTask.project_id !== projectId) return;

@@ -89,3 +89,24 @@ it('单任务历史只加载当前页，继续取更早记录时保留正在查�
   expect(screen.getAllByRole('option').some(option => option.getAttribute('value') === older.id)).toBe(true);
   expect(screen.queryByRole('button', { name: '加载更早运行记录' })).toBeNull(); expect(writes).toEqual([]);
 });
+
+it('分页等待保留键盘焦点并拒绝重复请求，下一页仍可连续加载', async () => {
+  const normal = vi.mocked(fetch).getMockImplementation()!; let calls = 0;
+  vi.mocked(fetch).mockImplementation(async (input, options) => {
+    if (String(input).includes('cursor=models-first')) {
+      calls += 1;
+      return new Promise(resolve => { delayed = resolve; });
+    }
+    return normal(input, options);
+  });
+  render(<App />); fireEvent.click(await screen.findByRole('button', { name: '模型库' }));
+  const more = await screen.findByRole('button', { name: '加载更多模型' });
+  more.focus(); fireEvent.click(more);
+  await waitFor(() => expect(delayed).toBeTruthy());
+  expect((more as HTMLButtonElement).disabled).toBe(false); expect(more.getAttribute('aria-disabled')).toBe('true');
+  expect(more.getAttribute('aria-busy')).toBe('true'); expect(document.activeElement).toBe(more);
+  fireEvent.click(more); expect(calls).toBe(1);
+  await act(async () => delayed!(response({ items: [chosenModel], next_cursor: 'models-next' })));
+  expect(document.activeElement).toBe(more); expect(more.getAttribute('aria-disabled')).toBe('false');
+  expect(more.getAttribute('aria-busy')).toBe('false');
+});

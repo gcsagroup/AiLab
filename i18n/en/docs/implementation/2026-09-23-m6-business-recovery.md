@@ -8,6 +8,10 @@
 - Quality remains unqualified: the 7B LoRA scored 31/32 and failed the format gate, with no qualified candidate registered. Image structure defects remain, and subjective audio review is missing. Execution, file integrity and completed playback do not replace quality qualification.
 - Remaining work includes clean installation and full upgrade acceptance of the same candidate, the complete UI and optimization matrices, the same qualified artifact chain from designated NVIDIA training to Apple, 5 real users, and notarization/distribution acceptance. Passing local subitems does not change these gates.
 
+**Large-list keyboard pagination fix (2026-09-29, source awaiting packaging)**: Production APIs created 205 test drafts in an isolated empty library. Real browser pagination loaded 100→200→205 without duplicate or missing records; the oldest task opened, and the 320 px dialog showed no horizontal overflow. Disabling “Load more” during requests caused keyboard focus loss. The entry now remains focusable, exposes busy and unavailable states through ARIA, and rejects duplicate requests through the in-flight check. Two consecutive Enter presses reached the final page after the fix, retaining focus after page two. The new regression failed against the old implementation and passed after the fix; all 676 frontend tests and type checking passed. Initial tests used unavailable assertion methods; these were corrected before repeating the before/after comparison. All 205 fixture drafts remained unchanged, no model ran, and owned services stopped. The fixed 051 bundle does not yet contain this fix; the next build must increment its version and undergo native verification. Full AC23/M6 remains incomplete.
+
+[205-task browser evidence](../../../../.artifacts/ac23-large-list051-20260929/root-readback.json)
+
 <a id="051-包内诊断脱敏"></a>
 
 ## 051 packaged diagnostic redaction
