@@ -125,3 +125,34 @@ it('真正预检 busy 时直接返回被原守卫拒绝，不新增禁用属性�
   await act(async () => pending.resolve(finishPreflight()));
   await user.click(back()); expect(backed).toHaveBeenCalledOnce(); expect(writes()).toHaveLength(1);
 });
+
+// 原生 049 检查后失去焦点；验证新交接合同，不能替代 WKWebView 实机复核。
+it.each([true, false])('键盘检查结果可提交=%s 时聚焦结果，Tab 可继续且不自动执行', async canSubmit => {
+  const pending = deferred<Response>(); preflightReply = pending.promise; await mount();
+  const check = screen.getByRole('button', { name: '检查配置' }); check.focus(); await user.keyboard('{Enter}');
+  // 模拟原生按钮被禁用后失焦，而非依赖 jsdom 的 disabled 焦点行为。
+  check.blur();
+  await act(async () => pending.resolve(response({ preflight_id: 'keyboard-preflight', can_submit: canSubmit, blocking: [], warnings: [] })));
+  expect(document.activeElement).toBe(screen.getByText(canSubmit ? '检查通过，可以运行' : '请先完成以下准备'));
+  await user.tab(); expect(document.activeElement?.textContent).toBe('查看本次已应用配置');
+  await user.tab(); expect(document.activeElement).toBe(screen.getByRole('button', { name: canSubmit ? '开始训练' : '检查配置' }));
+  expect(writes().map(call => call.path)).toEqual([`/tasks/${task.id}/preflight`]);
+});
+
+it('检查期间用户已选择别处，完成时不抢回焦点，即使该处随后失焦', async () => {
+  const pending = deferred<Response>(); preflightReply = pending.promise; await mount();
+  const check = screen.getByRole('button', { name: '检查配置' }); check.focus(); await user.keyboard('{Enter}');
+  back().focus(); back().blur();
+  await act(async () => pending.resolve(finishPreflight()));
+  expect(document.activeElement).toBe(document.body); expect(writes()).toHaveLength(1);
+});
+
+it('检查失败保留错误，不聚焦旧结果或自动开始', async () => {
+  preflightReply = Promise.resolve(finishPreflight()); await mount();
+  await user.click(screen.getByRole('button', { name: '检查配置' }));
+  const pending = deferred<Response>(); preflightReply = pending.promise;
+  const check = screen.getByRole('button', { name: '检查配置' }); check.focus(); await user.keyboard('{Enter}'); check.blur();
+  await act(async () => pending.resolve(response({ error: { code: 'CHECK_FAILED', message: '检查失败，配置保留' } }, false)));
+  expect(await screen.findByText('检查失败，配置保留')).toBeTruthy();
+  expect(document.activeElement).toBe(document.body); expect(writes()).toHaveLength(2);
+});

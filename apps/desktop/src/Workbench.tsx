@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, Check, ChevronRight, FileCheck2, Play, Save, Square, Settings2, Clock3 } from 'lucide-react';
 import { api, collection, mergeRecords, errorMessage, type ImportKind } from './api';
@@ -199,6 +199,24 @@ export default function Workbench({ task, models: listedModels, datasets, device
   }
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const preflightSummary = useRef<HTMLElement>(null);
+  const checkFocus = useRef<{ origin: HTMLElement; result: Preflight | null } | null>(null);
+  useEffect(() => {
+    // 等待期间一旦用户聚焦别处，就取消交接，避免异步回执抢走焦点。
+    const moved = (event: FocusEvent) => {
+      if (checkFocus.current && event.target !== checkFocus.current.origin) checkFocus.current = null;
+    };
+    document.addEventListener('focusin', moved);
+    return () => document.removeEventListener('focusin', moved);
+  }, []);
+  useLayoutEffect(() => {
+    if (busy) return;
+    const pending = checkFocus.current; checkFocus.current = null;
+    if (pending?.result && pending.result === preflight &&
+      (document.activeElement === document.body || document.activeElement === pending.origin)) {
+      preflightSummary.current?.focus();
+    }
+  }, [busy, preflight]);
   useEffect(() => {
     if (!busy) setError(current => current === leaveWhileBusyMessage ? '' : current);
   }, [busy]);
@@ -337,16 +355,20 @@ export default function Workbench({ task, models: listedModels, datasets, device
     });
     return () => registerLeave(null);
   }, [draft, revision, dirty, busy, captureLibraryRead]);
-  async function check() {
+  async function check(event: React.MouseEvent<HTMLButtonElement>) {
     const textTraining = task.kind === 'text' && train; const read = trainingContract;
     const libraryCurrent = captureDraftRead(); const isCurrent = () => libraryCurrent() && (!textTraining || read.isCurrent());
     if (configurationReadonly() || trainingBlocked || !isCurrent()) return;
+    checkFocus.current = document.activeElement === event.currentTarget ? { origin: event.currentTarget, result: null } : null;
     setBusy(true); setError('');
     try {
       const saved = await save(isCurrent);
       if (!isCurrent() || configurationReadonly()) return;
       const checked = await api<Preflight>('POST', `/tasks/${task.id}/preflight`, { draft_revision: saved.draft_revision });
-      if (isCurrent() && !configurationReadonly()) setPreflight(checked);
+      if (isCurrent() && !configurationReadonly()) {
+        if (checkFocus.current) checkFocus.current.result = checked;
+        setPreflight(checked);
+      }
     }
     catch (e) { if (isCurrent()) setError(errorMessage(e)); }
     finally { setBusy(false); }
@@ -427,7 +449,7 @@ export default function Workbench({ task, models: listedModels, datasets, device
       {marketNotice && <p className="market-notice" role="status">{marketNotice}</p>}
       {task.kind === 'text' && train && trainingContract.error && <Button disabled={busy} onClick={trainingContract.retry}>重新读取训练参数</Button>}
       <ErrorNotice message={error} />
-      {preflight && <div className="preflight" aria-label="运行前检查"><strong>{preflight.can_submit ? '检查通过，可以运行' : '请先完成以下准备'}</strong>{preflight.blocking.map((issue, index) => <p key={index} className="error">{issue.message}</p>)}{preflight.warnings.map((issue, index) => <p key={index} className="warning">{issue.message}</p>)}<UploadSummary preflight={preflight} /><DataCheck report={preflight.check_report} /><details><summary>查看本次已应用配置</summary><pre>{JSON.stringify(preflight.effective_config || {}, null, 2)}</pre></details>{preflight.can_submit && <p className="muted">{currentModel?.name} · {preflight.execution_target?.name || checkedDeviceName}<br />本次输入在所选设备处理；运行配方将固定保存。</p>}</div>}
+      {preflight && <div className="preflight" aria-label="运行前检查"><strong ref={preflightSummary} tabIndex={-1}>{preflight.can_submit ? '检查通过，可以运行' : '请先完成以下准备'}</strong>{preflight.blocking.map((issue, index) => <p key={index} className="error">{issue.message}</p>)}{preflight.warnings.map((issue, index) => <p key={index} className="warning">{issue.message}</p>)}<UploadSummary preflight={preflight} /><DataCheck report={preflight.check_report} /><details><summary>查看本次已应用配置</summary><pre>{JSON.stringify(preflight.effective_config || {}, null, 2)}</pre></details>{preflight.can_submit && <p className="muted">{currentModel?.name} · {preflight.execution_target?.name || checkedDeviceName}<br />本次输入在所选设备处理；运行配方将固定保存。</p>}</div>}
       {preflight?.can_submit ? <Button primary className="full" onClick={submit} busy={busy} disabled={trainingBlocked || runningReadonly}><Play size={16} />{remote ? '确认发送并开始' : '开始'}{train ? '训练' : '运行'}</Button> : <Button primary className="full" onClick={check} busy={busy} disabled={trainingBlocked || runningReadonly}><FileCheck2 size={16} />检查配置</Button>}
     </section><div className="result-column">{attempts.length > 1 && <label>查看运行记录<select aria-label="查看运行记录" value={attempt?.id || ''} onChange={e => setAttempt(attempts.find(item => item.id === e.target.value) || null)}>{attempts.map((item, i) => <option key={item.id} value={item.id}>{i === 0 ? '最近一次' : `历史运行 ${attempts.length - i}`} · {item.id.slice(-8)}</option>)}</select></label>}{attemptCursor && <Button busy={historyBusy} onClick={() => void loadMoreAttempts()}>加载更早运行记录</Button>}{/* 查看旧记录时保留当前执行的同一个 RunResult，继续接收实际状态，不另建轮询器。 */}
       {latestAttempt && (runningReadonly || showingLatest) && <div hidden={!showingLatest}><RunResult key={latestAttempt.id} initial={latestAttempt} onChanged={onUpdated} onAttemptUpdated={observeAttempt} onExport={onExport} onRestoreTask={onRestoreTask} /></div>}

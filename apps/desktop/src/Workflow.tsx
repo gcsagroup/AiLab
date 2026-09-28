@@ -121,7 +121,8 @@ export function WorkflowRunView({ runId, models, works, onBack, onUpdated, regis
       if (command.action === 'submit') { setAttempt(response as Attempt); }
       else {
         const updated = 'workflow_run' in response ? response.workflow_run : response as WorkflowRun;
-        setRun(updated);
+        // 新版本或步骤先撤下旧任务与结果，避免刷新回执到达前混用两个版本。
+        setRun(updated); setTask(null); setAttempt(null); setLoading(true);
         if (command.action === 'advance') setSelectedStep(updated.current_step || kind);
       }
       setRefresh(value => value + 1); onUpdated();

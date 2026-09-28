@@ -142,3 +142,25 @@ it('旧作品先读取原输入，明确复用只登记来源，不自动推进'
   expect(calls.filter(call => call.method !== 'GET').map(call => call.path)).toEqual(['/workflow-runs/flow-one/reuse-output']); expect(run.current_step).toBe('image');
   expect(run.step_attempts![0].mode).toBe('compute'); expect(await screen.findByRole('button', { name: '接受图片并带入视频' })).toBeTruthy();
 });
+
+
+it('保存新输入后读取被延迟时立即撤下旧结果和旧任务入口', async () => {
+  completeImage(); view(); fireEvent.click(await screen.findByRole('button', { name: '修改输入 / 重做本步' }));
+  fireEvent.change(screen.getByLabelText('画面描述'), { target: { value: '新版本画面' } });
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  let resolveRead!: (value: Response) => void;
+  vi.mocked(fetch).mockImplementation((input, options = {}) => {
+    if (String(input).endsWith('/workflow-runs/flow-one') && (!options.method || options.method === 'GET')) return new Promise(resolve => { resolveRead = resolve; });
+    return original(input, options);
+  });
+  fireEvent.click(screen.getByRole('button', { name: '保存新版本并重做' }));
+  await screen.findByRole('heading', { name: '正在读取当前步骤与原结果' });
+  expect(run.steps.image.input_revision).toBe(2);
+  expect(screen.queryByTestId('run-result')).toBeNull();
+  expect(screen.queryByRole('button', { name: '接受图片并带入视频' })).toBeNull();
+  expect(screen.queryByRole('button', { name: '检查本步配置' })).toBeNull();
+  await waitFor(() => expect(resolveRead).toBeTypeOf('function'));
+  await act(async () => resolveRead(response(run)));
+  expect(await screen.findByRole('button', { name: '检查本步配置' })).toBeTruthy();
+  expect(screen.queryByTestId('run-result')).toBeNull();
+});
