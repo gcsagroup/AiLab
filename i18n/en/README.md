@@ -2,6 +2,10 @@
 
 # GCSA AI Lab
 
+**Apple configuration regression completed (2026-09-29)**: With the same Ver2.6 (049) candidate, the original 7B weights and ordinary KV cache completed 18 public-question tests across the default, 512-block, and low-latency settings. Arithmetic, extraction, structured output, and extraction from the beginning, middle, and end of long inputs were correct: 6/6 for each setting, with no additional regression found. Independent audit verified raw answers, scoring, empty caches, the complete bundle, and protected data; owned workers exited. The earlier performance matrix completed across two segments with 136 successful model computations and 45 device-busy rejections, while retaining 2 expired-check rejections caused by sleep. This does not establish uninterrupted or exclusive-host stability or acceleration from every configuration. Public-question regression does not replace business holdouts; the LoRA result of 31/32 still fails the requirement for perfect format correctness. Full AC24, native UI acceptance, and M6 remain incomplete.
+
+[Configuration quality audit (local evidence)](../../.artifacts/apple-preset-quality049-20260928/root-readback.json)
+
 [简体中文](../../README.md) · [繁體中文](../zh-TW/README.md) · [English](README.md)
 
 A local-first desktop workbench for model training and inference. Organize models, data, training tasks, evaluations, and works by project, with workflows for language, images, video, and voice-over.

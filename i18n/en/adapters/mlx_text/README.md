@@ -6,6 +6,10 @@
 
 # Local MLX text adapter
 
+**Apple configuration regression completed (2026-09-29)**: With the same Ver2.6 (049) candidate, the original 7B weights and ordinary KV cache completed 18 public-question tests across the default, 512-block, and low-latency settings. Arithmetic, extraction, structured output, and extraction from the beginning, middle, and end of long inputs were correct: 6/6 for each setting, with no additional regression found. Independent audit verified raw answers, scoring, empty caches, the complete bundle, and protected data; owned workers exited. The earlier performance matrix completed across two segments with 136 successful model computations and 45 device-busy rejections, while retaining 2 expired-check rejections caused by sleep. This does not establish uninterrupted or exclusive-host stability or acceleration from every configuration. Public-question regression does not replace business holdouts; the LoRA result of 31/32 still fails the requirement for perfect format correctness. Full AC24, native UI acceptance, and M6 remain incomplete.
+
+[Configuration quality audit (local evidence)](../../../../.artifacts/apple-preset-quality049-20260928/root-readback.json)
+
 2026-09-10: Real inference, SFT + LoRA parameter updates, source identity verification, independent reload, MLX 4-bit quantization export, cancellation, and invalid-combination checks passed on Apple M5 Max. This is the Apple technical experiment and executor; it does not establish acceptance of the NVIDIA portion of TV-01, TV-03 cross-device round trips, model quality admission, or the complete training product.
 
 <a id="已验证组合"></a>

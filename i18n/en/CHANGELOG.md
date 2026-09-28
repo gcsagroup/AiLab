@@ -2,6 +2,10 @@
 
 # Changelog
 
+**Apple configuration regression completed (2026-09-29)**: With the same Ver2.6 (049) candidate, the original 7B weights and ordinary KV cache completed 18 public-question tests across the default, 512-block, and low-latency settings. Arithmetic, extraction, structured output, and extraction from the beginning, middle, and end of long inputs were correct: 6/6 for each setting, with no additional regression found. Independent audit verified raw answers, scoring, empty caches, the complete bundle, and protected data; owned workers exited. The earlier performance matrix completed across two segments with 136 successful model computations and 45 device-busy rejections, while retaining 2 expired-check rejections caused by sleep. This does not establish uninterrupted or exclusive-host stability or acceleration from every configuration. Public-question regression does not replace business holdouts; the LoRA result of 31/32 still fails the requirement for perfect format correctness. Full AC24, native UI acceptance, and M6 remain incomplete.
+
+[Configuration quality audit (local evidence)](../../.artifacts/apple-preset-quality049-20260928/root-readback.json)
+
 **Per-sample evaluation termination and token recording fix（2026-09-23）**：9 new observation tests first reproduced the gaps. After the fix, all 290 MLX tests and 48 relevant control-service tests passed. Two short technical generations used the fixed Qwen2.5-0.5B on Apple GPU: both returned `Apple`; a 1-token limit produced `length`, while a 16-token limit produced 2 tokens including the end marker and `stop`. Collected text exactly matched the original stream, and model file hashes were preserved. No training or historical holdout rerun occurred, and no new quality pass is claimed. At source verification time, the fixed App was 044 and did not include the change; subsequent packaged and native results for 045 follow below. [M6](docs/implementation/2026-09-23-m6-business-recovery.md#评测逐题结束原因与词元记录修复)
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md)
