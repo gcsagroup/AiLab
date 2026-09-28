@@ -10,7 +10,7 @@
 - 权重 SHA-256：`fdf756fa7fcbe7404d5c60e26bff1a0c8b8aa1f72ced49e7dd0210fe288fb7fe`；大小 988,097,824 字节。
 - 源模型只读使用；模型、tokenizer、模板、环境、实际参数和每个输出文件的摘要均写入执行证据。
 
-模型结构检查限定 `qwen2`、896 隐藏维度、24 层；训练和量化只接受未量化源模型，生成还接受本文验证的 MLX 4-bit／64／affine 产物。结构检查用于阻断明显错误的架构，不等同于验证所有同结构的衍生权重。当前独立实测仅覆盖上述固定官方版本及本执行器从它导出的量化模型。
+源码结构检查支持 `qwen2` 的 0.5B（896 隐藏维度、24 层）和 7B（3584 隐藏维度、28 层）固定组合。7B 只接受未量化基座，权重量化与 q4 KV 缓存尚未开放；0.5B 保留原有量化范围。结构匹配不等于所有同结构衍生权重或业务质量通过。上述历史记录描述首个组合，新增源码实测边界见文末。
 
 ## 准备与复跑
 
@@ -56,7 +56,7 @@ SIGTERM／SIGINT 设置取消请求，在实际计算同步点检查，退出 13
 
 训练固定项：`training_type=sft`、`update_method=lora`、`recipe_id=qwen25-assistant-only-v1`、`batch_size=1`、`gradient_accumulation=1`、`optimizer=adamw`、`weight_decay=0`、`lora_dropout=0`。
 
-训练可调项：`steps`（1—200，默认 4）、`learning_rate`（1e-7—0.01，默认 1e-4）、`max_seq_length`（32—2048，默认 512）、`lora_rank`（1—32，默认 4）、`lora_alpha`（1—64，默认 8）、`num_layers`（末尾 1—24 层，默认 2）与 `seed`。目标模块固定为 `self_attn.q_proj`、`self_attn.v_proj`。MLX scale 显式取 `alpha / rank`。
+训练可调项：`steps`（1—200，默认 4）、`learning_rate`（1e-7—0.01，默认 1e-4）、`max_seq_length`（32—2048，默认 512）、`lora_rank`（1—32，默认 4）、`lora_alpha`（1—64，默认 8）、`num_layers`（末尾 1—28 层，0.5B 最多 24 层，默认 2）与 `seed`。目标模块固定为 `self_attn.q_proj`、`self_attn.v_proj`。MLX scale 显式取 `alpha / rank`。
 
 AdamW 显式固定 betas=[0.9,0.999]、eps=1e-8、bias_correction=true；恒定学习率，无 warmup／梯度裁剪。源 BF16 权重冻结，LoRA 参数 FP32；数据按文件顺序循环，seed 控制 LoRA 初始化。每步产出真实损失与监督词元数，结束保存 LoRA 文件与参数变化。未开放中间检查点恢复、断点续训、全参数、量化训练、packing、多媒体或 NVIDIA。
 
@@ -85,3 +85,7 @@ AdamW 显式固定 betas=[0.9,0.999]、eps=1e-8、bias_correction=true；恒定�
 `m3-20260910-01/report.json` 记录新来源合同下的另一次 1 步训练、严格适配器回载、量化导出与独立加载。量化权重从 988,097,824 字节缩至 278,064,792 字节，占源权重 28.14%；3 个分片最大 134,188,406 字节。4 个固定问题的两次量化模型独立重载 logits 差均为 0；与基座的数值和文字输出存在变化，原始输出全部保留。错误训练配方、错误适配器摘要真实阻断；当前 46 项测试通过。固定问题同时包含训练探针，不能当独立质量评测集；该结果仅允许作为实验产物，仍未完成候选质量准入。
 
 官方资料：[MLX-LM 用法与 Python API](https://github.com/ml-explore/mlx-lm)、[固定 Qwen 源版本](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/tree/7ae557604adf67be50417f59c2c2f167def9a775)。具体训练 API 与 AdamW 默认值均以本机锁定版本源码复核。
+
+**源码新增 Apple 7B 实验支持（2026-09-28）**：固定 Qwen2.5-7B-Instruct 已完成真实 LoRA 训练、暂停及独立恢复对照；普通 KV 缓存可用，q4 KV 缓存因输出失败而阻断。源码支持不代表业务质量通过，也尚未进入已安装的 046 App；新签名候选及完整 M6 验收仍待完成。
+
+固定 7B 权重只读复核：`python3 adapters/mlx_text/prepare_model.py --variant 7b --verify-only`；移除 `--verify-only` 可下载固定版本，默认仍为 0.5B。

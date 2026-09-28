@@ -49,11 +49,11 @@ def identity(snapshot, effective, prompt_tokens, template_digest):
     return value, hashlib.sha256(encoded.encode()).hexdigest()
 
 
-def initial_cache_summary(cache):
+def initial_cache_summary(cache, expected_layers=24):
     """建立后立即观察每层为空，拒绝传入已有缓存或模型自定义缓存。"""
     from mlx_lm.models.cache import KVCache
-    if len(cache) != 24 or any(type(layer) is not KVCache for layer in cache):
-        raise InferenceError('CACHE_CONFIG_MISMATCH', '当前固定组合必须新建 24 层普通 KV 缓存。')
+    if type(expected_layers) is not int or expected_layers not in (24, 28) or len(cache) != expected_layers or any(type(layer) is not KVCache for layer in cache):
+        raise InferenceError('CACHE_CONFIG_MISMATCH', '当前模型必须新建对应层数的普通 KV 缓存。')
     layers = [{'index': index, 'class': type(layer).__name__, 'offset': layer.offset,
                'empty': layer.empty(), 'keys_absent': layer.keys is None,
                'values_absent': layer.values is None, 'nbytes': layer.nbytes}
@@ -64,11 +64,11 @@ def initial_cache_summary(cache):
             'scope': '本次创建后、调用模型之前逐层读取；不导出缓存内容。'}
 
 
-def cache_summary(cache, precision):
+def cache_summary(cache, precision, expected_layers=24):
     """仅回读实际层类型、形状、精度与分配量；不序列化缓存中的用户内容。"""
     from mlx_lm.models.cache import KVCache, QuantizedKVCache
     expected = QuantizedKVCache if precision == 'q4' else KVCache
-    if len(cache) != 24 or any(type(layer) is not expected for layer in cache):
+    if type(expected_layers) is not int or expected_layers not in (24, 28) or len(cache) != expected_layers or any(type(layer) is not expected for layer in cache):
         raise InferenceError('CACHE_CONFIG_MISMATCH', '实际推理缓存类型或层数与固定 Qwen 组合不符。')
     layers = []
     for index, layer in enumerate(cache):

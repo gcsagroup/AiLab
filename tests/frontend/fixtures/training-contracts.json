@@ -8,7 +8,7 @@
       "engine": "mlx",
       "device_id": "apple-gpu",
       "execution_scope": "local",
-      "model_constraint": "Qwen2.5-0.5B-Instruct 原权重；不支持量化基座训练",
+      "model_constraint": "Qwen2.5-0.5B-Instruct（最多24层）或 Qwen2.5-7B-Instruct（最多28层）原权重；不支持量化基座训练",
       "training_type": "sft",
       "update_method": "lora",
       "recipe_id": "qwen25-assistant-only-v1",
@@ -63,7 +63,7 @@
           "type": "integer",
           "default": 2,
           "minimum": 1,
-          "maximum": 24,
+          "maximum": 28,
           "unit": "layers",
           "editable": true
         },

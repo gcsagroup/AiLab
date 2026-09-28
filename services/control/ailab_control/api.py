@@ -105,7 +105,7 @@ class TrainingRuntime(Strict):
     max_seq_length: int = Field(default=512, ge=32, le=2048)
     lora_rank: int = Field(default=4, ge=1, le=32)
     lora_alpha: float = Field(default=8, ge=1, le=64)
-    num_layers: int = Field(default=2, ge=1, le=24)
+    num_layers: int = Field(default=2, ge=1, le=28)
     batch_size: int = Field(default=1, ge=1, le=1)
     gradient_accumulation: int = Field(default=1, ge=1, le=1)
     optimizer: Literal["adamw"] = "adamw"
@@ -153,6 +153,7 @@ class NvidiaRuntime(Strict):
 
 
 class NvidiaTrainingRuntime(TrainingRuntime):
+    num_layers: int = Field(default=2, ge=1, le=24)
     engine: Literal['transformers'] = 'transformers'
     device_id: Literal['cuda:0'] = 'cuda:0'
     precision: Literal['bfloat16'] = 'bfloat16'
@@ -189,7 +190,7 @@ def training_contracts():
         items.append({'schema_version': 'ailab-training-contract-v1', 'id': contract_id,
                       'kind': 'text', 'operation': 'train', 'engine': properties['engine']['default'],
                       'device_id': properties['device_id']['default'], 'execution_scope': scope,
-                      'model_constraint': 'Qwen2.5-0.5B-Instruct 原权重；不支持量化基座训练',
+                      'model_constraint': ('Qwen2.5-0.5B-Instruct（最多24层）或 Qwen2.5-7B-Instruct（最多28层）原权重；不支持量化基座训练' if name == 'mlx' else 'Qwen2.5-0.5B-Instruct 原权重；不支持量化基座训练'),
                       'training_type': 'sft', 'update_method': 'lora', 'recipe_id': 'qwen25-assistant-only-v1',
                       'source': {'id': contract_id, 'label': label, 'default_source': 'versioned_control_schema',
                                  'constraint_source': 'control_and_worker_intersection'},

@@ -136,3 +136,5 @@ The repository contains source, tests, build scripts, user guides, design specif
 ## Delivery limitations
 
 Full delivery still requires evidence for the specified NVIDIA system, trusted HTTPS across hosts, the same artifact across platforms, clean installation, five first-time users, passing quality, and human review. The historical intermittent blank display in long subtitle lists and other uncovered native paths remain unverified. The prototype, historical failures, and design baseline retain the conclusions reached when they were recorded.
+
+**Experimental Apple 7B source support (2026-09-28)**: the fixed Qwen2.5-7B-Instruct model completed real LoRA training, pause/resume, and independent recovery comparisons. Ordinary KV cache works; q4 KV cache is blocked after an output failure. Source support does not establish business quality and is not yet included in the installed 046 App. A newly signed candidate and full M6 acceptance remain pending.

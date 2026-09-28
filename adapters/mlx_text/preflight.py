@@ -16,6 +16,7 @@ from workers.mlx_worker import WorkerError, model_manifest, sha256, validate_ada
 from adapters.mlx_text.evaluation import EvaluationError, load_plan, model_evaluation_identity, model_plan_bound
 from adapters.mlx_text.checkpoint import CheckpointError, compatibility, verify_checkpoint
 from adapters.mlx_text.inference import InferenceError, identity as inference_identity
+from adapters.mlx_text.profiles import model_profile, adapter_shapes
 from adapters.mlx_text.generation import GenerationError, prepare_prompt
 
 
@@ -28,19 +29,15 @@ def check(snapshot, output):
         from mlx_lm.utils import load_tokenizer
         tokenizer = load_tokenizer(str(model), {"local_files_only": True, "trust_remote_code": False})
         template_digest = hashlib.sha256(tokenizer.chat_template.encode()).hexdigest()
+        profile = model_profile(json.loads((model / "config.json").read_text()))
         config = {}
         if snapshot.get("adapter_path"):
             if snapshot["operation"] not in {"generate", "evaluate"}:
                 raise WorkerError("RESUME_UNSUPPORTED", "首个训练执行器不支持增量续训")
-            adapter, config = validate_adapter_metadata(snapshot["adapter_path"], model_manifest(model)["sha256"], template_digest, snapshot["model_manifest_digest"], snapshot["adapter_training_recipe_digest"])
+            adapter, config = validate_adapter_metadata(snapshot["adapter_path"], model_manifest(model)["sha256"], template_digest, snapshot["model_manifest_digest"], snapshot["adapter_training_recipe_digest"], profile["num_hidden_layers"])
             from safetensors import safe_open
             rank = config["lora_parameters"]["rank"]
-            expected = {}
-            for layer in range(24 - config["num_layers"], 24):
-                for module, width in [("q_proj", 896), ("v_proj", 128)]:
-                    prefix = f"model.layers.{layer}.self_attn.{module}."
-                    expected[prefix + "lora_a"] = [896, rank]
-                    expected[prefix + "lora_b"] = [rank, width]
+            expected = adapter_shapes(profile, config["num_layers"], rank)
             with safe_open(str(adapter / "adapters.safetensors"), framework="numpy") as weights:
                 if set(weights.keys()) != set(expected) or any(weights.get_slice(key).get_shape() != shape for key, shape in expected.items()):
                     raise WorkerError("ADAPTER_MODULE_MISMATCH", "适配器参数名称或形状不匹配")

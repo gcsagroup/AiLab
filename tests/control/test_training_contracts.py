@@ -34,6 +34,8 @@ def test_contract_read_is_authenticated_and_never_probes_or_mutates_tasks(rig, m
     declared = contracts(client)
     assert set(declared) == {'mlx', 'transformers'}
     assert declared['mlx']['execution_scope'] == 'local'
+    assert declared['mlx']['parameters']['num_layers']['maximum'] == 28
+    assert declared['transformers']['parameters']['num_layers']['maximum'] == 24
     assert declared['transformers']['execution_scope'] == 'remote'
     for item in declared.values():
         assert item['schema_version'] == 'ailab-training-contract-v1'
@@ -61,7 +63,10 @@ def test_local_capability_uses_same_contract_without_claiming_device_readiness(r
 
 def mlx_snapshot(root, runtime):
     model = root / 'model'; model.mkdir()
-    (model / 'config.json').write_text(json.dumps({'model_type': 'qwen2', 'hidden_size': 896, 'num_hidden_layers': 24}))
+    config = {'model_type': 'qwen2', 'hidden_size': 896, 'num_hidden_layers': 24}
+    if runtime['num_layers'] > 24:
+        config = {'model_type': 'qwen2', 'hidden_size': 3584, 'num_hidden_layers': 28, 'num_attention_heads': 28, 'num_key_value_heads': 4, 'intermediate_size': 18944, 'vocab_size': 152064, 'tie_word_embeddings': False}
+    (model / 'config.json').write_text(json.dumps(config))
     (model / 'model.safetensors').write_bytes(b'contract-only-no-model-load')
     model_files, model_digest = snapshot_manifest(model)
     dataset = root / 'train.jsonl'
@@ -134,3 +139,9 @@ def test_integral_alpha_from_old_remote_drafts_remains_usable_and_local_range_is
     assert local.learning_rate == 1e-7 and local.lora_alpha == 8.5 and local.steps == 200
     with pytest.raises(ValidationError):
         TrainingRuntime.model_validate({'steps': 201})
+
+
+def test_frontend_contract_fixture_matches_live_contract(rig):
+    actual = rig[0].get("/api/v1/training-contracts").json()
+    fixture = json.loads((ROOT / "tests/frontend/fixtures/training-contracts.json").read_text())
+    assert fixture == actual

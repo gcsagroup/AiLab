@@ -47,6 +47,7 @@ it('真实静态合同驱动范围和默认说明，读取不改草稿也不探�
   fireEvent.change(input('训练步数'), { target: { value: '19' } });
   await act(async () => wait.resolve(response(fixture))); await ready();
   expect(input('训练步数')).toHaveValue(19); expect(input('随机种子')).toHaveValue(37);
+  expect(input('训练末尾层数')).toHaveAttribute('max', '28');
   expect(input('训练步数')).toHaveAttribute('max', '200'); expect(input('随机种子')).toHaveAttribute('max', '4294967295');
   expect(input('学习率')).toHaveAttribute('min', '1e-7'); expect(input('LoRA Alpha')).toHaveAttribute('step', 'any');
   expect(screen.getByText(/默认值来源：内置 Apple MLX/)).toBeTruthy(); expect(screen.getByText(/每设备批大小 1 × 梯度累积 1 × 数据并行设备 1 = 有效批量 1/)).toBeTruthy();
@@ -74,7 +75,7 @@ it('本机保留小数Alpha和1e-7学习率，切到NVIDIA后按新范围阻断�
   expect(calls.every(call => call.method === 'GET')).toBe(true);
 });
 
-it.each([['随机种子', '4294967296'], ['随机种子', '1.5'], ['训练步数', '200.5'], ['最大序列长度', '31'], ['LoRA 秩', '0'], ['训练末尾层数', '25']])('拒绝当前合同之外的%s=%s，保存输入仍可操作', async (label, value) => {
+it.each([['随机种子', '4294967296'], ['随机种子', '1.5'], ['训练步数', '200.5'], ['最大序列长度', '31'], ['LoRA 秩', '0'], ['训练末尾层数', '29']])('拒绝当前合同之外的%s=%s，保存输入仍可操作', async (label, value) => {
   mount(); await ready(); fireEvent.change(input(label), { target: { value } });
   expect(check()).toBeDisabled(); expect(input(label)).toHaveAttribute('aria-invalid', 'true');
   fireEvent.click(check()); expect(calls.some(call => call.path.endsWith('/preflight'))).toBe(false);

@@ -22,6 +22,7 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from adapters.mlx_text.recipe import RECIPE_ID, TEMPLATE_SHA256, RecipeError, build_recipe, check_dataset, collate_samples
 from adapters.mlx_text.checkpoint import CheckpointError, TrainingControl, compatibility, restore_checkpoint, verify_checkpoint
+from adapters.mlx_text.profiles import model_profile
 from adapters.mlx_text.inference import FIELDS as INFERENCE_FIELDS, InferenceError, cache_summary, identity as inference_identity, initial_cache_summary, resolve as resolve_inference
 from adapters.mlx_text.generation import GenerationError, StopBuffer, prepare_prompt
 
@@ -167,9 +168,13 @@ def validate_snapshot(snapshot, output):
     if output.exists() and (output.is_symlink() or any(output.iterdir())):
         raise WorkerError("OUTPUT_EXISTS", "输出目录必须为空，不能覆盖已有产物")
     config = json.loads((model_path / "config.json").read_text())
-    if config.get("model_type") != "qwen2" or config.get("hidden_size") != 896 or config.get("num_hidden_layers") != 24:
-        raise WorkerError("MODEL_UNVERIFIED", "首个验证组合为 Qwen2.5-0.5B-Instruct")
+    try:
+        profile = model_profile(config)
+    except ValueError as exc:
+        raise WorkerError("MODEL_UNVERIFIED", str(exc)) from exc
     quantization = config.get("quantization") or config.get("quantization_config")
+    if profile["name"] == "qwen25-7b" and (quantization or snapshot["operation"] == "quantize" or model_evaluation):
+        raise WorkerError("MODEL_OPERATION_UNSUPPORTED", "7B 当前只开放未量化基座的生成、SFT LoRA 与适配器评测；量化需独立验证")
     if quantization:
         expected_quantization = {"group_size": 64, "bits": 4, "mode": "affine"}
         if quantization != expected_quantization or any(config.get(key) not in (None, expected_quantization) for key in ["quantization", "quantization_config"]):
@@ -199,15 +204,17 @@ def validate_snapshot(snapshot, output):
             raise WorkerError("UNSUPPORTED_INPUT", "当前生成仅支持 prompt")
         effective.update(max_tokens=number(runtime, "max_tokens", 128, 1, 2048, True), temperature=number(runtime, "temperature", 0, 0, 2), top_p=number(runtime, "top_p", 1, 0.01, 1))
         effective.update(resolve_inference(runtime))
-        if config.get("num_attention_heads") != 14 or config.get("num_key_value_heads") != 2:
-            raise WorkerError("MODEL_UNVERIFIED", "缓存适配仅验证 14 个注意力头、2 个 KV 头和 64 维的固定 Qwen 组合")
+        if profile["name"] == "qwen25-7b" and effective["kv_precision"] != "auto":
+            raise WorkerError("UNSUPPORTED_PARAMETER", "7B 的 q4 KV 缓存尚未通过质量验证，请使用普通缓存")
+        if config.get("num_attention_heads") != profile["num_attention_heads"] or config.get("num_key_value_heads") != profile["num_key_value_heads"]:
+            raise WorkerError("MODEL_UNVERIFIED", "注意力头与当前固定 Qwen 结构不符")
     elif snapshot["operation"] == "train":
         fixed = {"training_type": "sft", "update_method": "lora", "recipe_id": RECIPE_ID, "batch_size": 1, "gradient_accumulation": 1, "optimizer": "adamw", "weight_decay": 0, "lora_dropout": 0}
         for key, value in fixed.items():
             if runtime.get(key, value) != value or isinstance(runtime.get(key), bool):
                 raise WorkerError("UNSUPPORTED_PARAMETER", f"首个训练适配器要求 {key}={value}")
         effective.update(fixed)
-        effective.update(steps=number(runtime, "steps", 4, 1, 200, True), learning_rate=number(runtime, "learning_rate", 0.0001, 1e-7, 0.01), max_seq_length=number(runtime, "max_seq_length", 512, 32, 2048, True), lora_rank=number(runtime, "lora_rank", 4, 1, 32, True), lora_alpha=number(runtime, "lora_alpha", 8, 1, 64), num_layers=number(runtime, "num_layers", 2, 1, 24, True))
+        effective.update(steps=number(runtime, "steps", 4, 1, 200, True), learning_rate=number(runtime, "learning_rate", 0.0001, 1e-7, 0.01), max_seq_length=number(runtime, "max_seq_length", 512, 32, 2048, True), lora_rank=number(runtime, "lora_rank", 4, 1, 32, True), lora_alpha=number(runtime, "lora_alpha", 8, 1, 64), num_layers=number(runtime, "num_layers", 2, 1, profile["num_hidden_layers"], True))
         dataset = Path(snapshot.get("dataset_path", ""))
         if not dataset.is_absolute() or not dataset.is_file() or dataset.stat().st_size > 64 * 1024 * 1024:
             raise WorkerError("INVALID_DATASET", "训练数据必须是小于 64 MiB 的本地 JSONL 文件")
@@ -318,7 +325,7 @@ def run_generate(model, tokenizer, snapshot, effective, output):
         emit("phase", phase="prefilling" if processed < total else "generating", message=f"正在处理提示词（{processed}/{total}）" if processed < total else "提示词已处理，正在生成")
 
     try:
-        initial = initial_cache_summary(cache)
+        initial = initial_cache_summary(cache, len(model.layers))
         with contextlib.closing(stream_generate(model, tokenizer, prompt, max_tokens=effective["max_tokens"], sampler=make_sampler(temp=effective["temperature"], top_p=effective["top_p"]), prompt_cache=cache, max_kv_size=None, prefill_step_size=effective["prefill_step_size"], kv_bits=effective["kv_bits"], kv_group_size=effective["kv_group_size"], quantized_kv_start=effective["quantized_kv_start"], prompt_progress_callback=progress)) as responses:
             for response in responses:
                 check_cancel()
@@ -342,7 +349,7 @@ def run_generate(model, tokenizer, snapshot, effective, output):
         check_cancel()
         mx.synchronize()
         generation_seconds = time.perf_counter() - generation_started
-        final_cache = cache_summary(cache, effective["kv_precision"])
+        final_cache = cache_summary(cache, effective["kv_precision"], len(model.layers))
         generation_peak = mx.get_peak_memory()
     finally:
         cache.clear()
@@ -366,7 +373,7 @@ def run_generate(model, tokenizer, snapshot, effective, output):
     emit("metric", **metrics)
 
 
-def validate_adapter_metadata(adapter_path, base_digest, template_digest, base_input_digest=None, training_recipe_digest=None):
+def validate_adapter_metadata(adapter_path, base_digest, template_digest, base_input_digest=None, training_recipe_digest=None, max_layers=24):
     path = Path(adapter_path)
     if not path.is_absolute() or not path.is_dir():
         raise WorkerError("ADAPTER_NOT_LOCAL", "适配器必须是本地绝对目录")
@@ -382,7 +389,7 @@ def validate_adapter_metadata(adapter_path, base_digest, template_digest, base_i
     params = config.get("lora_parameters", {})
     if config.get("fine_tune_type") != "lora" or params.get("keys") != ["self_attn.q_proj", "self_attn.v_proj"]:
         raise WorkerError("ADAPTER_MODULE_MISMATCH", "适配器类型或模块不属于已验证组合")
-    number(config, "num_layers", 0, 1, 24, True)
+    number(config, "num_layers", 0, 1, max_layers, True)
     number(params, "rank", 0, 1, 32, True)
     number(params, "scale", 0, 1 / 32, 64)
     if params.get("dropout") != 0:
@@ -395,7 +402,7 @@ def load_validated_adapter(model, tokenizer, adapter_path, base_digest, base_inp
     import mlx.core as mx
     from mlx.utils import tree_flatten
     from mlx_lm.tuner.utils import linear_to_lora_layers
-    path, config = validate_adapter_metadata(adapter_path, base_digest, hashlib.sha256(tokenizer.chat_template.encode()).hexdigest(), base_input_digest, training_recipe_digest)
+    path, config = validate_adapter_metadata(adapter_path, base_digest, hashlib.sha256(tokenizer.chat_template.encode()).hexdigest(), base_input_digest, training_recipe_digest, len(model.layers))
     params = config["lora_parameters"]
     model.freeze()
     linear_to_lora_layers(model, config["num_layers"], params)

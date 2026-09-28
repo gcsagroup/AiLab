@@ -178,6 +178,6 @@ def test_rejected_initial_cache_is_still_released(tmp_path, monkeypatch, cpu):
     monkeypatch.setattr(cpu, 'clear_cache', lambda: released.append(True))
     monkeypatch.setattr(worker, 'emit', lambda *a, **k: None)
     with pytest.raises(InferenceError) as error:
-        worker.run_generate(None, tokenizer, snapshot, effective, tmp_path)
+        worker.run_generate(SimpleNamespace(layers=[None] * 24), tokenizer, snapshot, effective, tmp_path)
     assert error.value.code == 'CACHE_CONFIG_MISMATCH' and cache == [] and released == [True]
     assert not (tmp_path / 'result.txt').exists()

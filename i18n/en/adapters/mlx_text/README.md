@@ -18,7 +18,7 @@
 - Weight SHA-256: `fdf756fa7fcbe7404d5c60e26bff1a0c8b8aa1f72ced49e7dd0210fe288fb7fe`; size 988,097,824 bytes.
 - The source model is used read-only; digests of the model, tokenizer, template, environment, actual parameters, and every output file are written into execution evidence.
 
-Model architecture checks are restricted to `qwen2`, hidden dimension 896, and 24 layers; training and quantization accept only unquantized source models, while generation also accepts the MLX 4-bit/64/affine artifact verified here. Architecture checks block clearly incorrect architectures but do not verify every derived weight set with that architecture. Current independent real measurements cover only the fixed official revision above and the quantized model this executor exports from it.
+Source architecture checks support fixed `qwen2` combinations: 0.5B (hidden dimension 896, 24 layers) and 7B (hidden dimension 3584, 28 layers). 7B accepts only an unquantized base; weight quantization and q4 KV cache are not enabled. 0.5B retains its existing quantization scope. Matching architecture does not establish acceptance of all derived weights or business quality. The historical evidence above describes the first combination; the new source evidence boundary is stated at the end.
 
 <a id="准备与复跑"></a>
 
@@ -70,7 +70,7 @@ Generation: `engine=mlx`, `device_id=apple-gpu`, `seed` (0—2³²−1), `max_to
 
 Fixed training settings: `training_type=sft`, `update_method=lora`, `recipe_id=qwen25-assistant-only-v1`, `batch_size=1`, `gradient_accumulation=1`, `optimizer=adamw`, `weight_decay=0`, `lora_dropout=0`.
 
-Adjustable training settings: `steps` (1—200, default 4), `learning_rate` (1e-7—0.01, default 1e-4), `max_seq_length` (32—2048, default 512), `lora_rank` (1—32, default 4), `lora_alpha` (1—64, default 8), `num_layers` (last 1—24 layers, default 2), and `seed`. Target modules are fixed to `self_attn.q_proj` and `self_attn.v_proj`. MLX scale is explicitly `alpha / rank`.
+Adjustable training settings: `steps` (1—200, default 4), `learning_rate` (1e-7—0.01, default 1e-4), `max_seq_length` (32—2048, default 512), `lora_rank` (1—32, default 4), `lora_alpha` (1—64, default 8), `num_layers` (last 1—28 layers, at most 24 layers for 0.5B, default 2), and `seed`. Target modules are fixed to `self_attn.q_proj` and `self_attn.v_proj`. MLX scale is explicitly `alpha / rank`.
 
 AdamW explicitly fixes betas=[0.9,0.999], eps=1e-8, bias_correction=true; the learning rate is constant, with no warmup/gradient clipping. Source BF16 weights are frozen and LoRA parameters are FP32; data cycles in file order, and seed controls LoRA initialization. Each step emits real loss and supervised-token count; completion saves LoRA files and parameter changes. Intermediate checkpoint restoration, resumed training, full-parameter training, quantized training, packing, multimedia, and NVIDIA are not exposed.
 
@@ -103,3 +103,7 @@ The real experiment used 4 manually created test samples, 4 LoRA steps, and 4 pr
 `m3-20260910-01/report.json` records another 1-step training run under the new provenance contract, strict adapter reload, quantization export, and independent loading. Quantized weights shrank from 988,097,824 to 278,064,792 bytes, 28.14% of source weights; the largest of 3 shards was 134,188,406 bytes. For 4 fixed questions, logit differences between two independent quantized-model reloads were all 0; numerical and textual outputs differed from the base, and all original outputs were retained. Incorrect training recipes and adapter digests were actually blocked; the current 46 tests passed. The fixed questions also include training probes and cannot serve as an independent quality evaluation set; this result is permitted only as an experimental artifact, with candidate quality admission still incomplete.
 
 Official references: [MLX-LM usage and Python API](https://github.com/ml-explore/mlx-lm), [fixed Qwen source revision](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/tree/7ae557604adf67be50417f59c2c2f167def9a775). Specific training APIs and AdamW defaults were rechecked against locally locked source versions.
+
+**Experimental Apple 7B source support (2026-09-28)**: the fixed Qwen2.5-7B-Instruct model completed real LoRA training, pause/resume, and independent recovery comparisons. Ordinary KV cache works; q4 KV cache is blocked after an output failure. Source support does not establish business quality and is not yet included in the installed 046 App. A newly signed candidate and full M6 acceptance remain pending.
+
+Read-only verification of the fixed 7B weights: `python3 adapters/mlx_text/prepare_model.py --variant 7b --verify-only`. Remove `--verify-only` to download the pinned revision; the default remains 0.5B.
