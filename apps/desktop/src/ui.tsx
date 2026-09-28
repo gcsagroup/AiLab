@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { X, LoaderCircle } from 'lucide-react';
 
 export function Button({ children, busy, primary, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { busy?: boolean; primary?: boolean }) {
@@ -6,6 +6,23 @@ export function Button({ children, busy, primary, ...props }: React.ButtonHTMLAt
   return <button {...props} tabIndex={props.tabIndex ?? 0} type={props.type || 'button'} className={`button ${primary ? 'primary' : ''} ${props.className || ''}`} disabled={props.disabled || busy}>
     {busy && <LoaderCircle size={16} className="spin" aria-hidden="true" />}{children}
   </button>;
+}
+export function PaginationButton({ label, hasMore, busy, onLoad }: { label: string; hasMore: boolean; busy: boolean; onLoad: () => void }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const wasBusy = useRef(false);
+  const [requested, setRequested] = useState(false);
+  useLayoutEffect(() => {
+    // 只跟随仍在入口上的焦点，不打断用户在等待期间进行的其他操作。
+    if (wasBusy.current && !busy && document.activeElement === ref.current) {
+      ref.current?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    }
+    wasBusy.current = busy;
+  }, [busy, hasMore]);
+  if (!hasMore && !requested) return null;
+  return <button ref={ref} type="button" tabIndex={0} className="button" aria-disabled={busy || !hasMore} aria-busy={busy} onClick={() => {
+    if (busy || !hasMore) return;
+    setRequested(true); onLoad();
+  }}>{hasMore ? '加载更多' : '已加载全部'}{label}</button>;
 }
 export function Dialog({ title, children, onClose, wide, preventClose }: { title: string; children: ReactNode; onClose: () => void; wide?: boolean; preventClose?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);

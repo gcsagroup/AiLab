@@ -110,3 +110,32 @@ it('分页等待保留键盘焦点并拒绝重复请求，下一页仍可连续�
   expect(document.activeElement).toBe(more); expect(more.getAttribute('aria-disabled')).toBe('false');
   expect(more.getAttribute('aria-busy')).toBe('false');
 });
+
+it('末页保留完成入口和焦点，并将仍聚焦的入口滚入视口', async () => {
+  const normal = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (input, options) => String(input).includes('cursor=models-first') ? new Promise(resolve => { delayed = resolve; }) : normal(input, options));
+  render(<App />); fireEvent.click(await screen.findByRole('button', { name: '模型库' }));
+  const more = await screen.findByRole('button', { name: '加载更多模型' });
+  const scroll = vi.fn(); more.scrollIntoView = scroll;
+  more.focus(); fireEvent.click(more);
+  await waitFor(() => expect(delayed).toBeTruthy());
+  await act(async () => delayed!(response({ items: [chosenModel], next_cursor: null })));
+  const completed = screen.getByRole('button', { name: '已加载全部模型' });
+  expect(completed).toBe(more); expect(document.activeElement).toBe(completed);
+  expect(completed.getAttribute('aria-disabled')).toBe('true');
+  expect(scroll).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' });
+  const count = reads.length; fireEvent.click(completed); expect(reads.length).toBe(count);
+});
+
+it('分页等待期间焦点移到别处，完成后不滚动或抢回焦点', async () => {
+  const normal = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (input, options) => String(input).includes('cursor=models-first') ? new Promise(resolve => { delayed = resolve; }) : normal(input, options));
+  render(<App />); fireEvent.click(await screen.findByRole('button', { name: '模型库' }));
+  const more = await screen.findByRole('button', { name: '加载更多模型' });
+  const scroll = vi.fn(); more.scrollIntoView = scroll;
+  more.focus(); fireEvent.click(more);
+  await waitFor(() => expect(delayed).toBeTruthy());
+  const elsewhere = screen.getByRole('button', { name: '工作台' }); elsewhere.focus();
+  await act(async () => delayed!(response({ items: [chosenModel], next_cursor: 'next' })));
+  expect(document.activeElement).toBe(elsewhere); expect(scroll).not.toHaveBeenCalled();
+});

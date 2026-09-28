@@ -26,7 +26,7 @@ import { ProjectContexts, rememberTaskSelection, taskSelectionKey, type LibraryV
 import { useExitPreparation } from './ExitPreparation';
 import ExportDialog, { type ExportObject, type ExportRecord } from './ExportDialog';
 import { EvaluationPlanDialog, EvaluationStartDialog, EvaluationTask, PlanSummary, type EvaluationPlan } from './Evaluation';
-import { activeStates, Badge, Button, Dialog, Empty, ErrorNotice, formatDate, readableSize, stateNames } from './ui';
+import { activeStates, Badge, Button, PaginationButton, Dialog, Empty, ErrorNotice, formatDate, readableSize, stateNames } from './ui';
 
 const navigation = [
   { id: 'home' as Page, label: '工作台', Icon: LayoutDashboard },
@@ -369,8 +369,7 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
     finally { if (epoch === pageEpoch.current) setPageBusy(previous => ({ ...previous, [name]: false })); }
   }
   function moreButton<T extends { id: string }>(name: string, label: string, setter: React.Dispatch<React.SetStateAction<T[]>>) {
-    // 保留等待中的键盘焦点；重复操作由 loadMore 的在途状态拦截。
-    return cursors[name] ? <Button aria-disabled={Boolean(pageBusy[name])} aria-busy={Boolean(pageBusy[name])} onClick={() => void loadMore(name, setter)}>加载更多{label}</Button> : null;
+    return <PaginationButton key={`${name}:${name === 'projects' ? 'all' : projectId}`} label={label} hasMore={Boolean(cursors[name])} busy={Boolean(pageBusy[name])} onLoad={() => void loadMore(name, setter)} />;
   }
   useEffect(() => {
     if (recovery.current || !selectedTask || selectedTask.project_id !== projectId) return;
