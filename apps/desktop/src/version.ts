@@ -1,4 +1,4 @@
 // 由 scripts/desktop/app_version.py 生成。
 export const APP_VERSION = "2.6.0";
-export const APP_BUILD = 47;
-export const APP_VERSION_LABEL = "Ver2.6(047)";
+export const APP_BUILD = 48;
+export const APP_VERSION_LABEL = "Ver2.6(048)";

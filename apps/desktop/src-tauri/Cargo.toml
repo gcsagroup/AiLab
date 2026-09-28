@@ -29,3 +29,8 @@ objc2-foundation = { version = "=0.3.2", default-features = false, features = ["
 
 [dev-dependencies]
 tempfile = "3"
+
+# macOS 27 会拒绝部分经调试信息剥离的宏动态库；保留符号，避免 LINKEDIT 错位。
+# https://github.com/rust-lang/rust/issues/157750
+[profile.release]
+strip = "none"
