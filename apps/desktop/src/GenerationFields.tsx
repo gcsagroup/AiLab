@@ -39,3 +39,31 @@ export function GenerationFields({ runtime, disabled, onChange }: { runtime: Run
     <small className="muted" id={`${id}-thinking-help`}>当前 Qwen2.5 模型与模板没有思考开关。</small>
   </div>;
 }
+
+// 与控制服务本机／远端文字运行范围保持一致，不自动裁剪用户输入。
+const numericFields = [
+  ['max_tokens', '最大输出 token', 1, 2048, true],
+  ['temperature', '温度', 0, 2, false],
+  ['top_p', 'Top-p', 0.01, 1, false],
+  ['seed', '随机种子', 0, 4294967295, true],
+] as const;
+
+export function generationNumericErrors(runtime: Runtime, remote: boolean) {
+  const errors: Partial<Record<typeof numericFields[number][0], string>> = {};
+  for (const [name, label, min, localMax, integer] of numericFields) {
+    const max = name === 'max_tokens' && remote ? 512 : localMax;
+    const value = runtime[name];
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max || (integer && !Number.isInteger(value))) {
+      errors[name] = `${label}须为 ${min}—${max} 之间的${integer ? '整数' : '有限数值'}；当前值未被自动调整。`;
+    }
+  }
+  return errors;
+}
+
+export function GenerationNumericFields({ runtime, remote, onChange }: { runtime: Runtime; remote: boolean; onChange: (field: typeof numericFields[number][0], value: number) => void }) {
+  const id = useId(); const errors = generationNumericErrors(runtime, remote);
+  return <>{numericFields.map(([name, label, min, localMax, integer]) => <div key={name}>
+    <label>{label}<input type="number" min={min} max={name === 'max_tokens' && remote ? 512 : localMax} step={integer ? 1 : 'any'} value={runtime[name]} aria-invalid={Boolean(errors[name])} aria-describedby={errors[name] ? `${id}-${name}-error` : undefined} onChange={event => onChange(name, Number(event.target.value))} /></label>
+    {errors[name] && <p className="error" role="alert" id={`${id}-${name}-error`}>{errors[name]}</p>}
+  </div>)}</>;
+}

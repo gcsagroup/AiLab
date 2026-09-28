@@ -1,4 +1,5 @@
 import React from 'react';
+import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from '../../apps/desktop/src/App';
@@ -280,4 +281,50 @@ describe('作品与导入重试', () => {
     const keys = calls.filter(call => call.path === '/models/imports').map(call => call.key);
     expect(keys).toHaveLength(2); expect(keys[0]).toBeTruthy(); expect(keys[1]).toBe(keys[0]);
   });
+});
+
+
+describe('文字运行数值错误关联与检查阻断', () => {
+  it.each([
+    ['最大输出 token', '0', '128'], ['最大输出 token', '1.5', '128'],
+    ['温度', '-0.1', '0.25'], ['Top-p', '1.1', '0.95'],
+    ['随机种子', '4294967296', '37'], ['随机种子', '1.5', '37'],
+  ])('%s 越界值 %s 保留，修正后才允许检查', async (label, invalid, valid) => {
+    renderWorkbench();
+    const input = screen.getByRole('spinbutton', { name: label });
+    fireEvent.change(input, { target: { value: invalid } });
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    expect(input).toHaveValue(Number(invalid));
+    const error = document.getElementById(input.getAttribute('aria-describedby')!);
+    expect(error).toHaveTextContent(label + '须为');
+    expect(error).toHaveTextContent('当前值未被自动调整');
+    const check = screen.getByRole('button', { name: '检查配置' });
+    expect(check).toBeDisabled(); fireEvent.click(check);
+    expect(calls.some(call => call.path.endsWith('/preflight'))).toBe(false);
+    fireEvent.change(input, { target: { value: valid } });
+    expect(input).toHaveAttribute('aria-invalid', 'false');
+    expect(input).not.toHaveAttribute('aria-describedby'); expect(check).toBeEnabled();
+    fireEvent.click(check); await screen.findByRole('button', { name: '开始运行' });
+    expect(task.draft.runtime).toMatchObject(label === '最大输出 token' ? { max_tokens: Number(valid) } : label === '温度' ? { temperature: Number(valid) } : label === 'Top-p' ? { top_p: Number(valid) } : { seed: Number(valid) });
+  });
+  it('合法默认 Top-p 与任意合法小数不受原步长误判', () => {
+    renderWorkbench();
+    for (const [label, value] of [['Top-p', '1'], ['Top-p', '0.973'], ['温度', '0.125']]) {
+      const input = screen.getByRole('spinbutton', { name: label }) as HTMLInputElement;
+      fireEvent.change(input, { target: { value } });
+      expect(input.validity.valid).toBe(true); expect(input).toHaveAttribute('aria-invalid', 'false');
+    }
+  });
+});
+
+
+it('远端文字运行使用 512 上限，本机 2048 上限，切换后立即重验', () => {
+  const remoteTask = { ...task, draft: { ...task.draft, execution_target_id: 'target-test', runtime: { ...task.draft.runtime, max_tokens: 513 } } };
+  renderWorkbench(remoteTask);
+  expect(screen.getByRole('spinbutton', { name: '最大输出 token' })).toHaveAttribute('aria-invalid', 'true');
+  expect(screen.getByRole('alert')).toHaveTextContent('1—512');
+  expect(screen.getByRole('button', { name: '检查配置' })).toBeDisabled();
+  cleanup(); renderWorkbench({ ...remoteTask, draft: { ...remoteTask.draft, execution_target_id: null } });
+  expect(screen.getByRole('spinbutton', { name: '最大输出 token' })).toHaveAttribute('aria-invalid', 'false');
+  expect(screen.getByRole('button', { name: '检查配置' })).toBeEnabled();
 });
