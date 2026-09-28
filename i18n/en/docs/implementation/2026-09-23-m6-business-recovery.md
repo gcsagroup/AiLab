@@ -2,7 +2,7 @@
 
 # M6 business-library recovery and cold-start error fix
 
-**Current M6 status (2026-09-29)**: The fixed company-signed candidate is **Ver2.6 (049)**. Full M0—M6 remains incomplete, and no formal release has been completed. Native tooling recovered after the directory move; the working root is `/Users/lazy/Projects/GCSA-AiLab`.
+**Current M6 status (2026-09-29)**: The fixed company-signed candidate is now **Ver2.6 (050)**, containing the check-result focus handoff and workflow old-result removal fixes. Build, signature and data-protection checks passed; native functional acceptance for 050 is pending. The completed native evidence below comes from 049 and does not automatically qualify 050. Full M0—M6 remains incomplete, with no formal release. The working root is `/Users/lazy/Projects/GCSA-AiLab`.
 
 - Local evidence now covers historical-library restoration, migration and failed-migration rollback; normal native exports of 12 fixed objects; independent language-model/adapter loading, image-adapter generation, report reading and media playback; packaged missing-file, digest-change, real disk-full, cancellation and service-process-interruption tests with native history presentation; and diagnostic preview, export and redaction.
 - Quality remains unqualified: the 7B LoRA scored 31/32 and failed the format gate, with no qualified candidate registered. Image structure defects remain, and subjective audio review is missing. Execution, file integrity and completed playback do not replace quality qualification.
@@ -12,7 +12,7 @@
 
 ## Current candidate acceptance gaps
 
-| Acceptance item | Current 049 evidence | Still unproven |
+| Acceptance item | Historical 049 evidence | Still unproven |
 | --- | --- | --- |
 | AC-22 installation and recovery | Formal historical-library restoration, migration and rollback; post-restore exports and diagnostic redaction | Clean-environment installation, complete candidate upgrade and release-identity acceptance |
 | AC-23 UI | Save/reopen, export entry points and error history, diagnostics, foreground startup/quit | All specified widths, themes, keyboard task, large lists and new-member replay |
@@ -515,3 +515,7 @@ After configuration checking, repeated Tab presses showed no focus movement. Shi
 The full regression run also exposed a workflow transition retaining the old result briefly after a new-version response. The transition now clears the old task and result and enters loading together with the new version, preventing mixed versions before refresh. A delayed-read test was added; after correcting its waiting-state assertion, all 61 frontend test files and 667 tests pass, along with 26 documentation tests and translation checks. This fix also remains outside the fixed signed App.
 
 [Focus handoff audit](../../../../.artifacts/preflight-focus050-20260929/root-readback.json)
+
+**050 fixed-path build completed (2026-09-29)**: Ver2.6 (050) was built from source commit `5b2a6a96`, retaining the App path, Bundle ID and company Apple Distribution signing identity. An APFS clone first preserved the 049 rollback bundle, with its complete inventory and signature verified. The single official build then exited successfully. Independent readback verified 21974 files, 48 links and 217 frozen source files. All 50 protection records, 25 model files and 4 libraries remained unchanged, and the 049 rollback copy remains intact. All 17 version, archive and source-contract tests passed; the earlier source validation passed 667 frontend tests. No App or model was launched during the build, and the original user database was not queried. The 050 bundle contains both fixes, but native focus, version-transition and full same-candidate acceptance remain incomplete. This is not notarization or release qualification.
+
+[050 bundle and frozen-source verification](../../../../.artifacts/integration-ver2-6-050-v1/root-frozen-check.json)

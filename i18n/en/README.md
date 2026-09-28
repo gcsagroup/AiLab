@@ -10,7 +10,7 @@ A local-first desktop workbench for model training and inference. Organize model
 
 ## Current status
 
-**Current M6 status (2026-09-29)**: The fixed company-signed candidate is **Ver2.6 (049)**. Full M0—M6 remains incomplete, and no formal release has been completed. Native tooling recovered after the directory move; the working root is `/Users/lazy/Projects/GCSA-AiLab`.
+**Current M6 status (2026-09-29)**: The fixed company-signed candidate is now **Ver2.6 (050)**, containing the check-result focus handoff and workflow old-result removal fixes. Build, signature and data-protection checks passed; native functional acceptance for 050 is pending. The completed native evidence below comes from 049 and does not automatically qualify 050. Full M0—M6 remains incomplete, with no formal release. The working root is `/Users/lazy/Projects/GCSA-AiLab`.
 
 - Local evidence now covers historical-library restoration, migration and failed-migration rollback; normal native exports of 12 fixed objects; independent language-model/adapter loading, image-adapter generation, report reading and media playback; packaged missing-file, digest-change, real disk-full, cancellation and service-process-interruption tests with native history presentation; and diagnostic preview, export and redaction.
 - Quality remains unqualified: the 7B LoRA scored 31/32 and failed the format gate, with no qualified candidate registered. Image structure defects remain, and subjective audio review is missing. Execution, file integrity and completed playback do not replace quality qualification.
