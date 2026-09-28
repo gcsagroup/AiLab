@@ -2,12 +2,6 @@
 
 # Changelog
 
-**Apple configuration regression completed (2026-09-29)**: With the same Ver2.6 (049) candidate, the original 7B weights and ordinary KV cache completed 18 public-question tests across the default, 512-block, and low-latency settings. Arithmetic, extraction, structured output, and extraction from the beginning, middle, and end of long inputs were correct: 6/6 for each setting, with no additional regression found. Independent audit verified raw answers, scoring, empty caches, the complete bundle, and protected data; owned workers exited. The earlier performance matrix completed across two segments with 136 successful model computations and 45 device-busy rejections, while retaining 2 expired-check rejections caused by sleep. This does not establish uninterrupted or exclusive-host stability or acceleration from every configuration. Public-question regression does not replace business holdouts; the LoRA result of 31/32 still fails the requirement for perfect format correctness. Full AC24, native UI acceptance, and M6 remain incomplete.
-
-[Configuration quality audit (local evidence)](../../.artifacts/apple-preset-quality049-20260928/root-readback.json)
-
-**Per-sample evaluation termination and token recording fix（2026-09-23）**：9 new observation tests first reproduced the gaps. After the fix, all 290 MLX tests and 48 relevant control-service tests passed. Two short technical generations used the fixed Qwen2.5-0.5B on Apple GPU: both returned `Apple`; a 1-token limit produced `length`, while a 16-token limit produced 2 tokens including the end marker and `stop`. Collected text exactly matched the original stream, and model file hashes were preserved. No training or historical holdout rerun occurred, and no new quality pass is claimed. At source verification time, the fixed App was 044 and did not include the change; subsequent packaged and native results for 045 follow below. [M6](docs/implementation/2026-09-23-m6-business-recovery.md#评测逐题结束原因与词元记录修复)
-
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md)
 
 This record distinguishes source changes, local signed candidates, and formal releases. The versions below are development candidates or historical development records. They do not establish public release, notarization, or complete M0—M6 acceptance. Refer to the corresponding stage documents for detailed procedures, failures, and evidence boundaries.
@@ -15,6 +9,24 @@ This record distinguishes source changes, local signed candidates, and formal re
 <a id="未发布"></a>
 
 ## Unreleased
+
+**049 local delivery acceptance summary (2026-09-29)**: This update changes acceptance records and documentation only; product code, the signed build and its build number are unchanged.
+
+**Current M6 status (2026-09-29)**: The fixed company-signed candidate is **Ver2.6 (049)**. Full M0—M6 remains incomplete, and no formal release has been completed. Native tooling recovered after the directory move; the working root is `/Users/lazy/Projects/GCSA-AiLab`.
+
+- Local evidence now covers historical-library restoration, migration and failed-migration rollback; normal native exports of 12 fixed objects; independent language-model/adapter loading, image-adapter generation, report reading and media playback; packaged missing-file, digest-change, real disk-full, cancellation and service-process-interruption tests with native history presentation; and diagnostic preview, export and redaction.
+- Quality remains unqualified: the 7B LoRA scored 31/32 and failed the format gate, with no qualified candidate registered. Image structure defects remain, and subjective audio review is missing. Execution, file integrity and completed playback do not replace quality qualification.
+- Remaining work includes clean installation and full upgrade acceptance of the same candidate, the complete UI and optimization matrices, the same qualified artifact chain from designated NVIDIA training to Apple, 5 real users, and notarization/distribution acceptance. Passing local subitems does not change these gates.
+
+[Current candidate evidence and remaining work](docs/implementation/2026-09-23-m6-business-recovery.md)
+
+The following entries retain conclusions from their original dates. Older candidate numbers, tooling blocks and next-step plans are not the current status.
+
+**Apple configuration regression completed (2026-09-29)**: With the same Ver2.6 (049) candidate, the original 7B weights and ordinary KV cache completed 18 public-question tests across the default, 512-block, and low-latency settings. Arithmetic, extraction, structured output, and extraction from the beginning, middle, and end of long inputs were correct: 6/6 for each setting, with no additional regression found. Independent audit verified raw answers, scoring, empty caches, the complete bundle, and protected data; owned workers exited. The earlier performance matrix completed across two segments with 136 successful model computations and 45 device-busy rejections, while retaining 2 expired-check rejections caused by sleep. This does not establish uninterrupted or exclusive-host stability or acceleration from every configuration. Public-question regression does not replace business holdouts; the LoRA result of 31/32 still fails the requirement for perfect format correctness. Full AC24, native UI acceptance, and M6 remain incomplete.
+
+[Configuration quality audit (local evidence)](../../.artifacts/apple-preset-quality049-20260928/root-readback.json)
+
+**Per-sample evaluation termination and token recording fix（2026-09-23）**：9 new observation tests first reproduced the gaps. After the fix, all 290 MLX tests and 48 relevant control-service tests passed. Two short technical generations used the fixed Qwen2.5-0.5B on Apple GPU: both returned `Apple`; a 1-token limit produced `length`, while a 16-token limit produced 2 tokens including the end marker and `stop`. Collected text exactly matched the original stream, and model file hashes were preserved. No training or historical holdout rerun occurred, and no new quality pass is claimed. At source verification time, the fixed App was 044 and did not include the change; subsequent packaged and native results for 045 follow below. [M6](docs/implementation/2026-09-23-m6-business-recovery.md#评测逐题结束原因与词元记录修复)
 
 **Apple larger-base quality experiment (2026-09-28)**: Using the same Ver2.6 (049) candidate, the 7B LoRA completed 192 training steps. On 32 newly frozen questions, the base passed 5/32 and the adapter 31/32: business 0/8→8/8, format 0/8→7/8, regression 5/8→8/8, and behavior 0/8→8/8. The sole failure changed order ID `C5-fo-02-04` to `C5-fo-002-04`. Business improvement passed, but format requires all answers to pass, so no qualified candidate was registered, no extra training was added, and the held-out questions were not retried. These are author-visible synthetic contract samples, not a blind evaluation; full business quality, native UI acceptance, and M6 remain incomplete.
 

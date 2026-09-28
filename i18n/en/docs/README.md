@@ -4,6 +4,16 @@
 
 [简体中文](../../../docs/README.md) · [繁體中文](../../zh-TW/docs/README.md) · [English](README.md)
 
+**Current M6 status (2026-09-29)**: The fixed company-signed candidate is **Ver2.6 (049)**. Full M0—M6 remains incomplete, and no formal release has been completed. Native tooling recovered after the directory move; the working root is `/Users/lazy/Projects/GCSA-AiLab`.
+
+- Local evidence now covers historical-library restoration, migration and failed-migration rollback; normal native exports of 12 fixed objects; independent language-model/adapter loading, image-adapter generation, report reading and media playback; packaged missing-file, digest-change, real disk-full, cancellation and service-process-interruption tests with native history presentation; and diagnostic preview, export and redaction.
+- Quality remains unqualified: the 7B LoRA scored 31/32 and failed the format gate, with no qualified candidate registered. Image structure defects remain, and subjective audio review is missing. Execution, file integrity and completed playback do not replace quality qualification.
+- Remaining work includes clean installation and full upgrade acceptance of the same candidate, the complete UI and optimization matrices, the same qualified artifact chain from designated NVIDIA training to Apple, 5 real users, and notarization/distribution acceptance. Passing local subitems does not change these gates.
+
+[Current candidate evidence and remaining work](implementation/2026-09-23-m6-business-recovery.md)
+
+The following entries retain conclusions from their original dates. Older candidate numbers, tooling blocks and next-step plans are not the current status.
+
 **Current M6 progress (2026-09-23)**: the fixed company-signed candidate is Ver2.5(046). Using the formal source-group workflow, the earlier quality run trained once on 48 samples with 24 LoRA layers for 192 steps, then independently compared the base and candidate on 32 newly frozen questions: total passes rose from 3/32 to 17/32 and business passes from 0/8 to 3/8. All four category thresholds still failed; no qualified candidate was registered. Per-sample observations, report export, shutdown, and original-data protection checks passed, along with 77 relevant tests. Qualifying quality, NVIDIA, 5 real users, clean installation, and distribution remain open. M6 is incomplete. [Business recovery and delivery progress](implementation/2026-09-23-m6-business-recovery.md)
 
 **045 additional local-runtime acceptance**: 20 complete native launch/quit samples passed. A separate run completed 362 formal packaged-service requests: 272 generations succeeded and 90 returned device busy. All owned processes exited normally, and original data and the fixed package were preserved. The low-memory preset traded slower first tokens for lower medium/long-input peaks; the low-latency preset did not improve every metric. In 75 open-ended outputs, token sequences differed from the same-weight default; repeats within each configuration were consistent. Those performance inputs do not establish semantic quality acceptance. Clean installation, full AC-23/AC-24, and M6 remain open.

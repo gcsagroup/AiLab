@@ -2,7 +2,29 @@
 
 # M6 business-library recovery and cold-start error fix
 
-**Current M6 progress (2026-09-29)**: The fixed company-signed candidate is Ver2.6 (049). Real evidence covers Apple 7B training and inference through the formal API, independent adapter loading, and independent report reading. Business quality remains 5/32 for the base model and 31/32 for LoRA; format correctness is incomplete and no qualified candidate is registered. The performance matrix totals 136 successful computations across two segments, with the original sleep interruption retained as a failure. The public-question configuration comparison scored 18/18; it does not replace business quality or full optimization acceptance. Directory compatibility repair restored the native tool and enabled save, reopen, native text export, and independent-reading verification; complete UI and delivery acceptance for this candidate remain unfinished. The same-artifact NVIDIA cross-device chain, 5 real users, clean installation, notarization, and distribution evidence are still missing. M6 is incomplete. Historical evidence below is retained by version; partial acceptance of older packages does not automatically qualify the current package.
+**Current M6 status (2026-09-29)**: The fixed company-signed candidate is **Ver2.6 (049)**. Full M0—M6 remains incomplete, and no formal release has been completed. Native tooling recovered after the directory move; the working root is `/Users/lazy/Projects/GCSA-AiLab`.
+
+- Local evidence now covers historical-library restoration, migration and failed-migration rollback; normal native exports of 12 fixed objects; independent language-model/adapter loading, image-adapter generation, report reading and media playback; packaged missing-file, digest-change, real disk-full, cancellation and service-process-interruption tests with native history presentation; and diagnostic preview, export and redaction.
+- Quality remains unqualified: the 7B LoRA scored 31/32 and failed the format gate, with no qualified candidate registered. Image structure defects remain, and subjective audio review is missing. Execution, file integrity and completed playback do not replace quality qualification.
+- Remaining work includes clean installation and full upgrade acceptance of the same candidate, the complete UI and optimization matrices, the same qualified artifact chain from designated NVIDIA training to Apple, 5 real users, and notarization/distribution acceptance. Passing local subitems does not change these gates.
+
+<a id="当前候选验收缺口"></a>
+
+## Current candidate acceptance gaps
+
+| Acceptance item | Current 049 evidence | Still unproven |
+| --- | --- | --- |
+| AC-22 installation and recovery | Formal historical-library restoration, migration and rollback; post-restore exports and diagnostic redaction | Clean-environment installation, complete candidate upgrade and release-identity acceptance |
+| AC-23 UI | Save/reopen, export entry points and error history, diagnostics, foreground startup/quit | All specified widths, themes, keyboard task, large lists and new-member replay |
+| AC-24 performance | Existing performance samples across two segments and public-question configuration regression | Full cold/hot, concurrency, memory and quality comparisons for every advertised optimization |
+| AC-25 first-time users | Developer-operated local evidence | Clean zero-resource workflows completed by 5 real target users |
+| AC-26 cross-platform artifacts | Apple-local training and independent loading after export | Designated real NVIDIA training, quality qualification and the same artifact's full chain to Apple |
+| AC-27 user exports | Normal fixed-object exports, independent use, five fault categories and native history | Complete sign-off across every applicable combination in the frozen release matrix; local evidence is not automatically full acceptance |
+| M0—M5 prerequisites and release | Technical subitems and a company-signed candidate | Qualified business model, media quality, applicable prerequisites, clean installation, notarization and distribution |
+
+Continue closing gaps against the frozen scope. Completed subitems need not be rerun merely to increase test counts. Missing external hosts, real users and independent quality materials remain missing rather than being replaced with simulated passes.
+
+The following entries retain conclusions from their original dates. Older candidate numbers, tooling blocks and next-step plans are not the current status.
 
 **045 additional local-runtime acceptance**: 20 complete native launch/quit samples passed. A separate run completed 362 formal packaged-service requests: 272 generations succeeded and 90 returned device busy. All owned processes exited normally, and original data and the fixed package were preserved. The low-memory preset traded slower first tokens for lower medium/long-input peaks; the low-latency preset did not improve every metric. In 75 open-ended outputs, token sequences differed from the same-weight default; repeats within each configuration were consistent. Those performance inputs do not establish semantic quality acceptance. Clean installation, full AC-23/AC-24, and M6 remain open.
 
