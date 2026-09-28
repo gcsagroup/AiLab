@@ -8,6 +8,16 @@
 - Quality remains unqualified: the 7B LoRA scored 31/32 and failed the format gate, with no qualified candidate registered. Image structure defects remain, and subjective audio review is missing. Execution, file integrity and completed playback do not replace quality qualification.
 - Remaining work includes clean installation and full upgrade acceptance of the same candidate, the complete UI and optimization matrices, the same qualified artifact chain from designated NVIDIA training to Apple, 5 real users, and notarization/distribution acceptance. Passing local subitems does not change these gates.
 
+<a id="051-恢复迁移回滚与恢复后导出"></a>
+
+## 051 restoration, migration rollback and post-restore exports
+
+The production restore API in the same fixed company-signed 051 restored a version 3 portable backup into a new isolated directory. Starting its packaged service then performed the real 3→4 migration. All 2 projects, 507 resources, 31 historical attempts and prior business rows were preserved, with matching hashes for 732 original artifact files. A separate new database-only fault copy added `CHECK(version<=3)`: the real migration failed and exited naturally with code 1, leaving an uncommitted `failed_rolled_back` receipt and a byte-identical fault database. No product migration logic was changed and no SQL connection was made to the original user libraries. [051 restoration and rollback audit](../../../../.artifacts/apple-recovery051-20260929/root-readback.json)
+
+The production export API in packaged 051 then exported all 12 fixed objects from this newly restored and migrated library. Independent copies were checked for 64 content files, manifests, versions, revision text and original-media boundaries, external adapter base dependencies and report contents. Exactly 12 export attempts and their plans, tasks and records were added. Prior business rows and all 732 original artifacts were preserved; no model was rerun. The complete 051 bundle and original data-protection records remained unchanged, and owned processes and temporary tokens were cleaned up. [Twelve post-restore export audit](../../../../.artifacts/apple-postrestore-exports051-20260929/root-readback.json)
+
+All 51 restoration/migration tests and 75 export tests passed, with 2 dependency warnings retained in each group. This run used production packaged APIs, without additional native restore interaction, independent model execution or media playback. The current candidate's technical restoration, controlled failed-migration rollback and fixed post-restore export subitems passed. Clean installation, complete native and cross-platform release matrices, quality qualification and full M6 remain incomplete.
+
 <a id="051-本机正式更新与历史读回"></a>
 
 ## 051 local formal update and history readback
