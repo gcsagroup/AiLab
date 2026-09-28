@@ -826,11 +826,11 @@
     },
     {
       "source": "scripts/desktop/README.md",
-      "source_sha256": "ea16da98349b2785a9769d463d9d34a06a6e760ac34a93955586b28c8f31e107",
+      "source_sha256": "07aa0256e7a9a7990b1d26d56df7b3c5da6c5f79be5ac2012816c5aeae4d8b88",
       "en": "i18n/en/scripts/desktop/README.md",
       "zh-TW": "i18n/zh-TW/scripts/desktop/README.md",
-      "zh-TW_sha256": "46ef8064d39af11143c7668604cfe136d39f84ced777143d7697599fa2c31a5d",
-      "en_sha256": "6d9108c9d4e87814d67c2049fc6e9a168cb0eff652c5b401956b6ff2831ea001"
+      "zh-TW_sha256": "1fb52a6843b79252302d1f3978450b0256c06a26f6a0c2251aa4bd9e09498779",
+      "en_sha256": "b57309ffdf9b768d78e1b4d17ef562f5c5110ecff5cb41d9c3ba813c19827aa5"
     }
   ],
   "source_count": 104,

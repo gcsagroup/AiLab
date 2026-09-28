@@ -116,3 +116,11 @@ services/control/.venv/bin/python scripts/desktop/candidate_update.py plan \
 After inspecting the generated `plan.json`, run `apply --plan <计划绝对路径> --sha256 <计划SHA>`. If interrupted, run `recover` for the same plan; after full replacement, run `rollback` when rollback is needed. Each plan applies once; do not repeat apply after completion or interruption. Recovery uses actual on-disk bundle digests and stops while preserving the scene if it encounters an unknown bundle or occupied location.
 
 Before replacement, `database-backup` saves a consistent database including WAL and library-selection settings, **excluding assets such as models and materials**. Old 0.1.0 bundles support only schema1; after a newer version upgrades the database to schema3, the tool rejects rollback to the old bundle and does not downgrade the database. Use the existing full-backup restore process in that case. Passing script tests still cannot replace real old-bundle upgrades, failure rollback, and native acceptance of the new version.
+
+<a id="验收保护与文件句柄耗尽"></a>
+
+## Acceptance protection and file descriptor exhaustion
+
+`guard_file_limits.py` supports acceptance scripts holding library locks. `wait_for_guard_exit` keeps waiting and retains locks and failure counts when exit-marker checks, process probes, or heartbeats encounter `EMFILE/ENFILE`. It probes processes again after recovery instead of trusting a stopped-state snapshot from before the wait. `retry_file_limit` is limited to safely repeatable reads, atomic heartbeat writes, and idempotent restoration; never wrap model execution or appended business records. Other errors propagate. The caller remains responsible for locks, selector restoration, and final evidence persistence.
+
+All 11 tests passed, including lowering the descriptor limit of an owned child process, triggering real `EMFILE`, independently confirming that the parent cannot acquire its lock during the fault, and recovering after releasing a descriptor. Tests do not change system limits or access user data. This tool neither fills observation gaps nor fixes the source of system descriptor exhaustion; the interrupted 051 historical run still does not pass full acceptance.
