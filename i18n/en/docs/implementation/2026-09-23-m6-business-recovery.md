@@ -8,13 +8,23 @@
 - Quality remains unqualified: the 7B LoRA scored 31/32 and failed the format gate, with no qualified candidate registered. Image structure defects remain, and subjective audio review is missing. Execution, file integrity and completed playback do not replace quality qualification.
 - Remaining work includes clean installation and full upgrade acceptance of the same candidate, the complete UI and optimization matrices, the same qualified artifact chain from designated NVIDIA training to Apple, 5 real users, and notarization/distribution acceptance. Passing local subitems does not change these gates.
 
+<a id="051-本机正式更新与历史读回"></a>
+
+## 051 local formal update and history readback
+
+The unmodified candidate updater completed 050→051 at the fixed App path, retaining the 050 rollback bundle, a complete original 051 copy and the database backup. The backup matches every pre-update business row. This run did not launch the native 050 UI or rebuild or modify 051.
+
+The updated 051 was launched through Finder. Its native UI retained historical tasks, failed evaluation results and the saved location of completed export `export-67cf089554f342a088f6a23c7eabb6a0`. After normal quit, every database row, 732 original artifact files, all 21974 bundle files and 48 symlinks remained unchanged, and signature verification passed. The original selector was restored; 47 protection records and model source files remained unchanged. There were no new model runs or exports, and no SQL connection to the original user libraries.
+
+All 27 updater and guard tests passed. Lifecycle observation completed, but one process-path gap during exit remains recorded; this does not establish gap-free cold launch or a known App exit code. This closes the local formal-update and history-readback subitem, not clean installation, failed-migration rollback on the current candidate, new exports after this update or full AC-22/M6. [051 post-update audit](../../../../.artifacts/apple-update051-20260929/root-readback.json)
+
 <a id="当前候选验收缺口"></a>
 
 ## Current candidate acceptance gaps
 
 | Acceptance item | Current and historical evidence | Still unproven |
 | --- | --- | --- |
-| AC-22 installation and recovery | Formal historical-library restoration, migration and rollback; post-restore exports and diagnostic redaction | Clean-environment installation, complete candidate upgrade and release-identity acceptance |
+| AC-22 installation and recovery | Formal 051 update and native history readback; historical restoration, migration, rollback, post-restore exports and diagnostic redaction | Clean-environment installation, complete candidate upgrade and release-identity acceptance |
 | AC-23 UI | Save/reopen, export entry points and error history, diagnostics, foreground startup/quit | All specified widths, themes, keyboard task, large lists and new-member replay |
 | AC-24 performance | Existing performance samples across two segments and public-question configuration regression | Full cold/hot, concurrency, memory and quality comparisons for every advertised optimization |
 | AC-25 first-time users | Developer-operated local evidence | Clean zero-resource workflows completed by 5 real target users |
