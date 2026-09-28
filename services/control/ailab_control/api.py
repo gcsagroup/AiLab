@@ -1119,7 +1119,7 @@ def create_app(settings):
                            "device_id": "apple-gpu", "supported": kind == "text" and environment["ready"],
                            "status": "available" if kind == "text" and environment["ready"] else "not_prepared" if kind == "text" else "not_supported",
                            "reason": environment["reason"] if kind == "text" else "此适配器尚未接入，当前不能运行。",
-                           "model_constraint": "Qwen2.5-0.5B-Instruct；MLX 4-bit／64／affine 仅开放独立生成", "pause": kind == "text" and operation == "train" and checkpoints_ready, "cancel": True}
+                           "model_constraint": "Qwen2.5-0.5B-Instruct 或 7B-Instruct 原权重；仅 0.5B 的 MLX 4-bit／64／affine 产物开放独立生成", "pause": kind == "text" and operation == "train" and checkpoints_ready, "cancel": True}
                           for kind in ('text',) for operation in ("generate", "train")]
         items[0]['generation_parameters'] = {
             'context_limit': {'default': 4096, 'minimum': 128, 'maximum': 4096, 'unit': 'token', 'scope': '模板、输入与最大输出合计'},

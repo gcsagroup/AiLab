@@ -139,7 +139,7 @@ def model_manifest(path):
     if not config.get("model_type"):
         raise Fault("INVALID_MODEL_FORMAT", "config.json 缺少 model_type。")
     return {"manifest": manifest, "manifest_digest": digest(manifest), "detected_format": "safetensors",
-            "family": config["model_type"], "model_config": {key: config.get(key) for key in ("model_type", "hidden_size", "num_hidden_layers", "quantization", "quantization_config")},
+            "family": config["model_type"], "model_config": {key: config.get(key) for key in ("model_type", "hidden_size", "num_hidden_layers", "num_attention_heads", "num_key_value_heads", "intermediate_size", "vocab_size", "tie_word_embeddings", "quantization", "quantization_config")},
             "total_bytes": sum(f["size"] for f in manifest),
             "loader": "mlx_lm.local_restricted", "trust_class": "restricted_weights",
             "execution_scope": {"network": False, "custom_code": False, "credentials": False},

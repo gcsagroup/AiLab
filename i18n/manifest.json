@@ -2,19 +2,19 @@
   "documents": [
     {
       "source": "CHANGELOG.md",
-      "source_sha256": "f2b2d534121c74d108fc2991a9c3c2c1710e59695937e78390b02a59e76a401c",
+      "source_sha256": "82a360856860172e0a63088bb7cc108b0f3f9c89b90fa69a8a0371254ff1b5e2",
       "en": "i18n/en/CHANGELOG.md",
       "zh-TW": "i18n/zh-TW/CHANGELOG.md",
-      "zh-TW_sha256": "92d97a882f85efc4e387de4414a662973587b8c7c106576d3f7cf330bcb5a753",
-      "en_sha256": "1f863a446617e456733ccaeb0f263172173e9c240eec70e19559941a235cb9f9"
+      "zh-TW_sha256": "bd991c1e3e66e234acc0cf04f3a67ab5ec04222578560c12beaee61d7e23b9d9",
+      "en_sha256": "ded1f80ad131fe1629c54731edd10a731c055c48da7fe4dcd3c457e31035b8c3"
     },
     {
       "source": "README.md",
-      "source_sha256": "10e476e36ec7ac5a047bfc272b674fe7fc7c944f1938c697656a4c020c4cb28e",
+      "source_sha256": "21994271e5f6b9e84f06a1a5c91f04292111c4377d8cee53043959569876d053",
       "en": "i18n/en/README.md",
       "zh-TW": "i18n/zh-TW/README.md",
-      "zh-TW_sha256": "c5e32d7f1545580258e04a377c43cfddd34ece49bf6a5ba2ee798b7bbd4568b3",
-      "en_sha256": "a11ccdcee5e9850f40bee891639c2e3c0186cf33046a34faef70aef5ee9f4204"
+      "zh-TW_sha256": "9878eee6db3b94d791a0a7c05568a6c9879724a188ee6fa836470016bf96e7c9",
+      "en_sha256": "2528fca23eef0c62d1110422701cc54385dfd8174b919346dcc059063863f2f2"
     },
     {
       "source": "adapters/media/ACCEPTANCE.md",
@@ -788,9 +788,9 @@
       "source": "docs/implementation/2026-09-23-m6-business-recovery.md",
       "en": "i18n/en/docs/implementation/2026-09-23-m6-business-recovery.md",
       "zh-TW": "i18n/zh-TW/docs/implementation/2026-09-23-m6-business-recovery.md",
-      "source_sha256": "343cd32a0c3122753cf5b3cef984e9c42e6a958b4db927840114a3bd03e4cc74",
-      "zh-TW_sha256": "ee5bb3195031723d2d6512dfee3d957c295184eaf6007053b826128fc5b3a0ef",
-      "en_sha256": "d43134e086a841ca3b664c28a37376c8369f81de355cda6aca38f0e3df5bf898"
+      "source_sha256": "d364980fb1794b17b7a717644e141dfa153eeb9a70cb1590283d5de386e82cb3",
+      "zh-TW_sha256": "95483b5e043c70b60f2b5533e64bcf94d8fe8bb096b7dee23b0af4d5aea9cd46",
+      "en_sha256": "bf40cb2485795523d8fba4925d6ca82c1f60a007c9d01fef1cb63f93f3aa26ae"
     },
     {
       "source": "docs/validation-report.md",

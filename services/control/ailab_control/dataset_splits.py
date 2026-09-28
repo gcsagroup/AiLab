@@ -13,7 +13,9 @@ import threading
 import time
 from types import SimpleNamespace
 
+
 from .assets import copy_asset, file_hash, regular_path, verify_manifest
+from .model_profiles import model_profile
 from .storage import Fault, digest, encode, identifier, now
 
 ALGORITHM = 'source-group-sha256-v1'
@@ -449,8 +451,12 @@ class DatasetSplits:
         if source.get('schema') != 'sft' or len(source.get('manifest', [])) != 1 or not 0 < source.get('total_bytes', 0) <= 64 * 1024 * 1024 or source.get('dataset_split_id'):
             failure('DATASET_SPLIT_SOURCE_REQUIRED', '请选择不超过 64 MiB、带 source_id 的单文件 SFT 原件；不能再次划分已派生子集。')
         config = model.get('model_config', {})
-        if model.get('modality', 'text') != 'text' or config.get('model_type') != 'qwen2' or config.get('hidden_size') != 896 or config.get('num_hidden_layers') != 24 or config.get('quantization') or config.get('quantization_config'):
-            failure('MODEL_UNVERIFIED', '当前来源组检查仅支持固定 Qwen2.5-0.5B-Instruct 原权重的分词器。')
+        try:
+            model_profile(config)
+        except ValueError as error:
+            failure('MODEL_UNVERIFIED', str(error))
+        if model.get('modality', 'text') != 'text' or config.get('quantization') or config.get('quantization_config'):
+            failure('MODEL_UNVERIFIED', '来源组检查需要已适配的未量化 Qwen2.5 文本基座。')
         for item in (source, model):
             if digest(item['manifest']) != item['manifest_digest']:
                 failure('ASSET_MANIFEST_CHANGED', '资产清单与登记不一致，请重新导入。')

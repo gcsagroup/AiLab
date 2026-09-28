@@ -18,6 +18,7 @@ from pathlib import Path
 from .assets import authorized_path, copy_asset, dataset_report, file_hash, model_manifest, regular_path, verify_manifest
 from .launcher import SOURCE as LAUNCHER_SOURCE
 from .probe_observations import ProbeFailure, ProbeObservations
+from .model_profiles import model_profile
 from .storage import Fault, Store, digest, encode, identifier, now
 from .ui_context import UIContextPatch, empty_context, validate_context
 
@@ -534,9 +535,16 @@ class Service:
                 raise Fault("PROJECT_MISMATCH", "模型不属于当前项目。", 403)
             config = model["model_config"]
             quantization = config.get("quantization") or config.get("quantization_config")
-            if config.get("model_type") != "qwen2" or config.get("hidden_size") != 896 or config.get("num_hidden_layers") != 24:
-                blocking.append({"code": "MODEL_UNVERIFIED", "message": "首个执行器仅开放 Qwen2.5-0.5B-Instruct 结构；此模型尚未接入运行。", "field": "model_id"})
-            elif quantization:
+            try:
+                profile = model_profile(config)
+            except ValueError as error:
+                profile = None
+                blocking.append({"code": "MODEL_UNVERIFIED", "message": str(error), "field": "model_id"})
+            if profile and draft["operation"] == "train" and draft["runtime"].get("num_layers", 2) > profile["num_hidden_layers"]:
+                blocking.append({"code": "INVALID_CONFIG", "message": "训练层数超过所选基座的总层数。", "field": "runtime.num_layers"})
+            if profile and profile["name"] == "qwen25-7b" and (quantization or draft["operation"] == "quantize" or model_evaluation):
+                blocking.append({"code": "MODEL_UNVERIFIED", "message": "7B 当前只接受未量化基座；权重量化尚未通过独立验证。", "field": "model_id"})
+            elif profile and quantization:
                 expected_quantization = {"bits": 4, "group_size": 64, "mode": "affine"}
                 if quantization != expected_quantization or config.get("quantization") not in (None, expected_quantization) or config.get("quantization_config") not in (None, expected_quantization) or draft["operation"] != "generate" or draft.get("adapter_id"):
                     blocking.append({"code": "MODEL_UNVERIFIED", "message": "当前量化组合仅开放 MLX 4-bit／64／affine 独立生成；训练、适配器、评测和再次量化均未开放。", "field": "model_id"})
