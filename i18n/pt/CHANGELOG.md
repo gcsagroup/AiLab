@@ -8,6 +8,8 @@ Corrigida a identificação incorreta de desconexões durante o envio remoto com
 
 055 corrige as mensagens de desconexão durante o envio e de estado final. Os testes nativos cobriram interrupção, verificação de estado e uma nova transferência bem-sucedida; o fluxo completo de modelos entre dispositivos de 054 não foi repetido.
 
+Verificação adicional de 055: o mesmo adaptador experimental treinado anteriormente no AGX foi exportado pela interface nativa e carregado independentemente de uma cópia com o ambiente MLX incluído, na GPU Apple. A geração foi concluída, o hash correspondeu, o modelo base e os arquivos exportados permaneceram inalterados e o processo terminou naturalmente. Não houve novo treinamento; a aprovação de qualidade e a validação completa de distribuição entre dispositivos continuam pendentes.
+
 ## Ver2.7 (054) · 2026-10-10
 
 Versão atual: **Ver2.7 (054), prévia técnica**. O aplicativo nativo foi testado por túnel SSH com Qwen2.5-0.5B-Instruct: geração no Jetson Orin, treinamento LoRA de duas etapas, coleta dos resultados e execução do mesmo adaptador na GPU Apple. Essa validação se limita ao modelo e ambiente indicados e não comprova melhoria de qualidade. A implantação HTTPS direta, a instalação em ambiente limpo, os testes com novos usuários e a validação de distribuição ainda não foram concluídos. Não há instalador público validado nem canal de atualização automática.

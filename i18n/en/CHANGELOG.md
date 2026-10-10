@@ -8,6 +8,8 @@ Fixed remote upload disconnections being reported as control-service crashes. Th
 
 055 corrects upload-disconnection and terminal-state messages. Native App checks covered interruption, reconciliation and a new successful transfer; the full 054 cross-device model workflow was not repeated.
 
+Additional 055 verification: the same experimental adapter trained earlier on AGX was exported through the native UI, then independently loaded from an export copy using the bundled MLX runtime on Apple GPU. Generation succeeded, the adapter hash matched, the base model and exported files remained unchanged, and the process exited naturally. No new training was performed; quality qualification and full cross-device release acceptance remain incomplete.
+
 ## Ver2.7 (054) · 2026-10-10
 
 Current version: **Ver2.7 (054), technical preview**. The native App has been tested through an SSH tunnel with Qwen2.5-0.5B-Instruct: Jetson Orin generation, two-step LoRA training, artifact collection and execution of the same adapter on Apple GPU. This covers only the specified model and environment and does not establish quality improvement. Direct HTTPS deployment, clean installation, first-user testing and release acceptance remain incomplete. There is no qualified public installer or automatic update channel yet.

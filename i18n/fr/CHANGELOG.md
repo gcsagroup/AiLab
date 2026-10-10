@@ -8,6 +8,8 @@ Correction des déconnexions pendant l’envoi distant signalées à tort comme 
 
 055 corrige les messages de déconnexion pendant l’envoi et de fin d’exécution. Les vérifications natives couvrent l’interruption, la vérification de l’état et un nouveau transfert réussi ; le parcours complet des modèles entre appareils de 054 n’a pas été répété.
 
+Vérification supplémentaire de 055 : le même adaptateur expérimental entraîné auparavant sur AGX a été exporté depuis l’interface native, puis chargé indépendamment depuis une copie avec le moteur MLX inclus, sur GPU Apple. La génération a réussi, l’empreinte correspond, le modèle de base et les fichiers exportés sont restés inchangés, et le processus s’est terminé naturellement. Aucun nouvel entraînement ; la qualification de qualité et la validation complète de distribution entre appareils restent incomplètes.
+
 ## Ver2.7 (054) · 2026-10-10
 
 Version actuelle : **Ver2.7 (054), aperçu technique**. L’application native a été testée via un tunnel SSH avec Qwen2.5-0.5B-Instruct : génération sur Jetson Orin, entraînement LoRA en deux étapes, récupération des résultats et exécution du même adaptateur sur GPU Apple. Cette validation se limite au modèle et à l’environnement indiqués et ne prouve aucune amélioration de qualité. Le déploiement HTTPS direct, l’installation sur un environnement vierge, les tests avec de nouveaux utilisateurs et la validation de distribution restent incomplets. Aucun installateur public validé ni canal de mise à jour automatique n’est disponible.
