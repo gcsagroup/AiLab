@@ -2,6 +2,8 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+2026-10-10 (소스 업데이트, 아직 앱에 포함되지 않음): 고정된 Jetson Orin 환경을 지원하고 CUDA 작업 공간 해제를 수정했습니다. Qwen2.5-0.5B-Instruct로 생성, LoRA 학습 2단계, 동일한 내보낸 어댑터의 Apple GPU 독립 로드를 검증했습니다. 이 결과는 모델 품질 향상이나 앱의 전체 기기 간 작업 흐름에 대한 인수 완료를 의미하지 않습니다.
+
 2026-10-07: 공개 문서를 7개 언어로 정리하고 내부 개발·검증 로그를 제외했으며 사용 절차를 다시 작성했습니다. 문서만 변경했으며 앱은 다시 빌드하지 않았습니다.
 
 ## Ver2.6 (053)

@@ -6,6 +6,7 @@ import importlib.metadata
 import json
 import math
 import os
+import platform
 from pathlib import Path
 import re
 import sys
@@ -19,7 +20,26 @@ ADAPTER_ID = "nvidia-text"
 MODEL_DIGEST = "a9b08fa2b761cbfc7335b28c6b0997b6e7713893aaca4b215625ffc99a1d36b3"
 MODEL_FILES = {"LICENSE", "README.md", "config.json", "generation_config.json", "merges.txt", "model.safetensors", "tokenizer.json", "tokenizer_config.json", "vocab.json"}
 VERSIONS = {"torch": "2.10.0", "transformers": "4.57.6", "peft": "0.18.1", "accelerate": "1.12.0", "safetensors": "0.7.0", "numpy": "2.4.2"}
+JETSON_VERSIONS = {**VERSIONS, "torch": "2.8.0a0+5228986c39.nv25.6", "numpy": "1.26.4"}
+JETSON_PROFILE = "jetson-orin-nv25.06"
 OUTPUT_RESERVE_BYTES = {"generate": 4 * 1024**2, "train": 64 * 1024**2}
+
+
+def runtime_profile(versions, machine):
+    """仅接纳两个固定组合；Jetson 的 NVIDIA 构建后缀也属于身份。"""
+    if machine == "aarch64" and versions == JETSON_VERSIONS:
+        return JETSON_PROFILE, JETSON_VERSIONS, "12.9"
+    if all((versions.get(name) or "").split("+")[0] == version for name, version in VERSIONS.items()):
+        return "cuda12.8-torch2.10", VERSIONS, "12.8"
+    return None, VERSIONS, "12.8"
+
+
+def release_cuda_cache(torch):
+    # 固定 NVIDIA 构建会保留 cuBLAS 工作区，empty_cache 不会释放该分配。
+    clear = getattr(torch._C, "_cuda_clearCublasWorkspaces", None)
+    if clear is not None:
+        clear()
+    torch.cuda.empty_cache(); torch.cuda.synchronize()
 
 
 def output_reserve_bytes(snapshot):
@@ -99,24 +119,28 @@ def probe():
     for package in VERSIONS:
         try: versions[package] = importlib.metadata.version(package)
         except importlib.metadata.PackageNotFoundError: versions[package] = None
-    result = {"adapter_id": ADAPTER_ID, "ready": False, "source_code_digest": source_identity(), "validation_scope": "runtime_probe_only", "model_acceptance": "not_verified", "hardware_acceptance": "not_verified", "platform": sys.platform, "python": sys.version.split()[0], "versions": versions, "required_versions": VERSIONS, "required_cuda": "12.8", "devices": [], "blocking": []}
+    machine = platform.machine()
+    profile, required_versions, required_cuda = runtime_profile(versions, machine)
+    result = {"adapter_id": ADAPTER_ID, "ready": False, "source_code_digest": source_identity(), "validation_scope": "runtime_probe_only", "model_acceptance": "not_verified", "hardware_acceptance": "not_verified", "platform": sys.platform, "machine": machine, "runtime_profile": profile, "python": sys.version.split()[0], "versions": versions, "required_versions": required_versions, "required_cuda": required_cuda, "devices": [], "blocking": []}
     if not sys.platform.startswith("linux"): result["blocking"].append({"code": "NVIDIA_LINUX_REQUIRED", "message": "此执行器只在明确 NVIDIA Linux 环境运行，本机不做 CPU/Apple 回退。"})
-    if any((version or "").split("+")[0] != VERSIONS[name] for name, version in versions.items()): result["blocking"].append({"code": "ENVIRONMENT_VERSION_MISMATCH", "message": "执行依赖与固定版本不一致。"})
+    if profile is None: result["blocking"].append({"code": "ENVIRONMENT_VERSION_MISMATCH", "message": "执行依赖与固定版本不一致。"})
     if result["blocking"]: return result
     try:
         import torch
         result["cuda_runtime"] = torch.version.cuda
-        if torch.version.cuda != "12.8" or not torch.cuda.is_available() or torch.cuda.device_count() < 1:
-            raise ProtocolError("CUDA_UNAVAILABLE", "CUDA 12.8 或 NVIDIA 设备不可用。")
+        if torch.version.cuda != required_cuda or not torch.cuda.is_available() or torch.cuda.device_count() < 1:
+            raise ProtocolError("CUDA_UNAVAILABLE", "所选固定 CUDA 环境或 NVIDIA 设备不可用。")
         torch.cuda.set_device(0)
         properties = torch.cuda.get_device_properties(0)
         result["devices"] = [{"id": "cuda:0", "name": properties.name, "total_memory_bytes": properties.total_memory, "capability": list(torch.cuda.get_device_capability(0)), "bf16_supported": bool(torch.cuda.is_bf16_supported())}]
+        if profile == JETSON_PROFILE and (properties.name != "Orin" or result["devices"][0]["capability"] != [8, 7]):
+            raise ProtocolError("CUDA_DEVICE_UNVERIFIED", "此 Jetson 环境仅验证了 Orin 设备。")
         if not torch.cuda.is_bf16_supported() or properties.total_memory < 8 * 1024**3:
             raise ProtocolError("CUDA_CAPACITY_UNSUPPORTED", "固定组合需要 BF16 支持与至少 8 GiB 显存。")
         sample = torch.ones((2, 2), dtype=torch.bfloat16, device="cuda:0")
         tested = sample @ sample; torch.cuda.synchronize()
         if tested.float().sum().item() != 8: raise ProtocolError("CUDA_PROBE_FAILED", "设备实际计算探测不一致。")
-        del tested, sample; torch.cuda.empty_cache(); torch.cuda.synchronize()
+        del tested, sample; release_cuda_cache(torch)
         result["probe_allocation_released"] = torch.cuda.memory_allocated(0) == 0
         if not result["probe_allocation_released"]: raise ProtocolError("CUDA_PROBE_NOT_RELEASED", "探测进程仍有未释放的张量分配。")
         result["ready"] = True
@@ -234,8 +258,15 @@ def validate_completion(snapshot, effective, artifacts, output_dir=None):
     if digest(actual) != digest(effective):
         raise ProtocolError('NVIDIA_COMPLETION_REPORT_MISMATCH', '实际配置文件与完成事件不一致。', 409)
     environment, metrics = report('environment.json'), report('metrics.json')
+    jetson = isinstance(environment, dict) and environment.get('runtime_profile') == JETSON_PROFILE
+    if jetson:
+        devices = environment.get('devices')
+        if (environment.get('machine') != 'aarch64' or environment.get('versions') != JETSON_VERSIONS
+                or not isinstance(devices, list) or len(devices) != 1 or not isinstance(devices[0], dict)
+                or devices[0].get('name') != 'Orin' or devices[0].get('capability') != [8, 7]):
+            raise ProtocolError('NVIDIA_COMPLETION_DEVICE_MISMATCH', 'Jetson 完成报告不属于已固定的 Orin 环境。', 409)
     if (not isinstance(environment, dict) or environment.get('ready') is not True or environment.get('source_code_digest') != source_identity()
-            or not str(environment.get('platform', '')).startswith('linux') or environment.get('cuda_runtime') != '12.8'
+            or not str(environment.get('platform', '')).startswith('linux') or environment.get('cuda_runtime') != ('12.9' if jetson else '12.8')
             or not isinstance(metrics, dict) or metrics.get('compute_device') != 'cuda:0'):
         raise ProtocolError('NVIDIA_COMPLETION_DEVICE_MISMATCH', '实际环境或计算指标未确认所选 NVIDIA 设备。', 409)
     if snapshot['operation'] == 'train':
@@ -400,7 +431,7 @@ def run(snapshot, input_dir, output, emit, check_cancel):
         effective.update(peak_allocated_bytes=torch.cuda.max_memory_allocated(0), peak_reserved_bytes=torch.cuda.max_memory_reserved(0), execution_seconds=time.perf_counter() - started, input_unchanged=True)
         write_json(output / "metrics.json", metrics)
     finally:
-        del model; gc.collect(); torch.cuda.empty_cache(); torch.cuda.synchronize()
+        del model; gc.collect(); release_cuda_cache(torch)
         effective.update(after_unload_allocated_bytes=torch.cuda.memory_allocated(0), after_unload_reserved_bytes=torch.cuda.memory_reserved(0), unload_scope="本执行器的 PyTorch 分配观察；进程组退出另由远端协议确认。")
         write_json(output / "effective-config.json", effective)
     check_cancel()

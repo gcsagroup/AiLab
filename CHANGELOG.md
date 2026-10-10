@@ -2,6 +2,8 @@
 
 [简体中文](CHANGELOG.md) · [繁體中文](i18n/zh-TW/CHANGELOG.md) · [English](i18n/en/CHANGELOG.md) · [日本語](i18n/ja/CHANGELOG.md) · [한국어](i18n/ko/CHANGELOG.md) · [Français](i18n/fr/CHANGELOG.md) · [Português](i18n/pt/CHANGELOG.md)
 
+2026-10-10（源码更新，尚未打包）：新增固定 Jetson Orin 环境支持，并修正 CUDA 工作区释放。已用 Qwen2.5-0.5B-Instruct 验证生成、两步 LoRA 训练，以及同一份导出适配器在 Apple GPU 上独立加载。此结果不代表训练效果提升或 App 完整跨端流程已验收。
+
 2026-10-07：公开文档改为七种语言，移除内部开发与验收日志，重写操作说明。本次仅整理文档，未重新构建 App。
 
 ## Ver2.6 (053)

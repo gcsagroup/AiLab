@@ -2,6 +2,8 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+2026-10-10 (mise à jour du code source, pas encore intégrée à une application distribuée) : ajout d’un environnement Jetson Orin figé et correction de la libération de l’espace de travail CUDA. Les vérifications avec Qwen2.5-0.5B-Instruct couvrent la génération, deux étapes d’entraînement LoRA et le chargement indépendant du même adaptateur exporté sur un GPU Apple. Elles ne démontrent ni une amélioration de la qualité du modèle ni la validation du parcours complet entre appareils dans l’application.
+
 2026-10-07 : documentation publique en sept langues, retrait des journaux internes de développement et de validation, réécriture des instructions. Aucun nouveau build de l’application.
 
 ## Ver2.6 (053)

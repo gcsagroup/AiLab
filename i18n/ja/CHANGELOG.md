@@ -2,6 +2,8 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+2026-10-10（ソース更新、アプリへの組み込み前）：固定構成の Jetson Orin 環境に対応し、CUDA ワークスペースの解放を修正しました。Qwen2.5-0.5B-Instruct で生成、2 ステップの LoRA 学習、同じエクスポート済みアダプターの Apple GPU での独立読み込みを確認しました。学習による品質向上や、アプリの端末間ワークフロー全体の受け入れ完了を示すものではありません。
+
 2026-10-07：公開文書を7言語に整理し、内部開発・検証ログを除外して利用手順を書き直しました。文書のみの変更で、アプリの再ビルドは行っていません。
 
 ## Ver2.6 (053)

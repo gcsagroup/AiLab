@@ -1,0 +1,8 @@
+# 使用已固定的 NVIDIA 25.06 Jetson 镜像与其 PyTorch，不从通用 PyPI 替换 torch。
+# 镜像：nvcr.io/nvidia/pytorch@sha256:90f3c17838fde28d5c7ae2d5bfbc8a4c587d3797767ea96cdd48fe82e3613f3b
+torch==2.8.0a0+5228986c39.nv25.6
+transformers==4.57.6
+peft==0.18.1
+accelerate==1.12.0
+safetensors==0.7.0
+numpy==1.26.4
