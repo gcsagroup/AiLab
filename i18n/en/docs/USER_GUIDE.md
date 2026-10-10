@@ -4,6 +4,8 @@
 
 Current version: **Ver2.7 (055), technical preview**. Ver2.7 (054) was tested in the native App through an SSH tunnel with Qwen2.5-0.5B-Instruct: Jetson Orin generation, two-step LoRA training, artifact collection and execution of the same adapter on Apple GPU. This covers only the specified model and environment and does not establish quality improvement. Direct HTTPS deployment, clean installation, first-user testing and release acceptance remain incomplete. There is no qualified public installer or automatic update channel yet. 055 corrects upload-disconnection and terminal-state messages. Native App checks covered interruption, reconciliation and a new successful transfer; the full 054 cross-device model workflow was not repeated.
 
+Work continues as an internal trial. Additional 055 checks cover historical backup recovery, package updates and rollback, independent use of exports, a keyboard-operated task and specified media generation. Business-material review and testing by five real users remain pending; simulated results have not replaced them.
+
 Support depends on the exact model, device, engine and precision. Check the configuration before starting. Existing quality experiments still have failures; completing training does not establish acceptable quality. Documentation is available in seven languages; the application UI is not thereby available in all seven.
 
 ## 1. Getting started
@@ -13,6 +15,8 @@ Create a project in an App with its runtime already prepared, then choose text i
 ## 2. Tasks and parameters
 
 Resume tasks from the workspace or task queue. Drafts save automatically; retry a failed save and confirm it succeeded. Previous results retain their original model and settings. Preview preset changes before applying them, then check again. Text settings include output limit, temperature, Top-p, seed, context budget, stop sequences and streaming. The context budget includes the template, input and reserved output; requests exceeding it are rejected. Use one stop sequence per line, up to 8 sequences of 128 characters each. Low-memory settings may be slower. 4-bit KV cache is currently blocked and is separate from model-weight quantization. Load older tasks at the end of the list; a completion indicator remains on the last page.
+
+Smaller prompt chunks are not guaranteed to be faster and may change the output. To reproduce a result, keep the chunk limit, model, precision, sampling parameters and seed fixed.
 
 ## 3. Training and data
 

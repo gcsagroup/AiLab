@@ -6,6 +6,8 @@ GCSA AI Lab is a desktop workspace for local model inference, LoRA fine-tuning, 
 
 Current version: **Ver2.7 (055), technical preview**. Ver2.7 (054) was tested in the native App through an SSH tunnel with Qwen2.5-0.5B-Instruct: Jetson Orin generation, two-step LoRA training, artifact collection and execution of the same adapter on Apple GPU. This covers only the specified model and environment and does not establish quality improvement. Direct HTTPS deployment, clean installation, first-user testing and release acceptance remain incomplete. There is no qualified public installer or automatic update channel yet. 055 corrects upload-disconnection and terminal-state messages. Native App checks covered interruption, reconciliation and a new successful transfer; the full 054 cross-device model workflow was not repeated.
 
+Work continues as an internal trial. Additional 055 checks cover historical backup recovery, package updates and rollback, independent use of exports, a keyboard-operated task and specified media generation. Business-material review and testing by five real users remain pending; simulated results have not replaced them.
+
 - Text generation, SFT + LoRA fine-tuning, and baseline/candidate evaluation.
 - Image generation and experimental image LoRA, with video generation, speech synthesis and transcription entry points. Video and audio training are not available.
 - Data import, splitting by source group, task history, content revisions, export, backup and recovery.

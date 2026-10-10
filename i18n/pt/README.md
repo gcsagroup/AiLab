@@ -6,6 +6,8 @@ GCSA AI Lab é um aplicativo para executar modelos localmente, fazer ajuste fino
 
 Versão atual: **Ver2.7 (055), prévia técnica**. O aplicativo nativo Ver2.7 (054) foi testado por túnel SSH com Qwen2.5-0.5B-Instruct: geração no Jetson Orin, treinamento LoRA de duas etapas, coleta dos resultados e execução do mesmo adaptador na GPU Apple. Essa validação se limita ao modelo e ambiente indicados e não comprova melhoria de qualidade. A implantação HTTPS direta, a instalação em ambiente limpo, os testes com novos usuários e a validação de distribuição ainda não foram concluídos. Não há instalador público validado nem canal de atualização automática. 055 corrige as mensagens de desconexão durante o envio e de estado final. Os testes nativos cobriram interrupção, verificação de estado e uma nova transferência bem-sucedida; o fluxo completo de modelos entre dispositivos de 054 não foi repetido.
 
+O trabalho continua como teste interno. As verificações adicionais de 055 cobrem restauração de backups históricos, atualização e retorno ao pacote anterior, uso independente das exportações, uma tarefa pelo teclado e a geração de mídia especificada. A revisão dos dados de negócio e os testes com cinco usuários reais continuam pendentes, sem substituição por resultados simulados.
+
 - Geração de texto, ajuste fino SFT + LoRA e avaliação do modelo de referência e do candidato.
 - Geração de imagens e LoRA de imagem experimental, com opções de geração de vídeo, síntese de voz e transcrição. O treinamento de vídeo e áudio não está disponível.
 - Importação de dados, divisão por grupo de origem, histórico, revisões de conteúdo, exportação, backup e restauração.

@@ -4,6 +4,8 @@
 
 Versão atual: **Ver2.7 (055), prévia técnica**. O aplicativo nativo Ver2.7 (054) foi testado por túnel SSH com Qwen2.5-0.5B-Instruct: geração no Jetson Orin, treinamento LoRA de duas etapas, coleta dos resultados e execução do mesmo adaptador na GPU Apple. Essa validação se limita ao modelo e ambiente indicados e não comprova melhoria de qualidade. A implantação HTTPS direta, a instalação em ambiente limpo, os testes com novos usuários e a validação de distribuição ainda não foram concluídos. Não há instalador público validado nem canal de atualização automática. 055 corrige as mensagens de desconexão durante o envio e de estado final. Os testes nativos cobriram interrupção, verificação de estado e uma nova transferência bem-sucedida; o fluxo completo de modelos entre dispositivos de 054 não foi repetido.
 
+O trabalho continua como teste interno. As verificações adicionais de 055 cobrem restauração de backups históricos, atualização e retorno ao pacote anterior, uso independente das exportações, uma tarefa pelo teclado e a geração de mídia especificada. A revisão dos dados de negócio e os testes com cinco usuários reais continuam pendentes, sem substituição por resultados simulados.
+
 O suporte depende da combinação exata de modelo, dispositivo, mecanismo e precisão. Verifique a configuração antes de iniciar. Os experimentos de qualidade ainda apresentam falhas; concluir o treinamento não garante qualidade. A documentação está em sete idiomas, o que não significa que a interface ofereça todos eles.
 
 ## 1. Primeiro resultado
@@ -13,6 +15,8 @@ Crie um projeto no aplicativo com o ambiente de execução já preparado e escol
 ## 2. Tarefas e parâmetros
 
 Retome tarefas pela área de trabalho ou pela fila. Rascunhos são salvos automaticamente; se houver falha, tente novamente e confirme o salvamento. Resultados anteriores mantêm o modelo e os parâmetros originais. Confira as diferenças de uma predefinição antes de aplicá-la e faça nova verificação. Os parâmetros incluem limite de saída, temperatura, Top-p, semente, orçamento de contexto, sequências de parada e exibição progressiva. O orçamento inclui o modelo de mensagem, a entrada e a saída reservada; solicitações acima do limite são recusadas. Use uma sequência de parada por linha, até 8 com 128 caracteres cada. A opção de pouca memória pode ser mais lenta. O cache KV de 4-bit está bloqueado e é diferente da quantização dos pesos. Carregue tarefas antigas no final da lista; a última página mantém o indicador de conclusão.
+
+Blocos menores de prompt não garantem maior velocidade e podem alterar a saída. Para reproduzir um resultado, mantenha fixos o limite do bloco, o modelo, a precisão, os parâmetros de amostragem e a semente.
 
 ## 3. Treinamento e dados
 
