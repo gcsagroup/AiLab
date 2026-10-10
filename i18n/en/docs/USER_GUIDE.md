@@ -2,7 +2,7 @@
 
 [简体中文](../../../docs/USER_GUIDE.md) · [繁體中文](../../zh-TW/docs/USER_GUIDE.md) · [English](USER_GUIDE.md) · [日本語](../../ja/docs/USER_GUIDE.md) · [한국어](../../ko/docs/USER_GUIDE.md) · [Français](../../fr/docs/USER_GUIDE.md) · [Português](../../pt/docs/USER_GUIDE.md)
 
-Current version: **Ver2.6 (053), technical preview**. Selected models have been tested for inference and fine-tuning on Apple Silicon. NVIDIA cross-device workflows, clean installation, first-user testing and release acceptance remain incomplete. There is no qualified public installer or automatic update channel yet.
+Current version: **Ver2.7 (054), technical preview**. The native App has been tested through an SSH tunnel with Qwen2.5-0.5B-Instruct: Jetson Orin generation, two-step LoRA training, artifact collection and execution of the same adapter on Apple GPU. This covers only the specified model and environment and does not establish quality improvement. Direct HTTPS deployment, clean installation, first-user testing and release acceptance remain incomplete. There is no qualified public installer or automatic update channel yet.
 
 Support depends on the exact model, device, engine and precision. Check the configuration before starting. Existing quality experiments still have failures; completing training does not establish acceptable quality. Documentation is available in seven languages; the application UI is not thereby available in all seven.
 
@@ -36,7 +36,7 @@ Create a full backup in device and environment settings after resolving running 
 
 ## 8. Remote execution
 
-Register a service address, executor ID and credentials. HTTPS certificates must be valid and match the host. A working connection does not establish GPU or model readiness. The project default affects only new text tasks; existing drafts keep their destination. Review the destination, files and total size, then explicitly confirm sending. Configuration checks do not upload files. The native App stores credentials in the system keychain; the development browser keeps them only in the current control-service session. The designated NVIDIA cross-host workflow and transfer of the same adapter to Apple remain unqualified.
+Register a service address, executor ID and credentials. HTTPS certificates must be valid and match the host. A working connection does not establish GPU or model readiness. The project default affects only new text tasks; existing drafts keep their destination. Review the destination, files and total size, then explicitly confirm sending. Configuration checks do not upload files. The native App stores credentials in the system keychain; the development browser keeps them only in the current control-service session. The specified Jetson Orin workflow was tested through an SSH tunnel: generate, train, collect, save the experimental adapter, then select local Apple GPU for trial use. Direct HTTPS deployment remains unqualified; two training steps establish workflow operation only.
 
 ## 9. Troubleshooting
 

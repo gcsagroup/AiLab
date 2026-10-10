@@ -2,7 +2,9 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
-2026-10-10 (mise à jour du code source, pas encore intégrée à une application distribuée) : ajout d’un environnement Jetson Orin figé et correction de la libération de l’espace de travail CUDA. Les vérifications avec Qwen2.5-0.5B-Instruct couvrent la génération, deux étapes d’entraînement LoRA et le chargement indépendant du même adaptateur exporté sur un GPU Apple. Elles ne démontrent ni une amélioration de la qualité du modèle ni la validation du parcours complet entre appareils dans l’application.
+## Ver2.7 (054) · 2026-10-10
+
+Version actuelle : **Ver2.7 (054), aperçu technique**. L’application native a été testée via un tunnel SSH avec Qwen2.5-0.5B-Instruct : génération sur Jetson Orin, entraînement LoRA en deux étapes, récupération des résultats et exécution du même adaptateur sur GPU Apple. Cette validation se limite au modèle et à l’environnement indiqués et ne prouve aucune amélioration de qualité. Le déploiement HTTPS direct, l’installation sur un environnement vierge, les tests avec de nouveaux utilisateurs et la validation de distribution restent incomplets. Aucun installateur public validé ni canal de mise à jour automatique n’est disponible.
 
 2026-10-07 : documentation publique en sept langues, retrait des journaux internes de développement et de validation, réécriture des instructions. Aucun nouveau build de l’application.
 

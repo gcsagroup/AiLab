@@ -14,127 +14,127 @@
       "path": "README.md",
       "language": "zh-CN",
       "kind": "readme",
-      "sha256": "68a2c49ff3e1ae12fcb1d5e6d0d355cf1f6854e2732300a3b4cc3fd473c7a2de"
+      "sha256": "29c569d33a224e724d5a4562f735234b84bcf2f90837ae80a299deb4ea76ffde"
     },
     {
       "path": "docs/USER_GUIDE.md",
       "language": "zh-CN",
       "kind": "guide",
-      "sha256": "ef94e191f796f13ad0af5a1d5048d369a32ded2885840733f46c73e0e3b00328"
+      "sha256": "98b574dab0465d970a7fd8c2dd954eb49a881e0efe0d7a3454c66cff33a17c8d"
     },
     {
       "path": "CHANGELOG.md",
       "language": "zh-CN",
       "kind": "changelog",
-      "sha256": "c8afb12a019b9d51ae6fc84ae4728b62917eebf1b668e6866fab4bafe0ab599d"
+      "sha256": "510068479adda52a61ed02190fccc3df5d6c9f4c0c1d8970bedb771197309aaf"
     },
     {
       "path": "i18n/zh-TW/README.md",
       "language": "zh-TW",
       "kind": "readme",
-      "sha256": "e554d7eb116121d15405734484d715dca0cd7fb20b8a9adee73c6344d466b3ea"
+      "sha256": "f0ed20ff432650f0122e00c06625e36ebf0b69cf6658ef902a515725048c536c"
     },
     {
       "path": "i18n/zh-TW/docs/USER_GUIDE.md",
       "language": "zh-TW",
       "kind": "guide",
-      "sha256": "f4ee063a4a1d9be5315864bd258000e5abbca1fdbea97211625902388f38567e"
+      "sha256": "e559923f62c654f2c1874f08248c8c01c2d66fec29895f2b51bb022005db5f32"
     },
     {
       "path": "i18n/zh-TW/CHANGELOG.md",
       "language": "zh-TW",
       "kind": "changelog",
-      "sha256": "9b40a484a190d94bf084e20006c187c6b839a263db188f56b0454728ac5e8b8c"
+      "sha256": "848aaea76b627359195e43ca713ce55926ae7f69158a49b4acc80b42f7204b7c"
     },
     {
       "path": "i18n/en/README.md",
       "language": "en",
       "kind": "readme",
-      "sha256": "07f03bedeb948f90fdaa475294d1eb838fff60b56b5ba5a28d0b502a02082bcb"
+      "sha256": "425fdebf36f3cf7e4383aa26f10b3e875f18bd1752aca7cd8d1bc91fa89c6ad1"
     },
     {
       "path": "i18n/en/docs/USER_GUIDE.md",
       "language": "en",
       "kind": "guide",
-      "sha256": "913dc041474f0c0fd327f47f43f8963d438b0be64585bedb1bca2b91805e7b97"
+      "sha256": "c833a4435337a2a8f6cdef9bb2e98918b5354214e893b0de9d2324ff9fc2cb82"
     },
     {
       "path": "i18n/en/CHANGELOG.md",
       "language": "en",
       "kind": "changelog",
-      "sha256": "5ede819ac8b965e49dcb9bcab241c472da63cc2306fe963943ad3ad8b57d0821"
+      "sha256": "f7383277ff6568974fffc7777a30ad63570b6fbde2351c841b381cb4e5516718"
     },
     {
       "path": "i18n/ja/README.md",
       "language": "ja",
       "kind": "readme",
-      "sha256": "0ce3ba9ab699e0d743a59ec99705f131176f2c67643f83711228a1d35fa3a209"
+      "sha256": "dfe8182007fcac30a763ccddc6bea5e439f2689ae0eb5195ceeda43ec62ba7f2"
     },
     {
       "path": "i18n/ja/docs/USER_GUIDE.md",
       "language": "ja",
       "kind": "guide",
-      "sha256": "13ff7e7f46ed6a693ab255a633ae419705210dd1bafa167a77632bdafd9501ab"
+      "sha256": "19e6a72b817662915d3f5c3965ebe36bcc10e5866679cbc2559707a5c13e4ec5"
     },
     {
       "path": "i18n/ja/CHANGELOG.md",
       "language": "ja",
       "kind": "changelog",
-      "sha256": "d1899666c533f446fb9482ba69c139d29a2dce91b31966a023a57f9fa81bc90a"
+      "sha256": "8d9e61d79af45cd4bc1f6b8b5deb487d36c60f69acc6a5b1448599692c695f7f"
     },
     {
       "path": "i18n/ko/README.md",
       "language": "ko",
       "kind": "readme",
-      "sha256": "ffebb195dad1a1e7be7c7cc6972a7c71bc2cd40e20cb872fd5834c47da63e737"
+      "sha256": "c961f2b17b7b6a06d30219d6dc2ec9bff28d3fa72557ff3d3978e935917d3894"
     },
     {
       "path": "i18n/ko/docs/USER_GUIDE.md",
       "language": "ko",
       "kind": "guide",
-      "sha256": "0bed96f760cdc0b16072624b0f15f079ae88f0d3722f81b4089a286e34db32f0"
+      "sha256": "dd20512f60029c68aa2f3c231c051812e9847ce11e2d56e024ce56bc33cf5d9c"
     },
     {
       "path": "i18n/ko/CHANGELOG.md",
       "language": "ko",
       "kind": "changelog",
-      "sha256": "8c7dacdb20b6a4ebbf6606873df1308d965718c9a56520e5c63577af4477566c"
+      "sha256": "e6b74aaf1b26294bb9d6fb5cc0d230717d9066b86e70f53fc1fba96fa9afbd53"
     },
     {
       "path": "i18n/fr/README.md",
       "language": "fr",
       "kind": "readme",
-      "sha256": "67b38ec3fd9751e15adb845054b441958a90ed6bd2017eefcdfca1374c0b264a"
+      "sha256": "b2005389bfc489a44cf597f510505826ae876fd7d8ab740470e26adc8f5ed04a"
     },
     {
       "path": "i18n/fr/docs/USER_GUIDE.md",
       "language": "fr",
       "kind": "guide",
-      "sha256": "4ae58005278914b244f82fbdb66c8c04048f5810f9f5c27ca0edca1612f91bb8"
+      "sha256": "dde6d3248160935dcc62be6715318613a21187a2475f61bbde2de12c2c1e9181"
     },
     {
       "path": "i18n/fr/CHANGELOG.md",
       "language": "fr",
       "kind": "changelog",
-      "sha256": "d3b2c97510b0466f1ea57ec7a0a7d30b9edfc80c0a3426f8586375d7f1ef81d6"
+      "sha256": "cfc2907d051abb8bfc062bf63b6d90c9a410700270fbc91cefb5840c49544da9"
     },
     {
       "path": "i18n/pt/README.md",
       "language": "pt",
       "kind": "readme",
-      "sha256": "d64944489d899376d2a591e02ed29768898cb634cc4ebb407c5c62621a804316"
+      "sha256": "8760d40b5930f79f18971041d6041eb0a6db55f341fcaf5fcf010702be6182fa"
     },
     {
       "path": "i18n/pt/docs/USER_GUIDE.md",
       "language": "pt",
       "kind": "guide",
-      "sha256": "217e202308242de95e51102566486d990f84ebced4308d262557a28238aabcef"
+      "sha256": "1d12285818fada4240ed379bf4f91046b5e7ab0469c5d897af53fd47e452c113"
     },
     {
       "path": "i18n/pt/CHANGELOG.md",
       "language": "pt",
       "kind": "changelog",
-      "sha256": "50834b964eb6023bb52058967f5c81929f6729e8816deeb0dd9f00ee73ae7189"
+      "sha256": "65062e90c8dc417cc2f82b612cc4edd0ebc14ab877ab442b41add9f49538a78a"
     }
   ],
   "indexes": [

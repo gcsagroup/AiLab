@@ -2,7 +2,7 @@
 
 [简体中文](../../../docs/USER_GUIDE.md) · [繁體中文](../../zh-TW/docs/USER_GUIDE.md) · [English](../../en/docs/USER_GUIDE.md) · [日本語](../../ja/docs/USER_GUIDE.md) · [한국어](../../ko/docs/USER_GUIDE.md) · [Français](USER_GUIDE.md) · [Português](../../pt/docs/USER_GUIDE.md)
 
-Version actuelle : **Ver2.6 (053), aperçu technique**. Certains modèles ont été testés en inférence et en ajustement sur Apple Silicon. Les parcours entre appareils NVIDIA et Apple, l’installation sur un environnement vierge, les tests avec de nouveaux utilisateurs et la validation de distribution restent incomplets. Aucun installateur public validé ni canal de mise à jour automatique n’est disponible.
+Version actuelle : **Ver2.7 (054), aperçu technique**. L’application native a été testée via un tunnel SSH avec Qwen2.5-0.5B-Instruct : génération sur Jetson Orin, entraînement LoRA en deux étapes, récupération des résultats et exécution du même adaptateur sur GPU Apple. Cette validation se limite au modèle et à l’environnement indiqués et ne prouve aucune amélioration de qualité. Le déploiement HTTPS direct, l’installation sur un environnement vierge, les tests avec de nouveaux utilisateurs et la validation de distribution restent incomplets. Aucun installateur public validé ni canal de mise à jour automatique n’est disponible.
 
 La prise en charge dépend du modèle, de l’appareil, du moteur et de la précision. Vérifiez la configuration avant de démarrer. Des tests de qualité échouent encore : terminer un entraînement ne garantit pas sa qualité. La documentation existe en sept langues ; cela ne signifie pas que l’interface les propose toutes.
 
@@ -36,7 +36,7 @@ Créez une sauvegarde complète dans les paramètres des appareils et de l’env
 
 ## 8. Exécution distante
 
-Enregistrez l’adresse du service, son identifiant d’exécuteur et les identifiants d’accès. Le certificat HTTPS doit être valide et correspondre à l’hôte. Une connexion réussie ne prouve pas que le GPU ou le modèle est prêt. La destination par défaut du projet ne concerne que les nouvelles tâches texte ; les brouillons existants gardent leur destination. Vérifiez la destination, les fichiers et leur taille totale avant de confirmer l’envoi. Le contrôle de configuration ne téléverse rien. L’application native stocke les identifiants dans le trousseau système ; le navigateur de développement les garde seulement dans la session du service de contrôle. Le parcours NVIDIA entre hôtes et le transfert du même adaptateur vers Apple restent à valider intégralement.
+Enregistrez l’adresse du service, son identifiant d’exécuteur et les identifiants d’accès. Le certificat HTTPS doit être valide et correspondre à l’hôte. Une connexion réussie ne prouve pas que le GPU ou le modèle est prêt. La destination par défaut du projet ne concerne que les nouvelles tâches texte ; les brouillons existants gardent leur destination. Vérifiez la destination, les fichiers et leur taille totale avant de confirmer l’envoi. Le contrôle de configuration ne téléverse rien. L’application native stocke les identifiants dans le trousseau système ; le navigateur de développement les garde seulement dans la session du service de contrôle. Le parcours Jetson Orin indiqué a été testé via un tunnel SSH : génération, entraînement, récupération, sauvegarde de l’adaptateur expérimental puis sélection du GPU Apple local pour l’essai. Le déploiement HTTPS direct reste à valider ; deux étapes d’entraînement prouvent uniquement le fonctionnement du parcours.
 
 ## 9. Dépannage
 

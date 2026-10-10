@@ -1,6 +1,6 @@
 {
   "name": "gcsa-ailab",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "private": true,
   "type": "module",
   "description": "GCSA-AiLab 本地模型训练与运行工作台",

@@ -2,7 +2,9 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
-2026-10-10 (source update, not yet packaged): Added a fixed Jetson Orin environment and corrected CUDA workspace cleanup. Qwen2.5-0.5B-Instruct passed generation, two LoRA training steps and independent loading of the same exported adapter on an Apple GPU. These checks do not establish improved model quality or acceptance of the complete cross-device App workflow.
+## Ver2.7 (054) · 2026-10-10
+
+Current version: **Ver2.7 (054), technical preview**. The native App has been tested through an SSH tunnel with Qwen2.5-0.5B-Instruct: Jetson Orin generation, two-step LoRA training, artifact collection and execution of the same adapter on Apple GPU. This covers only the specified model and environment and does not establish quality improvement. Direct HTTPS deployment, clean installation, first-user testing and release acceptance remain incomplete. There is no qualified public installer or automatic update channel yet.
 
 2026-10-07: Publish documentation in seven languages, remove internal development and acceptance logs, and rewrite user instructions. Documentation only; the App was not rebuilt.
 

@@ -2,7 +2,7 @@
 
 [简体中文](../../../docs/USER_GUIDE.md) · [繁體中文](../../zh-TW/docs/USER_GUIDE.md) · [English](../../en/docs/USER_GUIDE.md) · [日本語](../../ja/docs/USER_GUIDE.md) · [한국어](../../ko/docs/USER_GUIDE.md) · [Français](../../fr/docs/USER_GUIDE.md) · [Português](USER_GUIDE.md)
 
-Versão atual: **Ver2.6 (053), prévia técnica**. Modelos específicos foram testados para inferência e ajuste fino em Apple Silicon. Os fluxos entre NVIDIA e Apple, a instalação em ambiente limpo, os testes com novos usuários e a validação de distribuição ainda não foram concluídos. Não há instalador público validado nem canal de atualização automática.
+Versão atual: **Ver2.7 (054), prévia técnica**. O aplicativo nativo foi testado por túnel SSH com Qwen2.5-0.5B-Instruct: geração no Jetson Orin, treinamento LoRA de duas etapas, coleta dos resultados e execução do mesmo adaptador na GPU Apple. Essa validação se limita ao modelo e ambiente indicados e não comprova melhoria de qualidade. A implantação HTTPS direta, a instalação em ambiente limpo, os testes com novos usuários e a validação de distribuição ainda não foram concluídos. Não há instalador público validado nem canal de atualização automática.
 
 O suporte depende da combinação exata de modelo, dispositivo, mecanismo e precisão. Verifique a configuração antes de iniciar. Os experimentos de qualidade ainda apresentam falhas; concluir o treinamento não garante qualidade. A documentação está em sete idiomas, o que não significa que a interface ofereça todos eles.
 
@@ -36,7 +36,7 @@ Crie um backup completo nas configurações de dispositivo e ambiente, depois de
 
 ## 8. Execução remota
 
-Cadastre o endereço do serviço, o ID do executor e as credenciais. O certificado HTTPS deve ser válido e corresponder ao host. A conexão não comprova que GPU ou modelo estejam prontos. O destino padrão do projeto afeta somente novas tarefas de texto; rascunhos existentes mantêm seu destino. Confira o destino, os arquivos e o tamanho total antes de confirmar o envio. A verificação de configuração não faz upload. O aplicativo nativo guarda credenciais no chaveiro do sistema; o navegador de desenvolvimento as mantém apenas na sessão atual do serviço de controle. O fluxo entre hosts NVIDIA e a transferência do mesmo adaptador para Apple ainda não foram validados integralmente.
+Cadastre o endereço do serviço, o ID do executor e as credenciais. O certificado HTTPS deve ser válido e corresponder ao host. A conexão não comprova que GPU ou modelo estejam prontos. O destino padrão do projeto afeta somente novas tarefas de texto; rascunhos existentes mantêm seu destino. Confira o destino, os arquivos e o tamanho total antes de confirmar o envio. A verificação de configuração não faz upload. O aplicativo nativo guarda credenciais no chaveiro do sistema; o navegador de desenvolvimento as mantém apenas na sessão atual do serviço de controle. O fluxo Jetson Orin indicado foi testado por túnel SSH: geração, treinamento, coleta, salvamento do adaptador experimental e seleção da GPU Apple local para teste. A implantação HTTPS direta ainda não foi validada; duas etapas de treinamento comprovam apenas o funcionamento do fluxo.
 
 ## 9. Solução de problemas
 
