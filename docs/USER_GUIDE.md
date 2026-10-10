@@ -2,7 +2,7 @@
 
 [简体中文](USER_GUIDE.md) · [繁體中文](../i18n/zh-TW/docs/USER_GUIDE.md) · [English](../i18n/en/docs/USER_GUIDE.md) · [日本語](../i18n/ja/docs/USER_GUIDE.md) · [한국어](../i18n/ko/docs/USER_GUIDE.md) · [Français](../i18n/fr/docs/USER_GUIDE.md) · [Português](../i18n/pt/docs/USER_GUIDE.md)
 
-当前版本为 **Ver2.7（054），技术预览**。已在原生 App 中通过 SSH 隧道验证 Qwen2.5-0.5B-Instruct 的 Jetson Orin 生成、两步 LoRA 训练、产物回收，以及同份适配器在 Apple GPU 上运行。此验证限于指定模型和环境，不代表质量提升；直接 HTTPS 部署、干净安装、首次用户测试及正式发行验收仍未完成。当前没有已验收的正式安装包或自动更新渠道。
+当前版本为 **Ver2.7（055），技术预览**。Ver2.7（054）已在原生 App 中通过 SSH 隧道验证 Qwen2.5-0.5B-Instruct 的 Jetson Orin 生成、两步 LoRA 训练、产物回收，以及同份适配器在 Apple GPU 上运行。此验证限于指定模型和环境，不代表质量提升；直接 HTTPS 部署、干净安装、首次用户测试及正式发行验收仍未完成。当前没有已验收的正式安装包或自动更新渠道。 055 修复上传断线后的原因提示与终态说明，并在原生 App 中验证中断、核实和重新传输；未重跑 054 的完整跨设备模型流程。
 
 可运行范围取决于具体模型、设备、引擎和精度，开始前以配置检查结果为准。现有质量实验仍有失败项，不能把训练完成当作质量合格。文档提供七种语言；这不代表应用界面支持七种语言。
 

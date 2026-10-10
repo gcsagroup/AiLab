@@ -19,7 +19,7 @@ import type { Adapter, Attempt, CheckReport, Dataset, Device, Draft, Kind, Mater
 import { activeStates, Badge, Button, Dialog, Empty, ErrorNotice, readableSize, stateNames } from './ui';
 
 export const kindLabels: Record<string, string> = { text: '模型', image: '图片', video: '视频', audio: '音频', export: '文件' };
-const phaseNames: Record<string, string> = { loading: '加载模型', generating: '生成文本', tokenizing: '检查分词', training: '训练模型', quantizing: '量化模型', evaluating: '独立评测', preparing: '准备输入', saving: '保存产物' };
+const phaseNames: Record<string, string> = { loading: '加载模型', generating: '生成文本', tokenizing: '检查分词', training: '训练模型', quantizing: '量化模型', evaluating: '独立评测', preparing: '准备输入', saving: '保存产物', uploading: '上传输入' };
 export const defaultRuntime = { engine: 'mlx', device_id: 'apple-gpu', max_tokens: 128, temperature: 0, top_p: 1, seed: 0 };
 export const defaultTrainingRuntime: Runtime = { engine: 'mlx', device_id: 'apple-gpu', seed: 0, training_type: 'sft', update_method: 'lora', recipe_id: 'qwen25-assistant-only-v1', steps: 4, learning_rate: 0.0001, max_seq_length: 512, lora_rank: 4, lora_alpha: 8, num_layers: 2, batch_size: 1, gradient_accumulation: 1, optimizer: 'adamw', weight_decay: 0, lora_dropout: 0 };
 const outputPreviewLimit = 65536;
@@ -105,7 +105,13 @@ export function RunResult({ initial, onChanged, onAttemptUpdated, onExport, onRe
   const metrics = events.filter(event => event.type === 'metric' && (typeof event.payload.step === 'number' || typeof event.payload.completed_steps === 'number') && typeof event.payload.loss === 'number');
   const lastMetric = metrics.at(-1)?.payload;
   const warning = [...events].reverse().find(event => event.type === 'warning' && typeof event.payload.message === 'string');
-  const failureMessage = attempt.error?.message || (warning?.payload.message as string | undefined) || '执行未成功，完整记录已保留。';
+  const terminal = [...events].reverse().find(event => event.type === 'terminal' && typeof event.payload.message === 'string');
+  const failureMessage = attempt.error?.message || (terminal?.payload.message as string | undefined) || (warning?.payload.message as string | undefined) || '执行未成功，完整记录已保留。';
+  const remote = attempt.executor_type === 'remote' || attempt.snapshot?.executor_type === 'remote';
+  const recoveryMessage = remote ? attempt.remote_submission_started === false
+    ? '上传已中断，本次尚未提交计算。核实后可重新检查并开始新的传输。'
+    : '远端连接或同步中断，需要核实原执行状态。核实不会重新提交计算。'
+    : '控制服务曾中断，需要核实原进程是否退出。核实不会重新执行任务。';
   const output = displayOutput(attempt, events);
   function captureAction() {
     const currentLifetime = lifetime.current; const libraryCurrent = captureLibraryRead();
@@ -162,7 +168,7 @@ export function RunResult({ initial, onChanged, onAttemptUpdated, onExport, onRe
     {attempt.state === 'failed' && output && <ErrorNotice message={failureMessage} />}
     <ErrorNotice message={error} />
     {attempt.connection_state === 'disconnected' && <p className="warning">连接已中断，当前显示最后取得的运行状态。重连核实不会再次提交执行。</p>}{attempt.stop_status === 'unknown' && <p className="warning">停止结果尚未确认，不能据此认为任务已经停止或资源已经释放。</p>}
-    {!active && attempt.state !== 'succeeded' && attempt.compute_outcome === 'succeeded' && attempt.collection_state === 'succeeded' && <p className="muted recovery-notice">已有计算产物已补收完成，原中断或取消记录仍保留。</p>}{attempt.recovery_required && <p className="warning recovery-notice">控制服务曾中断，需要核实原进程是否退出。核实不会重新执行任务。</p>}
+    {!active && attempt.state !== 'succeeded' && attempt.compute_outcome === 'succeeded' && attempt.collection_state === 'succeeded' && <p className="muted recovery-notice">已有计算产物已补收完成，原中断或取消记录仍保留。</p>}{attempt.recovery_required && <p className="warning recovery-notice">{recoveryMessage}</p>}
     <div className="result-actions"><small>{attempt.state === 'paused' ? '已停在安全检查点，等待继续训练' : active && attempt.phase ? `当前阶段：${phaseNames[attempt.phase] || '处理中'}` : '运行记录自动保存在本机'}</small>{(attempt.allowed_actions || (active ? ['cancel'] : [])).map(action => action === 'cancel' ? <Button key={action} busy={busy} onClick={() => control('cancel')}><Square size={14} />停止运行</Button> : action === 'force-stop' ? <Button key={action} busy={busy} onClick={() => setConfirmStop(true)}>强制停止</Button> : action === 'reconcile' ? <Button key={action} busy={busy} onClick={() => control('reconcile')}>{(attempt.executor_type === 'remote' || attempt.snapshot?.executor_type === 'remote') ? '重连并核实原执行' : '核实原进程'}</Button> : action === 'pause' ? <Button key={action} busy={busy} onClick={() => control('pause')}>保存检查点并暂停</Button> : action === 'resume' ? <Button key={action} busy={busy} onClick={() => control('resume')}>继续训练</Button> : action === 'collect' ? <Button key={action} busy={busy} onClick={() => control('collect')}>只补收已有产物</Button> : null)}{!active && workArtifact && <Button busy={busy} disabled={workSaved} onClick={saveWork}>{workSaved ? <Check size={15} /> : <Save size={15} />}{workSaved ? '已保存作品' : '保存作品'}</Button>}</div>
     {confirmStop && <Dialog title="强制停止本次运行" onClose={() => setConfirmStop(false)}><p>正常停止尚未完成。强制停止可能丢失尚未保存的训练进度，原运行记录会保留。</p><div className="dialog-footer"><Button onClick={() => setConfirmStop(false)}>继续等待</Button><Button busy={busy} onClick={() => control('force-stop')}>确认强制停止</Button></div></Dialog>}
     {!active && Boolean(attempt.artifacts?.length) && <div className="result-actions">{attempt.artifacts?.some(item => ['adapters.safetensors', 'pytorch_lora_weights.safetensors'].includes(item.name || '')) && <Button busy={busy} disabled={adapterSaved} onClick={saveAdapter}>{adapterSaved ? '已保存实验适配器' : '保存训练适配器'}</Button>}{converting && attempt.artifacts?.some(item => item.name === 'conversion.json') && <Button busy={busy} disabled={convertedSaved} onClick={saveConverted}>{convertedSaved ? '已保存实验量化模型' : '保存实验量化模型'}</Button>}{onExport && <Button onClick={() => onExport({ type: 'report', id: attempt.id, name: '本次执行报告' })}>导出执行报告</Button>}</div>}

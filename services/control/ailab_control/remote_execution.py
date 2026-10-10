@@ -323,6 +323,7 @@ class RemoteExecution:
             if attempt['state'] in TERMINAL:
                 return
             attempt.update(connection_state='disconnected', recovery_required=True,
+                           last_connection_error=error.code,
                            stop_status='unknown' if attempt['stop_status'] in {'pending', 'unknown'} else attempt['stop_status'])
             attempt['state_version'] += 1
             self.store.event(attempt, 'warning', {'code': error.code, 'message': '连接中断；保留原执行编号，重新连接后核实状态。'})
@@ -493,8 +494,9 @@ class RemoteExecution:
                 raise Fault('REVISION_CONFLICT', '运行状态已更新，请刷新后再核实。', 409)
             self.service.execution_targets.client(attempt['execution_target_id'], attempt['project_id'])
             if not attempt['remote_submission_started'] and attempt.get('recovery_required'):
-                attempt.update(stop_status='confirmed', recovery_required=False, connection_state='connected', compute_outcome='failed', terminal_reason='CONTROL_INTERRUPTED')
-                self.service.transition(attempt, 'failed', '控制服务在上传阶段中断；已核实本次从未提交执行。可重新预览并开始新的传输。')
+                attempt.update(stop_status='confirmed', recovery_required=False, compute_outcome='failed',
+                               terminal_reason=attempt.get('last_connection_error') or 'UPLOAD_INTERRUPTED')
+                self.service.transition(attempt, 'failed', '上传未完成；本次尚未向执行服务提交计算。请重新检查配置后开始新的传输。')
             self.store.remember(scope, key, payload, {'id': attempt_id})
         # 仅同步原编号；不提交新计算，也不重启原工作进程。
         if attempt['state'] not in TERMINAL:

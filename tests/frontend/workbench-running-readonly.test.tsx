@@ -141,3 +141,36 @@ it.each(['市场', '划分'])('任务变为活动状态时关闭已打开的%s�
   }
   await tick(600); expect(writes()).toEqual([]); expect(screen.queryByRole('dialog')).toBeNull();
 });
+
+it('远端上传中断显示尚未提交计算，不误报本机控制服务退出，核实不提交新任务', async () => {
+  current = { ...current, state: 'queued', phase: 'uploading', executor_type: 'remote',
+    remote_submission_started: false, connection_state: 'disconnected', recovery_required: true, allowed_actions: ['reconcile'] };
+  attachCurrent(); render(content()); await tick();
+  expect(screen.getByText('上传已中断，本次尚未提交计算。核实后可重新检查并开始新的传输。')).toBeTruthy();
+  expect(screen.queryByText(/控制服务曾中断/)).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: '重连并核实原执行' })); await tick();
+  expect(writes().map(call => call.path)).toEqual(['/attempts/attempt-current/reconcile']);
+});
+
+it('已提交的远端断线仍要求核实原执行，不宣称尚未计算', async () => {
+  current = { ...current, executor_type: 'remote', remote_submission_started: true,
+    connection_state: 'disconnected', recovery_required: true, stop_status: 'unknown', allowed_actions: ['reconcile'] };
+  attachCurrent(); render(content()); await tick();
+  expect(screen.getByText('远端连接或同步中断，需要核实原执行状态。核实不会重新提交计算。')).toBeTruthy();
+  expect(screen.queryByText(/上传已中断，本次尚未提交计算/)).toBeNull();
+  expect(screen.queryByText(/控制服务曾中断/)).toBeNull();
+  expect(writes()).toEqual([]);
+});
+
+it('核实后的失败正文采用终态说明，不被早先断线警告覆盖', async () => {
+  current = { ...current, state: 'failed', executor_type: 'remote', allowed_actions: [] };
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation((input, options) => String(input).includes('/events?') ? Promise.resolve(response({ items: [
+    { sequence: 1, type: 'warning', payload: { message: '连接中断，状态待核实。' } },
+    { sequence: 2, type: 'terminal', payload: { message: '本次尚未向执行服务提交计算。' } },
+  ] })) : original(input, options));
+  attachCurrent(); render(content()); await tick();
+  const body = screen.getByRole('heading', { name: '本次没有文本输出' }).parentElement!;
+  expect(body.textContent).toContain('本次尚未向执行服务提交计算。');
+  expect(body.textContent).not.toContain('状态待核实');
+});

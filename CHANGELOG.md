@@ -2,6 +2,12 @@
 
 [简体中文](CHANGELOG.md) · [繁體中文](i18n/zh-TW/CHANGELOG.md) · [English](i18n/en/CHANGELOG.md) · [日本語](i18n/ja/CHANGELOG.md) · [한국어](i18n/ko/CHANGELOG.md) · [Français](i18n/fr/CHANGELOG.md) · [Português](i18n/pt/CHANGELOG.md)
 
+## Ver2.7 (055) · 2026-10-10
+
+修复远端上传断线被误报为控制服务崩溃的问题，保留实际错误原因；核实时不会重复提交计算。原生 App 实测中断后核实、恢复连接并重新传输成功，回收文件内容一致，原记录保留。
+
+055 修复上传断线后的原因提示与终态说明，并在原生 App 中验证中断、核实和重新传输；未重跑 054 的完整跨设备模型流程。
+
 ## Ver2.7 (054) · 2026-10-10
 
 当前版本为 **Ver2.7（054），技术预览**。已在原生 App 中通过 SSH 隧道验证 Qwen2.5-0.5B-Instruct 的 Jetson Orin 生成、两步 LoRA 训练、产物回收，以及同份适配器在 Apple GPU 上运行。此验证限于指定模型和环境，不代表质量提升；直接 HTTPS 部署、干净安装、首次用户测试及正式发行验收仍未完成。当前没有已验收的正式安装包或自动更新渠道。

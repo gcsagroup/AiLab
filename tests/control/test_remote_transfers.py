@@ -165,3 +165,37 @@ def test_changed_input_bytes_after_preview_prevent_any_upload(remote_rig):
     response = client.post('/api/v1/remote-transfers', json={'prepare_id': prepare['id'], 'digest': prepare['digest']}, headers={'Idempotency-Key': 'changed-file'})
     assert response.status_code == 409 and response.json()['error']['code'] == 'ARTIFACT_CORRUPT'
     assert executions(server) == [] and list((server.data / 'blobs').iterdir()) == []
+
+
+@pytest.mark.parametrize("control_recovery", [False, True])
+def test_upload_disconnect_reconcile_preserves_network_cause_without_submitting(remote_rig, monkeypatch, control_recovery):
+    """上传前真实断开执行服务；本机服务仍在，核实不得误报崩溃或启动计算。"""
+    client, service, server, *_ = remote_rig
+    original = LoopbackClient.upload
+
+    def disconnect_before_upload(self, *args, **kwargs):
+        server.stop()
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(LoopbackClient, 'upload', disconnect_before_upload)
+    attempt, _ = submit_transfer(remote_rig)
+    interrupted = wait_attempt(client, attempt['id'], lambda value: value.get('recovery_required'))
+    assert interrupted['remote_submission_started'] is False
+    assert interrupted['last_connection_error'] == 'REMOTE_UNAVAILABLE'
+    assert executions(server) == []
+    if control_recovery:
+        service._recover()
+        interrupted = client.get(f"/api/v1/attempts/{attempt['id']}").json()
+    expected_reason = 'CONTROL_INTERRUPTED' if control_recovery else 'REMOTE_UNAVAILABLE'
+    assert interrupted['last_connection_error'] == expected_reason
+    payload = {'expected_state_version': interrupted['state_version']}
+    reconciled = post(client, f"/attempts/{attempt['id']}/reconcile", payload, 'verify-upload-only')
+    assert reconciled['state'] == 'failed' and not reconciled['recovery_required']
+    assert reconciled['terminal_reason'] == expected_reason
+    assert reconciled['connection_state'] == 'disconnected'
+    assert post(client, f"/attempts/{attempt['id']}/reconcile", payload, 'verify-upload-only')['id'] == attempt['id']
+    events = client.get(f"/api/v1/attempts/{attempt['id']}/events").json()['items']
+    assert '尚未向执行服务提交计算' in events[-1]['payload']['message']
+    assert '控制服务' not in events[-1]['payload']['message']
+    assert executions(server) == []
+    assert list((server.data / 'blobs').iterdir()) == []

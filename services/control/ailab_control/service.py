@@ -172,6 +172,8 @@ class Service:
                     attempt["stop_status"] = "unknown"
                     attempt["state_version"] += 1
                     attempt["recovery_required"] = True
+                    if attempt.get("executor_type") == "remote":
+                        attempt["last_connection_error"] = "CONTROL_INTERRUPTED"
                     self.store.event(attempt, "warning", {"code": "CONTROL_RESULT_UNKNOWN", "message": "控制服务曾中断，原执行未重新启动；停止结果待核实。"})
                 elif (attempt["state"] in {"failed", "cancelled"}
                       and attempt.get("compute_outcome") == "succeeded"

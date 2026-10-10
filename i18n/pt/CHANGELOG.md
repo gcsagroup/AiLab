@@ -2,6 +2,12 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## Ver2.7 (055) · 2026-10-10
+
+Corrigida a identificação incorreta de desconexões durante o envio remoto como falhas do serviço de controle. A causa real é preservada e a verificação de estado não reenvia o cálculo. O teste nativo confirmou interrupção, verificação de estado, reconexão e uma nova transferência bem-sucedida, com conteúdo idêntico no arquivo recebido e preservação do registro original.
+
+055 corrige as mensagens de desconexão durante o envio e de estado final. Os testes nativos cobriram interrupção, verificação de estado e uma nova transferência bem-sucedida; o fluxo completo de modelos entre dispositivos de 054 não foi repetido.
+
 ## Ver2.7 (054) · 2026-10-10
 
 Versão atual: **Ver2.7 (054), prévia técnica**. O aplicativo nativo foi testado por túnel SSH com Qwen2.5-0.5B-Instruct: geração no Jetson Orin, treinamento LoRA de duas etapas, coleta dos resultados e execução do mesmo adaptador na GPU Apple. Essa validação se limita ao modelo e ambiente indicados e não comprova melhoria de qualidade. A implantação HTTPS direta, a instalação em ambiente limpo, os testes com novos usuários e a validação de distribuição ainda não foram concluídos. Não há instalador público validado nem canal de atualização automática.
