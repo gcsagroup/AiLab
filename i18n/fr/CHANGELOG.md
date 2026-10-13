@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-13 · Vérifications natives supplémentaires
+
+La même version Ver2.7 (055), signée par l’entreprise, a passé les vérifications de reprise après erreur d’importation avec des chemins chinois, de noms longs, d’états vides, de retour du focus après fermeture des dialogues et de refus des sous-titres dépassant la durée vidéo. Les preuves comprennent 11 captures natives et 98 tests frontend associés réussis. Aucun code produit n’a été modifié, l’application n’a pas été reconstruite et aucun entraînement ni aucune inférence n’a été lancé. L’apparence système, la taille de fenêtre et la bibliothèque quotidienne ont été restaurées. Ces vérifications portent sur certaines pages et certains états ; la validation complète de l’interface, de la qualité métier, par cinq utilisateurs réels et de la publication reste inachevée.
+
 ## 2026-10-13 · Suivi qualité et maintenance des tests
 
 Point qualité du 2026-10-13 : le modèle Qwen2.5-7B-Instruct existant a exécuté une référence et deux essais de prompts sur 50 comptes rendus synthétiques d’exploitation, en inférence locale autonome, sans entraînement. Certains champs se sont améliorés, mais des faits manquaient et des états restaient erronés. Le prompt révisé a aussi suivi une annotation trompeuse du texte source et inventé une action et un rétablissement. Aucun des deux prompts n’a été adopté. Ces exemples ont servi au développement et n’ont pas fait l’objet d’une revue métier indépendante ; ils ne prouvent ni un test en aveugle ni une validation de qualité en production.

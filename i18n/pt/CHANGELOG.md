@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## 2026-10-13 · Verificações adicionais da interface nativa
+
+A mesma Ver2.7 (055), assinada pela empresa, passou nas verificações de recuperação de erros de importação com caminhos em chinês, nomes longos, estados vazios, retorno do foco após fechar diálogos e rejeição de legendas que excedem a duração do vídeo. Foram preservadas 11 capturas nativas e passaram 98 testes frontend relacionados. Não houve alteração no código do produto, recompilação do aplicativo, treinamento ou inferência. A aparência do sistema, o tamanho da janela e a biblioteca de uso diário foram restaurados. A verificação abrange apenas algumas páginas e estados; a validação completa da interface, da qualidade de negócio, com cinco usuários reais e da publicação continua incompleta.
+
 ## 2026-10-13 · Registros de qualidade e manutenção dos testes
 
 Atualização de qualidade, 2026-10-13: o Qwen2.5-7B-Instruct existente executou uma linha de base e dois testes de prompts em 50 registros operacionais sintéticos, por inferência local independente, sem treinamento. Alguns campos melhoraram, mas permaneceram omissões de fatos e estados incorretos. O prompt revisado também seguiu uma anotação enganosa do texto original e inventou uma ação e uma recuperação. Nenhum dos prompts foi adotado. Essas amostras já foram usadas no desenvolvimento e não tiveram revisão independente de especialistas do domínio; não comprovam teste cego nem aprovação de qualidade em produção.

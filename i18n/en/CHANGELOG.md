@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-13 · Additional native UI checks
+
+The same company-signed Ver2.7 (055) passed checks for recovery from data-import errors with Chinese paths, long names, empty states, dialog focus return, and rejection of subtitles extending beyond the video duration. Evidence includes 11 native screenshots and 98 passing related frontend tests. No product code changed, the app was not rebuilt, and no training or inference ran. System appearance, window size, and the daily library were restored. These checks cover selected pages and states; full UI, domain quality, five real users, and release acceptance remain incomplete.
+
 ## 2026-10-13 · Quality records and test maintenance
 
 Quality update, 2026-10-13: the existing Qwen2.5-7B-Instruct completed a baseline and two prompt trials on 50 synthetic operations records through standalone local inference, without training. The new prompts improved some fields but still omitted facts and misclassified states; the revised prompt also followed a misleading source annotation and fabricated an action and recovery. Neither prompt was adopted. These samples have been used for development and lack independent domain review, so they are not evidence of a blind test or production-quality acceptance.
