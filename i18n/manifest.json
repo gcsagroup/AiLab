@@ -26,7 +26,7 @@
       "path": "CHANGELOG.md",
       "language": "zh-CN",
       "kind": "changelog",
-      "sha256": "aae4dee035e5314f064313e59503f0e6c983290f4f27f362bfe576dc9a9f97a8"
+      "sha256": "a86d5739e95667b0966fb506d948492e9e1da1e8283247bb662563f0afb46e80"
     },
     {
       "path": "i18n/zh-TW/README.md",
@@ -44,7 +44,7 @@
       "path": "i18n/zh-TW/CHANGELOG.md",
       "language": "zh-TW",
       "kind": "changelog",
-      "sha256": "14bb0f739fb86717076aee5dc14a201e76ebb44da42810c137afd91c37a717eb"
+      "sha256": "029b32a72e2e617d312cddabc491e9b66c8124384d06ec1204854a743fc4bf82"
     },
     {
       "path": "i18n/en/README.md",
@@ -62,7 +62,7 @@
       "path": "i18n/en/CHANGELOG.md",
       "language": "en",
       "kind": "changelog",
-      "sha256": "62096cf96da0b81e6dc392a78c314bc5ec0c93bc08671de0fc7321434918945a"
+      "sha256": "7e498a10986d8ebbf0d66736e0de9d8cde6984c0a81b0498c40fd5d3f74b8359"
     },
     {
       "path": "i18n/ja/README.md",
@@ -80,7 +80,7 @@
       "path": "i18n/ja/CHANGELOG.md",
       "language": "ja",
       "kind": "changelog",
-      "sha256": "4d06aa6a8ccb71e7871866cacc8ebc9ec595aa9ec729b04b60e563c874407c35"
+      "sha256": "d2c906107001faf71faa0074d5b244e28378da1e80bf5c01ed36f3a255e54f64"
     },
     {
       "path": "i18n/ko/README.md",
@@ -98,7 +98,7 @@
       "path": "i18n/ko/CHANGELOG.md",
       "language": "ko",
       "kind": "changelog",
-      "sha256": "9928147456690a3a18a5fee583d56b73dde92ebd0a7da7b0d2fb3696dd6cc155"
+      "sha256": "5f78b1ddeeb10799fa2d754c0c3ccb00dff95b980badd1485c530693cc601992"
     },
     {
       "path": "i18n/fr/README.md",
@@ -116,7 +116,7 @@
       "path": "i18n/fr/CHANGELOG.md",
       "language": "fr",
       "kind": "changelog",
-      "sha256": "bd7727044e131c89c09b830587dff15def21283dd9d90de64a455d9ff40e8947"
+      "sha256": "2ce9ef3eb2217fa81920e13ff9603ffa61de075a6727960a0b727357b12785d1"
     },
     {
       "path": "i18n/pt/README.md",
@@ -134,7 +134,7 @@
       "path": "i18n/pt/CHANGELOG.md",
       "language": "pt",
       "kind": "changelog",
-      "sha256": "88cf107a933523dffb712f5cc8d3442c4f5f2c788f02b5a90fb2290351485518"
+      "sha256": "c6b1a0c1b86bb10124afa7f869f4e37c3782e95958f0f2d7babc88cd56b57e29"
     }
   ],
   "indexes": [

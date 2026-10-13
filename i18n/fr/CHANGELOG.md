@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · Vérifications locales des paramètres et de l’annulation
+
+La même App Ver2.7 (055), signée par l’entreprise, a exécuté deux essais d’inférence locale depuis l’interface native : vérification des paramètres saisis, de la recette figée et du résultat réussi, puis annulation pendant la génération avec arrêt du processus confirmé. Les 101 tests associés ont réussi. Les enregistrements existants et la bibliothèque quotidienne sont conservés. Aucun entraînement ni reconstruction de l’App. Le périphérique NVIDIA désigné est actuellement inaccessible ; les contrôles distants restent incomplets. Cela ne valide ni toutes les fonctions, ni la qualité du modèle, ni la publication.
+
 ## 2026-10-14 · Socle technique et choix initiaux finalisés
 
 Les preuves techniques de la configuration textuelle initiale sur les deux appareils, du cycle de vie du bureau et du même adaptateur entre appareils ont été consolidées. Les choix actuels et la planification des validations restantes sont documentés. Ver2.7 (055) reste un aperçu technique. Cette mise à jour concerne uniquement les enregistrements, sans reconstruction de l’App ni exécution de modèle. La finalisation de ce socle ne valide ni la qualité, ni la matrice fonctionnelle complète, ni les cinq vrais utilisateurs, ni l’installation propre, ni la publication officielle ; elle ne promet aucune date de sortie.

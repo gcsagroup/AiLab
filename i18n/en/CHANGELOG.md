@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · Local parameter and cancellation checks
+
+The same company-signed Ver2.7 (055) completed two local inference attempts through the native UI: one verified entered parameters, the frozen recipe and a successful result; the other was cancelled during generation with process exit confirmed. All 101 related tests passed. Existing acceptance records and the daily library were preserved. No training or App rebuild occurred. The designated NVIDIA device is currently unreachable, so remote checks remain incomplete. This does not establish full feature-matrix, model-quality or release acceptance.
+
 ## 2026-10-14 · Initial technical and selection baseline completed
 
 Consolidated technical evidence for the initial text combination on both devices, desktop lifecycle and the same cross-device adapter, and completed current selection decisions and remaining acceptance planning. Ver2.7 (055) remains a technical preview. This update changes records only; no App rebuild or model execution occurred. Completion of the technical baseline does not establish model quality, full feature-matrix, five-user, clean-install or production-release acceptance, and is not a release-date commitment.

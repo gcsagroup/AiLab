@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## 2026-10-14 · Verificações locais de parâmetros e cancelamento
+
+O mesmo App Ver2.7(055), assinado pela empresa, executou duas tentativas de inferência local pela interface nativa: uma conferiu os parâmetros informados, a receita fixada e o resultado concluído; a outra foi cancelada durante a geração, com a saída do processo confirmada. Os 101 testes relacionados passaram. Os registros existentes e a biblioteca diária foram preservados. Não houve treinamento nem recompilação do App. O dispositivo NVIDIA designado está inacessível no momento, portanto as verificações remotas continuam incompletas. Isso não comprova a validação de todas as funções, da qualidade do modelo ou do lançamento.
+
 ## 2026-10-14 · Base técnica e escolhas iniciais concluídas
 
 Foram consolidadas as evidências técnicas da configuração inicial de texto nos dois dispositivos, do ciclo de vida do aplicativo e do mesmo adaptador entre dispositivos. As escolhas atuais e o planejamento das validações restantes foram documentados. Ver2.7(055) continua sendo uma prévia técnica. Esta atualização altera apenas registros, sem recompilar o App ou executar modelos. A conclusão dessa base não comprova a qualidade, a matriz funcional completa, a validação com cinco usuários reais, a instalação limpa ou o lançamento oficial, nem representa compromisso com uma data de lançamento.
