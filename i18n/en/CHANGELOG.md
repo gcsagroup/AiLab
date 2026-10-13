@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · Cross-device adapter identity and rejection checks
+
+The 055 bundled preflight passed 1 matching case and rejected 7 mismatch cases covering the base model, template, training provenance, modules, tensor names, disguised format and missing base; 56 related regression tests passed. The existing NVIDIA→Apple artifact chain was verified across 9 files and 4 elementwise matrix transposes, completing the technical trial for the same adapter. No new training or generation ran, and the App was not rebuilt. Model quality, the full cross-device candidate-admission flow and release acceptance remain incomplete.
+
 ## 2026-10-13 · Additional native UI checks
 
 The same company-signed Ver2.7 (055) passed checks for recovery from data-import errors with Chinese paths, long names, empty states, dialog focus return, and rejection of subtitles extending beyond the video duration. Evidence includes 11 native screenshots and 98 passing related frontend tests. No product code changed, the app was not rebuilt, and no training or inference ran. System appearance, window size, and the daily library were restored. These checks cover selected pages and states; full UI, domain quality, five real users, and release acceptance remain incomplete.

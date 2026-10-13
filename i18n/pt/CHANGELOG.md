@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## 2026-10-14 · Identidade do adaptador entre dispositivos e verificações de rejeição
+
+A verificação prévia incluída na 055 aprovou 1 caso compatível e rejeitou 7 casos envolvendo modelo base, template, origem do treinamento, módulos, nomes de tensores, formato disfarçado e base ausente; 56 testes de regressão relacionados passaram. A cadeia NVIDIA→Apple existente foi verificada em 9 arquivos e 4 transposições de matrizes, elemento por elemento, concluindo o ensaio técnico do mesmo adaptador. Não houve novo treinamento, geração ou recompilação do App. A qualidade do modelo, o fluxo completo de aprovação do candidato entre dispositivos e a validação da publicação permanecem incompletos.
+
 ## 2026-10-13 · Verificações adicionais da interface nativa
 
 A mesma Ver2.7 (055), assinada pela empresa, passou nas verificações de recuperação de erros de importação com caminhos em chinês, nomes longos, estados vazios, retorno do foco após fechar diálogos e rejeição de legendas que excedem a duração do vídeo. Foram preservadas 11 capturas nativas e passaram 98 testes frontend relacionados. Não houve alteração no código do produto, recompilação do aplicativo, treinamento ou inferência. A aparência do sistema, o tamanho da janela e a biblioteca de uso diário foram restaurados. A verificação abrange apenas algumas páginas e estados; a validação completa da interface, da qualidade de negócio, com cinco usuários reais e da publicação continua incompleta.
