@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · Apple and NVIDIA technical evidence review
+
+Verified historical four-step Apple and two-step NVIDIA LoRA training, real generation and 26 output files for the specified Qwen2.5-0.5B-Instruct, with matching base, tokenizer files and template identities; 49 related regression tests passed. The minimal training/inference technical trial passed; model quality remains unevaluated. No new training or generation, remote connection or App rebuild occurred. Remaining desktop lifecycle evidence, full milestone acceptance and production release are still pending.
+
 ## 2026-10-14 · Cross-device adapter identity and rejection checks
 
 The 055 bundled preflight passed 1 matching case and rejected 7 mismatch cases covering the base model, template, training provenance, modules, tensor names, disguised format and missing base; 56 related regression tests passed. The existing NVIDIA→Apple artifact chain was verified across 9 files and 4 elementwise matrix transposes, completing the technical trial for the same adapter. No new training or generation ran, and the App was not rebuilt. Model quality, the full cross-device candidate-admission flow and release acceptance remain incomplete.

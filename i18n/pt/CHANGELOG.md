@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## 2026-10-14 · Verificação das evidências técnicas de Apple e NVIDIA
+
+Foram verificados os treinos LoRA históricos de quatro etapas na Apple e de duas etapas na NVIDIA, a geração real e 26 arquivos produzidos para o Qwen2.5-0.5B-Instruct selecionado. As identidades do modelo base, dos arquivos do tokenizador e do modelo de conversa coincidem; 49 testes de regressão relacionados passaram. O ensaio técnico mínimo de treino e inferência passou; a qualidade do modelo continua sem avaliação. Não houve novo treino ou geração, conexão remota ou recompilação do App. As evidências restantes do ciclo de vida do aplicativo, a validação completa das etapas e o lançamento oficial continuam pendentes.
+
 ## 2026-10-14 · Identidade do adaptador entre dispositivos e verificações de rejeição
 
 A verificação prévia incluída na 055 aprovou 1 caso compatível e rejeitou 7 casos envolvendo modelo base, template, origem do treinamento, módulos, nomes de tensores, formato disfarçado e base ausente; 56 testes de regressão relacionados passaram. A cadeia NVIDIA→Apple existente foi verificada em 9 arquivos e 4 transposições de matrizes, elemento por elemento, concluindo o ensaio técnico do mesmo adaptador. Não houve novo treinamento, geração ou recompilação do App. A qualidade do modelo, o fluxo completo de aprovação do candidato entre dispositivos e a validação da publicação permanecem incompletos.
