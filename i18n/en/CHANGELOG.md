@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · Media failure messages and two workflow checks
+
+056 corrects local execution verification and missing-media messages. The same company-signed candidate completed two image, video and Chinese voiceover workflows, including explicit reuse, input changes, rejection while busy, cancellation and retry after failure. Six media files were separately exported and checked in independent viewers. All 685 frontend tests passed. No training was performed. These results do not establish model quality, full M4/M6 acceptance or release readiness. 057 passes 688 frontend tests and corrects workflow history navigation in the task queue: failed, running and stop-verification entries show the selected attempt. Native checks confirmed an older failure record and return to the current workflow step. The two model workflows were not rerun on 057.
+
 ## 2026-10-14 · Local parameter and cancellation checks
 
 The same company-signed Ver2.7 (055) completed two local inference attempts through the native UI: one verified entered parameters, the frozen recipe and a successful result; the other was cancelled during generation with process exit confirmed. All 101 related tests passed. Existing acceptance records and the daily library were preserved. No training or App rebuild occurred. The designated NVIDIA device is currently unreachable, so remote checks remain incomplete. This does not establish full feature-matrix, model-quality or release acceptance.

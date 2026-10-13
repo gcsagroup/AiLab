@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · Messages d’échec média et vérification de deux flux
+
+056 corrige les messages de vérification de l’exécution locale et d’absence de résultat média. Le même candidat signé par l’entreprise a terminé deux flux image, vidéo et voix chinoise, avec réutilisation explicite, modification des entrées, refus pendant une occupation, annulation et nouvelle exécution après échec. Six médias ont été exportés séparément et ouverts dans des lecteurs indépendants. Les 685 tests de l’interface ont réussi. Aucun entraînement n’a été effectué. Ces résultats ne valident ni la qualité des modèles, ni M4/M6 dans leur intégralité, ni la publication. 057 passe 688 tests de l’interface et corrige aussi la navigation dans l’historique des flux : les tâches en échec, en cours ou en attente de confirmation d’arrêt affichent l’exécution choisie. Les contrôles natifs ont confirmé l’accès à un ancien échec et le retour à l’étape actuelle. Les deux flux de calcul n’ont pas été réexécutés sur 057.
+
 ## 2026-10-14 · Vérifications locales des paramètres et de l’annulation
 
 La même App Ver2.7 (055), signée par l’entreprise, a exécuté deux essais d’inférence locale depuis l’interface native : vérification des paramètres saisis, de la recette figée et du résultat réussi, puis annulation pendant la génération avec arrêt du processus confirmé. Les 101 tests associés ont réussi. Les enregistrements existants et la bibliothèque quotidienne sont conservés. Aucun entraînement ni reconstruction de l’App. Le périphérique NVIDIA désigné est actuellement inaccessible ; les contrôles distants restent incomplets. Cela ne valide ni toutes les fonctions, ni la qualité du modèle, ni la publication.

@@ -154,3 +154,25 @@ it('普通草稿原页编辑后自动保存，未点击保存或导航也能重�
   expect([...history.values()]).toEqual(originalHistory);
   expect(writes.every(item => item.method === 'PATCH' && (item.path.endsWith('/draft') || item.path === '/ui-context'))).toBe(true);
 });
+
+it.each(['failed', 'running', 'unknown'] as const)('工作流历史 %s 入口读取所选运行，不跳到已变化的当前步骤', async state => {
+  const task = tasks.get(taskId('project-a', 'image'))!;
+  task.workflow_ref = { workflow_run_id: 'workflow-current-image' };
+  const attempt = task.latest_attempt!;
+  Object.assign(attempt, { state, recovery_required: state === 'unknown', allowed_actions: state === 'running' ? ['cancel'] : [], error: state === 'failed' ? { code: 'WORKER_FAILED', message: '历史图片执行进程异常退出' } : undefined });
+  history.set(attempt.id, attempt);
+  const before = structuredClone(task);
+  await start();
+  fireEvent.click(screen.getByRole('button', { name: /^甲项目图片草稿/ }));
+  await screen.findByRole('heading', { name: '工作流运行记录' });
+  await screen.findByText(attempt.id);
+  expect(screen.getByRole('button', { name: '查看工作流当前步骤' })).toBeTruthy();
+  expect(screen.queryByLabelText('画面描述')).toBeNull();
+  if (state === 'failed') await screen.findByText('历史图片执行进程异常退出');
+  if (state === 'running') expect(screen.getByRole('button', { name: '停止运行' })).toBeTruthy();
+  expect(tasks.get(task.id)).toEqual(before);
+  expect(writes.every(item => item.path === '/ui-context')).toBe(true);
+  await chooseProject('project-b');
+  await waitFor(() => expect(screen.queryByRole('heading', { name: '工作流运行记录' })).toBeNull());
+  expect(screen.queryByText(attempt.id)).toBeNull();
+});

@@ -20,7 +20,7 @@ it.each([
   ['evaluate', '评测执行完成'],
   ['train', '训练产物已保存'],
   ['quantize', '量化产物已保存'],
-  ['generate', '本次没有文本输出'],
+  ['generate', '本次没有可显示的媒体结果'],
 ])('运行摘要等待 %s 详情和事件时不提前判定空输出', async (operation, title) => {
   const detail = deferred(), events = deferred();
   vi.stubGlobal('fetch', vi.fn((url: string) => String(url).includes('/events?') ? events.promise : detail.promise));
@@ -63,4 +63,28 @@ it('等待详情时仍保留摘要允许的停止操作', () => {
   expect(screen.getByText('正在读取运行记录')).toBeTruthy();
   expect(screen.getByRole('button', { name: '停止运行' }).matches(':disabled')).toBe(false);
   expect(screen.queryByText('本次没有文本输出')).toBeNull();
+});
+
+it('本机停止待核实不假定控制服务曾经退出，核实入口仍可用', async () => {
+  const interrupted: Attempt = { ...summary, state: 'running', recovery_required: true, stop_status: 'unknown',
+    snapshot: { kind: 'video', operation: 'generate' }, artifacts: [], allowed_actions: ['reconcile'] };
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => response(String(url).includes('/events?') ? { items: [] } : interrupted)));
+  render(<RunResult initial={interrupted} onChanged={vi.fn()} />);
+  await act(async () => {});
+  expect(screen.getByText('本机执行状态待核实，需要确认原进程是否退出。核实不会重新执行任务。')).toBeTruthy();
+  expect(screen.queryByText(/控制服务曾中断/)).toBeNull();
+  expect(screen.getByRole('button', { name: '核实原进程' }).matches(':disabled')).toBe(false);
+  expect(screen.queryByRole('button', { name: '保存作品' })).toBeNull();
+});
+
+it.each(['image', 'video', 'audio'])('%s 失败时说明没有媒体结果并保留实际失败原因', async kind => {
+  const failed: Attempt = { ...summary, state: 'failed', snapshot: { kind, operation: 'generate' }, artifacts: [],
+    error: { message: '已核实原执行进程退出；保留中断事实，可创建新的运行。' } };
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => response(String(url).includes('/events?') ? { items: [] } : failed)));
+  render(<RunResult initial={failed} onChanged={vi.fn()} />);
+  await act(async () => {});
+  const body = screen.getByRole('heading', { name: '本次没有可显示的媒体结果' }).parentElement!;
+  expect(body.textContent).toContain(failed.error!.message);
+  expect(screen.queryByText('本次没有文本输出')).toBeNull();
+  expect(screen.queryByRole('button', { name: '保存作品' })).toBeNull();
 });

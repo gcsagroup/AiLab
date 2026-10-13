@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## 2026-10-14 · Mensagens de falha de mídia e verificação de dois fluxos
+
+056 corrige as mensagens de verificação da execução local e de ausência de mídia. O mesmo candidato assinado pela empresa concluiu dois fluxos de imagem, vídeo e voz em chinês, com reutilização explícita, alteração de entrada, recusa durante ocupação, cancelamento e nova execução após falha. Seis mídias foram exportadas separadamente e abertas em visualizadores independentes. Os 685 testes da interface passaram. Não houve treinamento. Esses resultados não comprovam a qualidade dos modelos, a validação completa de M4/M6 nem a prontidão para lançamento. 057 passa em 688 testes da interface e também corrige a navegação pelo histórico dos fluxos: tarefas com falha, em execução ou aguardando confirmação de parada exibem a execução selecionada. A verificação nativa confirmou o acesso a uma falha antiga e o retorno à etapa atual. Os dois fluxos de cálculo não foram repetidos no 057.
+
 ## 2026-10-14 · Verificações locais de parâmetros e cancelamento
 
 O mesmo App Ver2.7(055), assinado pela empresa, executou duas tentativas de inferência local pela interface nativa: uma conferiu os parâmetros informados, a receita fixada e o resultado concluído; a outra foi cancelada durante a geração, com a saída do processo confirmada. Os 101 testes relacionados passaram. Os registros existentes e a biblioteca diária foram preservados. Não houve treinamento nem recompilação do App. O dispositivo NVIDIA designado está inacessível no momento, portanto as verificações remotas continuam incompletas. Isso não comprova a validação de todas as funções, da qualidade do modelo ou do lançamento.
