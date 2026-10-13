@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## 2026-10-14 · Validação do ciclo de vida e recuperação do aplicativo
+
+O mesmo App Ver2.7 (055), assinado pela empresa, passou nas verificações nativas de aviso de interrupção do serviço, reconexão, encerramento dos processos filhos após término forçado do processo principal, reabertura, cancelamento da saída e saída normal. O serviço incluído também passou nas verificações de início e término, reinício após falha e logs de erro em um caminho com caracteres chineses e espaços; 13 testes relacionados passaram. Todos os registros de negócio da biblioteca de validação foram preservados e a seleção original foi restaurada. Nenhum modelo foi executado e o App não foi recompilado. Esta validação técnica não substitui a matriz completa de falhas de tarefas em execução, qualidade, usuários reais, instalação limpa ou validação de lançamento.
+
 ## 2026-10-14 · Verificação das evidências técnicas de Apple e NVIDIA
 
 Foram verificados os treinos LoRA históricos de quatro etapas na Apple e de duas etapas na NVIDIA, a geração real e 26 arquivos produzidos para o Qwen2.5-0.5B-Instruct selecionado. As identidades do modelo base, dos arquivos do tokenizador e do modelo de conversa coincidem; 49 testes de regressão relacionados passaram. O ensaio técnico mínimo de treino e inferência passou; a qualidade do modelo continua sem avaliação. Não houve novo treino ou geração, conexão remota ou recompilação do App. As evidências restantes do ciclo de vida do aplicativo, a validação completa das etapas e o lançamento oficial continuam pendentes.

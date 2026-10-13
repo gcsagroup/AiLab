@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · Desktop lifecycle and recovery validation
+
+The same company-signed Ver2.7 (055) passed native control-service interruption messaging, reconnection, child-process cleanup after forced App-host termination, reopening, cancelled quit and normal quit. Its bundled control service also passed lifecycle, crash/restart and failure-log checks using a path containing Chinese characters and spaces; 13 related tests passed. All acceptance-library business records were preserved, and the original library selection was restored. No model was run or App rebuilt. This desktop technical validation does not replace the complete failure matrix for running tasks, quality, real-user, clean-install or release acceptance.
+
 ## 2026-10-14 · Apple and NVIDIA technical evidence review
 
 Verified historical four-step Apple and two-step NVIDIA LoRA training, real generation and 26 output files for the specified Qwen2.5-0.5B-Instruct, with matching base, tokenizer files and template identities; 49 related regression tests passed. The minimal training/inference technical trial passed; model quality remains unevaluated. No new training or generation, remote connection or App rebuild occurred. Remaining desktop lifecycle evidence, full milestone acceptance and production release are still pending.

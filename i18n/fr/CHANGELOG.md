@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · Validation du cycle de vie et de la reprise du bureau
+
+La même App Ver2.7 (055), signée par l’entreprise, a passé les vérifications natives du message d’interruption du service, de la reconnexion, de l’arrêt des processus enfants après terminaison forcée de l’hôte, de la réouverture, de l’annulation de la fermeture et de la fermeture normale. Son service intégré a aussi passé les vérifications de démarrage et d’arrêt, de reprise après plantage et des journaux d’échec sur un chemin contenant des caractères chinois et des espaces ; 13 tests associés ont réussi. Tous les enregistrements métier de la bibliothèque de validation sont préservés et la sélection initiale a été restaurée. Aucun modèle n’a été exécuté ni l’App reconstruite. Cette validation technique ne remplace pas la matrice complète de pannes des tâches en cours, la qualité, les vrais utilisateurs, l’installation propre ou la validation de publication.
+
 ## 2026-10-14 · Vérification des preuves techniques Apple et NVIDIA
 
 Vérification des entraînements LoRA historiques de quatre étapes sur Apple et de deux étapes sur NVIDIA, de la génération réelle et de 26 fichiers produits pour le modèle Qwen2.5-0.5B-Instruct retenu. Les identités du modèle de base, des fichiers du tokenizer et du modèle de conversation correspondent ; 49 tests de régression associés ont réussi. L’essai technique minimal d’entraînement et d’inférence est validé ; la qualité du modèle reste non évaluée. Aucun nouvel entraînement, aucune génération, connexion distante ou reconstruction de l’App n’a eu lieu. Les preuves restantes du cycle de vie de l’application, la validation complète des jalons et la publication officielle restent en attente.
