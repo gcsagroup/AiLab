@@ -2,6 +2,12 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-13 · Suivi qualité et maintenance des tests
+
+Point qualité du 2026-10-13 : le modèle Qwen2.5-7B-Instruct existant a exécuté une référence et deux essais de prompts sur 50 comptes rendus synthétiques d’exploitation, en inférence locale autonome, sans entraînement. Certains champs se sont améliorés, mais des faits manquaient et des états restaient erronés. Le prompt révisé a aussi suivi une annotation trompeuse du texte source et inventé une action et un rétablissement. Aucun des deux prompts n’a été adopté. Ces exemples ont servi au développement et n’ont pas fait l’objet d’une revue métier indépendante ; ils ne prouvent ni un test en aveugle ni une validation de qualité en production.
+
+Les échecs des essais autonomes de prompts 7B sont documentés ; aucun prompt n’est devenu un réglage par défaut de l’application. Le test de nouvelle tentative du marché de données attend désormais le bouton de téléchargement avant de l’utiliser. Seuls les tests et la documentation ont changé ; l’App n’a pas été reconstruite et le candidat signé reste Ver2.7 (055). La qualité complète, les essais avec cinq utilisateurs réels et la validation de distribution restent à réaliser.
+
 ## Ver2.7 (055) · 2026-10-10
 
 Correction des déconnexions pendant l’envoi distant signalées à tort comme un plantage du service de contrôle. La cause réelle est conservée et la vérification de l’état ne soumet pas à nouveau le calcul. Le test natif a confirmé l’interruption, la vérification de l’état, la reconnexion et un nouveau transfert réussi, avec un contenu identique au retour et la conservation de l’historique.

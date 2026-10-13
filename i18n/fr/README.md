@@ -8,6 +8,8 @@ Version actuelle : **Ver2.7 (055), aperçu technique**. L’application native V
 
 Le travail se poursuit en essai interne. Les vérifications complémentaires de 055 couvrent la restauration de sauvegardes, la mise à jour et le retour au paquet précédent, l’utilisation indépendante des exports, une tâche au clavier et les générations multimédias prévues. L’examen des données métier et les tests par cinq utilisateurs réels restent en attente, sans remplacement par des résultats simulés.
 
+Point qualité du 2026-10-13 : le modèle Qwen2.5-7B-Instruct existant a exécuté une référence et deux essais de prompts sur 50 comptes rendus synthétiques d’exploitation, en inférence locale autonome, sans entraînement. Certains champs se sont améliorés, mais des faits manquaient et des états restaient erronés. Le prompt révisé a aussi suivi une annotation trompeuse du texte source et inventé une action et un rétablissement. Aucun des deux prompts n’a été adopté. Ces exemples ont servi au développement et n’ont pas fait l’objet d’une revue métier indépendante ; ils ne prouvent ni un test en aveugle ni une validation de qualité en production.
+
 - Génération de texte, ajustement SFT + LoRA et comparaison du modèle de référence avec un candidat.
 - Génération d’images, LoRA image expérimental, accès à la génération vidéo, à la synthèse vocale et à la transcription. L’entraînement vidéo et audio n’est pas disponible.
 - Import de données, séparation par groupe de provenance, historique, révisions des productions, export, sauvegarde et restauration.

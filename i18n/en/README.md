@@ -8,6 +8,8 @@ Current version: **Ver2.7 (055), technical preview**. Ver2.7 (054) was tested in
 
 Work continues as an internal trial. Additional 055 checks cover historical backup recovery, package updates and rollback, independent use of exports, a keyboard-operated task and specified media generation. Business-material review and testing by five real users remain pending; simulated results have not replaced them.
 
+Quality update, 2026-10-13: the existing Qwen2.5-7B-Instruct completed a baseline and two prompt trials on 50 synthetic operations records through standalone local inference, without training. The new prompts improved some fields but still omitted facts and misclassified states; the revised prompt also followed a misleading source annotation and fabricated an action and recovery. Neither prompt was adopted. These samples have been used for development and lack independent domain review, so they are not evidence of a blind test or production-quality acceptance.
+
 - Text generation, SFT + LoRA fine-tuning, and baseline/candidate evaluation.
 - Image generation and experimental image LoRA, with video generation, speech synthesis and transcription entry points. Video and audio training are not available.
 - Data import, splitting by source group, task history, content revisions, export, backup and recovery.

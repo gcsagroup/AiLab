@@ -82,7 +82,7 @@ it('显示实际字节进度，取消保留原下载编号，明确续传原文�
   expect(requests.filter(item => item.method === 'POST').map(item => item.path)).toEqual(['/market/downloads/download-one/cancel', '/market/downloads/download-one/resume']);
 });
 it.each(['CONTROL_UNAVAILABLE', 'LOCAL_BRIDGE', 'INTERNAL_ERROR', 'MARKET_PROVIDER_UNAVAILABLE'])('%s 后重试保留原 body 和 key，表单冻结', async code => {
-  view(); await statement(); rejection = code; fireEvent.click(screen.getByRole('button', { name: '下载此版本' })); await screen.findByRole('button', { name: '重试并读取原结果' }); expect(screen.getByLabelText('你的使用范围声明').hasAttribute('disabled')).toBe(true);
+  view(); await statement(); rejection = code; fireEvent.click(await screen.findByRole('button', { name: '下载此版本' })); await screen.findByRole('button', { name: '重试并读取原结果' }); expect(screen.getByLabelText('你的使用范围声明').hasAttribute('disabled')).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: '重试并读取原结果' })); await screen.findByRole('button', { name: '检查并导入当前项目' }); const sent = requests.filter(item => item.path === '/market/downloads'); expect(sent).toHaveLength(2); expect(sent[0]).toEqual(sent[1]);
 });
 it('草稿 CAS 冲突保留下载与导入结果，禁止再次使用并提示返回核对', async () => {

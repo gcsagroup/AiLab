@@ -22,6 +22,10 @@ Smaller prompt chunks are not guaranteed to be faster and may change the output.
 
 Language fine-tuning uses a fixed SFT + LoRA recipe; image LoRA is experimental. Check the imported format and valid supervised samples. Split training and validation data by source group to avoid leakage, preview the split and apply it; originals remain intact. Changes to data, model or parameters require another check. Freeze an evaluation plan before training and keep evaluation samples separate. Compare the base model and adapter. Results below the thresholds remain experimental adapters and cannot be registered as quality-approved candidates. Pause and resume only as confirmed by the UI and available checkpoints.
 
+Quality update, 2026-10-13: the existing Qwen2.5-7B-Instruct completed a baseline and two prompt trials on 50 synthetic operations records through standalone local inference, without training. The new prompts improved some fields but still omitted facts and misclassified states; the revised prompt also followed a misleading source annotation and fabricated an action and recovery. Neither prompt was adopted. These samples have been used for development and lack independent domain review, so they are not evidence of a blind test or production-quality acceptance.
+
+Valid JSON does not establish factual accuracy when summarizing business records. Check services and nodes, timestamps, completed actions, later updates and recovery evidence separately. Suggestions, negations and instruction-like source annotations must not become completed actions. The synthetic operations-record trials of 2026-10-13 did not meet adoption criteria, and their outputs still require human review; these trials were not native App quality acceptance.
+
 ## 4. Media workflows
 
 Images, video, speech synthesis and transcription each require supported models and runtimes. The image → video → speech workflow retains each step’s inputs and results. Changing an upstream input marks older downstream results as outdated. Select reuse explicitly; it is not a new generation. Current samples have quality limitations, so inspect the images, sound and video yourself.

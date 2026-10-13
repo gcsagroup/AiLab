@@ -2,6 +2,12 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-13 · Quality records and test maintenance
+
+Quality update, 2026-10-13: the existing Qwen2.5-7B-Instruct completed a baseline and two prompt trials on 50 synthetic operations records through standalone local inference, without training. The new prompts improved some fields but still omitted facts and misclassified states; the revised prompt also followed a misleading source annotation and fabricated an action and recovery. Neither prompt was adopted. These samples have been used for development and lack independent domain review, so they are not evidence of a blind test or production-quality acceptance.
+
+Documented the failed standalone 7B prompt trials; neither prompt became an application default. Updated the data-market retry test to wait for the download button before interacting. Only tests and documentation changed; the App was not rebuilt and the signed candidate remains Ver2.7 (055). Full quality, five real-user trials and release acceptance remain pending.
+
 ## Ver2.7 (055) · 2026-10-10
 
 Fixed remote upload disconnections being reported as control-service crashes. The actual error is retained and reconciliation does not resubmit computation. Native App testing confirmed interruption, reconciliation, reconnection and a new successful transfer, with matching returned file contents and the original record preserved.

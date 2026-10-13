@@ -2,6 +2,12 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## 2026-10-13 · Registros de qualidade e manutenção dos testes
+
+Atualização de qualidade, 2026-10-13: o Qwen2.5-7B-Instruct existente executou uma linha de base e dois testes de prompts em 50 registros operacionais sintéticos, por inferência local independente, sem treinamento. Alguns campos melhoraram, mas permaneceram omissões de fatos e estados incorretos. O prompt revisado também seguiu uma anotação enganosa do texto original e inventou uma ação e uma recuperação. Nenhum dos prompts foi adotado. Essas amostras já foram usadas no desenvolvimento e não tiveram revisão independente de especialistas do domínio; não comprovam teste cego nem aprovação de qualidade em produção.
+
+Foram documentadas as falhas dos testes independentes de prompts 7B; nenhum prompt se tornou padrão do aplicativo. O teste de nova tentativa do mercado de dados passou a esperar o botão de download antes de interagir. Apenas os testes e a documentação mudaram; o App não foi recompilado e o candidato assinado continua sendo Ver2.7 (055). A qualidade completa, os testes com cinco usuários reais e a aceitação da distribuição continuam pendentes.
+
 ## Ver2.7 (055) · 2026-10-10
 
 Corrigida a identificação incorreta de desconexões durante o envio remoto como falhas do serviço de controle. A causa real é preservada e a verificação de estado não reenvia o cálculo. O teste nativo confirmou interrupção, verificação de estado, reconexão e uma nova transferência bem-sucedida, com conteúdo idêntico no arquivo recebido e preservação do registro original.
