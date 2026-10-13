@@ -8,6 +8,19 @@ Work continues as an internal trial. Additional 055 checks cover historical back
 
 Support depends on the exact model, device, engine and precision. Check the configuration before starting. Existing quality experiments still have failures; completing training does not establish acceptable quality. Documentation is available in seven languages; the application UI is not thereby available in all seven.
 
+## Current validation scope (2026-10-13)
+
+| Use | Combination with real-device evidence | Limits |
+| --- | --- | --- |
+| Local text | Qwen2.5-0.5B-Instruct · MLX · Apple GPU | Generation, SFT + LoRA, recovery and export have technical evidence; training and quantization quality still have failures. |
+| Remote text | Qwen2.5-0.5B-Instruct · Jetson Orin · SSH tunnel | 054 verified returning the same LoRA to Apple; 055 added upload recovery and loading after export, without rerunning the full cross-device chain. |
+| Images | Tiny-SD · Diffusers / MPS · 512×512 | Generation and image LoRA are experimental, with known structural quality issues. |
+| Video | SVD image-to-video · 14 frames · 7 FPS | Execution evidence exists for clips of about 2 seconds; motion quality remains limited. Video training is outside this scope. |
+| Speech | Kokoro-82M · Chinese Xiaobei voice · CPU · 24 kHz WAV | Speech files were generated; human listening review remains incomplete. |
+| Weight quantization | Qwen2.5-0.5B-Instruct · MLX 4-bit / group 64 / affine | Conversion, loading and export have evidence; candidates failing quality gates cannot be registered as qualified. |
+
+This table lists only fixed combinations with evidence, not automatic compatibility for related models, other precisions or devices. ASR, audio/video training, merging, distillation, speculative decoding, Core ML/ANE and AMD/Intel extensions are outside the accepted scope. An entry point or installed dependency does not establish availability. No delivery candidate has passed independent domain-quality acceptance.
+
 ## 1. Getting started
 
 Create a project in an App with its runtime already prepared, then choose text inference. You can prepare an official language model after reviewing its source, license and download manifest. After downloading, add it to the current project’s model library; alternatively, import a complete local model directory. Select the model, enter a prompt and check the configuration before starting. Save the output to find it in the content library. Downloading, importing and saving a draft do not start the model.
@@ -28,7 +41,7 @@ Valid JSON does not establish factual accuracy when summarizing business records
 
 ## 4. Media workflows
 
-Images, video, speech synthesis and transcription each require supported models and runtimes. The image → video → speech workflow retains each step’s inputs and results. Changing an upstream input marks older downstream results as outdated. Select reuse explicitly; it is not a new generation. Current samples have quality limitations, so inspect the images, sound and video yourself.
+This media scope covers image generation, short video generation and speech synthesis using the models and runtimes listed above. The image → video → speech workflow retains each step’s inputs and results. Changing an upstream input marks older downstream results as outdated. Select reuse explicitly; it is not a new generation. Current samples have quality limitations, so inspect the images, sound and video yourself.
 
 ## 5. Revisions and exports
 

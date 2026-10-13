@@ -8,6 +8,19 @@ O trabalho continua como teste interno. As verificações adicionais de 055 cobr
 
 O suporte depende da combinação exata de modelo, dispositivo, mecanismo e precisão. Verifique a configuração antes de iniciar. Os experimentos de qualidade ainda apresentam falhas; concluir o treinamento não garante qualidade. A documentação está em sete idiomas, o que não significa que a interface ofereça todos eles.
 
+## Escopo atual de validação (2026-10-13)
+
+| Uso | Combinação com evidência em hardware real | Limites |
+| --- | --- | --- |
+| Texto local | Qwen2.5-0.5B-Instruct · MLX · Apple GPU | Geração, SFT + LoRA, recuperação e exportação têm evidência técnica; a qualidade de treinamento e quantização ainda apresenta falhas. |
+| Texto remoto | Qwen2.5-0.5B-Instruct · Jetson Orin · túnel SSH | 054 verificou o retorno do mesmo LoRA ao Apple; 055 acrescentou recuperação de upload e carregamento após exportação, sem repetir toda a cadeia entre dispositivos. |
+| Imagens | Tiny-SD · Diffusers / MPS · 512×512 | Geração e LoRA de imagens são experimentais, com problemas estruturais conhecidos. |
+| Vídeo | SVD imagem para vídeo · 14 quadros · 7 FPS | Há evidência de execução de clipes de cerca de 2 segundos; a qualidade do movimento permanece limitada. Treinamento de vídeo está fora do escopo. |
+| Voz | Kokoro-82M · voz chinesa Xiaobei · CPU · 24 kHz WAV | Arquivos de voz foram gerados; a avaliação auditiva humana continua incompleta. |
+| Quantização de pesos | Qwen2.5-0.5B-Instruct · MLX 4-bit / group 64 / affine | Conversão, carregamento e exportação têm evidência; candidatos que falham nos critérios de qualidade não podem ser registrados como aprovados. |
+
+A tabela lista apenas combinações fixas com evidência, sem garantir compatibilidade de modelos relacionados, outras precisões ou dispositivos. ASR, treinamento de áudio/vídeo, mesclagem, destilação, decodificação especulativa, Core ML/ANE e extensões AMD/Intel estão fora do escopo aceito. Uma entrada na interface ou dependência instalada não comprova disponibilidade. Nenhum candidato a entrega passou pela validação independente de qualidade de negócio.
+
 ## 1. Primeiro resultado
 
 Crie um projeto no aplicativo com o ambiente de execução já preparado e escolha a geração de texto. Para preparar um modelo oficial, consulte a origem, a licença e a lista de arquivos. Após o download, adicione-o à biblioteca do projeto. Também é possível importar uma pasta local completa. Selecione o modelo, informe o texto e verifique a configuração antes de executar. Salve o resultado para encontrá-lo na biblioteca de conteúdo. Baixar, importar e salvar rascunhos não executa o modelo.
@@ -28,7 +41,7 @@ Um JSON válido não garante a exatidão dos fatos de um registro de negócio. C
 
 ## 4. Fluxos de mídia
 
-Imagens, vídeos, síntese de voz e transcrição exigem modelos e ambientes compatíveis. O fluxo imagem → vídeo → voz preserva entradas e resultados de cada etapa. Alterar uma entrada anterior marca os resultados seguintes como desatualizados. Selecione a reutilização explicitamente; ela não representa uma nova geração. As amostras atuais têm limitações de qualidade: confira imagens, som e vídeo.
+O escopo atual de mídia cobre geração de imagens, vídeos curtos e voz com os modelos e ambientes indicados acima. O fluxo imagem → vídeo → voz preserva entradas e resultados de cada etapa. Alterar uma entrada anterior marca os resultados seguintes como desatualizados. Selecione a reutilização explicitamente; ela não representa uma nova geração. As amostras atuais têm limitações de qualidade: confira imagens, som e vídeo.
 
 ## 5. Revisões e exportação
 

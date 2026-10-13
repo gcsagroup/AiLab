@@ -20,7 +20,7 @@
       "path": "docs/USER_GUIDE.md",
       "language": "zh-CN",
       "kind": "guide",
-      "sha256": "9af2fc6ef0078a0e8fd2e54c8e12a8b04604a20758281762e62b178af074032b"
+      "sha256": "875b4d8942f746be9b141df77ae2c1064f3ae246fc91ccd4ff680187777d3e3b"
     },
     {
       "path": "CHANGELOG.md",
@@ -38,7 +38,7 @@
       "path": "i18n/zh-TW/docs/USER_GUIDE.md",
       "language": "zh-TW",
       "kind": "guide",
-      "sha256": "37ba1e440144f11ab7189220e0034e56a928e16d3d8faef052f6ea91a1396e5c"
+      "sha256": "29a7a2d5987f098238e1dae4233a0bdcd3e54889131f2d91a107a2d5c5479ab5"
     },
     {
       "path": "i18n/zh-TW/CHANGELOG.md",
@@ -56,7 +56,7 @@
       "path": "i18n/en/docs/USER_GUIDE.md",
       "language": "en",
       "kind": "guide",
-      "sha256": "507ca534e111d681997d1c8111eac6f37812fa42fc71cee744fe92bb0888edcd"
+      "sha256": "1c70eecf645038b606776ee351e09171e8b0457ba6bfacfb6f4ac43450d36413"
     },
     {
       "path": "i18n/en/CHANGELOG.md",
@@ -74,7 +74,7 @@
       "path": "i18n/ja/docs/USER_GUIDE.md",
       "language": "ja",
       "kind": "guide",
-      "sha256": "408414bef3ddaa2f208436fd716efcd9344ffb276291b6aa1a6e706a8173765d"
+      "sha256": "878ed28691aa84ce62d798d673f66a7216dc7c85ca6ad8e3954a3f49878fa634"
     },
     {
       "path": "i18n/ja/CHANGELOG.md",
@@ -92,7 +92,7 @@
       "path": "i18n/ko/docs/USER_GUIDE.md",
       "language": "ko",
       "kind": "guide",
-      "sha256": "f1228c5ad67a6a6116a1a79af8889708594a8d1f899461010da51dc64fd59787"
+      "sha256": "5a7dca939ad0bec5f0b9a5baadfbfd12bcf62d5286b9e0f01c7cbaeabb96671b"
     },
     {
       "path": "i18n/ko/CHANGELOG.md",
@@ -110,7 +110,7 @@
       "path": "i18n/fr/docs/USER_GUIDE.md",
       "language": "fr",
       "kind": "guide",
-      "sha256": "5de84ba7a6b773670f08f27f835de84e30e4bfd971cdb641dacbfcfe6cb37599"
+      "sha256": "05a01b5966886f5460319202e2a06c842c27658ad578d0495e677241d707fbab"
     },
     {
       "path": "i18n/fr/CHANGELOG.md",
@@ -128,7 +128,7 @@
       "path": "i18n/pt/docs/USER_GUIDE.md",
       "language": "pt",
       "kind": "guide",
-      "sha256": "d32c9862de16841c02ce3c3b40ce1ea0fd9837112246b92a04762778b7b4c101"
+      "sha256": "7ca5e825b1747c3636668b6993d4edfb7e30a499650474a0809312be9481fc9c"
     },
     {
       "path": "i18n/pt/CHANGELOG.md",

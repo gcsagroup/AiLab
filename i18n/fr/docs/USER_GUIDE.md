@@ -8,6 +8,19 @@ Le travail se poursuit en essai interne. Les vérifications complémentaires de 
 
 La prise en charge dépend du modèle, de l’appareil, du moteur et de la précision. Vérifiez la configuration avant de démarrer. Des tests de qualité échouent encore : terminer un entraînement ne garantit pas sa qualité. La documentation existe en sept langues ; cela ne signifie pas que l’interface les propose toutes.
 
+## Périmètre validé à ce jour (2026-10-13)
+
+| Usage | Combinaison avec preuves sur matériel réel | Limites |
+| --- | --- | --- |
+| Texte local | Qwen2.5-0.5B-Instruct · MLX · Apple GPU | La génération, SFT + LoRA, la récupération et l’export ont des preuves techniques ; la qualité d’entraînement et de quantification présente encore des échecs. |
+| Texte distant | Qwen2.5-0.5B-Instruct · Jetson Orin · tunnel SSH | 054 a vérifié le retour du même LoRA vers Apple ; 055 a ajouté la reprise du transfert et le chargement après export, sans réexécuter toute la chaîne entre appareils. |
+| Images | Tiny-SD · Diffusers / MPS · 512×512 | La génération et le LoRA image sont expérimentaux, avec des défauts structurels connus. |
+| Vidéo | SVD image vers vidéo · 14 images · 7 FPS | Des preuves d’exécution existent pour des clips d’environ 2 secondes ; la qualité du mouvement reste limitée. L’entraînement vidéo est hors périmètre. |
+| Voix | Kokoro-82M · voix chinoise Xiaobei · CPU · 24 kHz WAV | Des fichiers vocaux ont été générés ; la revue humaine par écoute reste inachevée. |
+| Quantification des poids | Qwen2.5-0.5B-Instruct · MLX 4-bit / group 64 / affine | Conversion, chargement et export ont des preuves ; un candidat en échec qualité ne peut pas être enregistré comme qualifié. |
+
+Ce tableau couvre uniquement les combinaisons fixes documentées, sans garantir la compatibilité des modèles apparentés, des autres précisions ou appareils. ASR, entraînement audio/vidéo, fusion, distillation, décodage spéculatif, Core ML/ANE et extensions AMD/Intel sont hors du périmètre accepté. Un point d’entrée ou une dépendance installée ne prouve pas la disponibilité. Aucun candidat à livrer n’a passé une validation indépendante de qualité métier.
+
 ## 1. Premier résultat
 
 Créez un projet dans l’application dont l’environnement est déjà préparé, puis choisissez un essai de génération de texte. Pour préparer un modèle officiel, consultez sa provenance, sa licence et la liste des fichiers. Après téléchargement, ajoutez-le à la bibliothèque du projet. Vous pouvez aussi importer un dossier local complet. Choisissez le modèle, saisissez le texte et vérifiez la configuration avant de lancer l’exécution. Enregistrez le résultat pour le retrouver dans la bibliothèque des productions. Télécharger, importer ou enregistrer un brouillon ne lance pas le modèle.
@@ -28,7 +41,7 @@ Un JSON valide ne garantit pas l’exactitude des faits d’un compte rendu mét
 
 ## 4. Parcours multimédia
 
-Images, vidéos, synthèse vocale et transcription exigent leurs modèles et environnements compatibles. Le parcours image → vidéo → voix conserve les entrées et résultats de chaque étape. Modifier une entrée en amont rend les anciens résultats suivants obsolètes. Choisissez explicitement de les réutiliser ; ce n’est pas une nouvelle génération. Les exemples actuels ont des limites de qualité : examinez les images, le son et les vidéos.
+Le périmètre multimédia actuel couvre la génération d’images, de courtes vidéos et de voix avec les modèles et environnements indiqués ci-dessus. Le parcours image → vidéo → voix conserve les entrées et résultats de chaque étape. Modifier une entrée en amont rend les anciens résultats suivants obsolètes. Choisissez explicitement de les réutiliser ; ce n’est pas une nouvelle génération. Les exemples actuels ont des limites de qualité : examinez les images, le son et les vidéos.
 
 ## 5. Révisions et export
 
