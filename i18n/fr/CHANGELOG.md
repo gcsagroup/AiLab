@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · Socle technique et choix initiaux finalisés
+
+Les preuves techniques de la configuration textuelle initiale sur les deux appareils, du cycle de vie du bureau et du même adaptateur entre appareils ont été consolidées. Les choix actuels et la planification des validations restantes sont documentés. Ver2.7 (055) reste un aperçu technique. Cette mise à jour concerne uniquement les enregistrements, sans reconstruction de l’App ni exécution de modèle. La finalisation de ce socle ne valide ni la qualité, ni la matrice fonctionnelle complète, ni les cinq vrais utilisateurs, ni l’installation propre, ni la publication officielle ; elle ne promet aucune date de sortie.
+
 ## 2026-10-14 · Validation du cycle de vie et de la reprise du bureau
 
 La même App Ver2.7 (055), signée par l’entreprise, a passé les vérifications natives du message d’interruption du service, de la reconnexion, de l’arrêt des processus enfants après terminaison forcée de l’hôte, de la réouverture, de l’annulation de la fermeture et de la fermeture normale. Son service intégré a aussi passé les vérifications de démarrage et d’arrêt, de reprise après plantage et des journaux d’échec sur un chemin contenant des caractères chinois et des espaces ; 13 tests associés ont réussi. Tous les enregistrements métier de la bibliothèque de validation sont préservés et la sélection initiale a été restaurée. Aucun modèle n’a été exécuté ni l’App reconstruite. Cette validation technique ne remplace pas la matrice complète de pannes des tâches en cours, la qualité, les vrais utilisateurs, l’installation propre ou la validation de publication.

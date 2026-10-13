@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## 2026-10-14 · Base técnica e escolhas iniciais concluídas
+
+Foram consolidadas as evidências técnicas da configuração inicial de texto nos dois dispositivos, do ciclo de vida do aplicativo e do mesmo adaptador entre dispositivos. As escolhas atuais e o planejamento das validações restantes foram documentados. Ver2.7(055) continua sendo uma prévia técnica. Esta atualização altera apenas registros, sem recompilar o App ou executar modelos. A conclusão dessa base não comprova a qualidade, a matriz funcional completa, a validação com cinco usuários reais, a instalação limpa ou o lançamento oficial, nem representa compromisso com uma data de lançamento.
+
 ## 2026-10-14 · Validação do ciclo de vida e recuperação do aplicativo
 
 O mesmo App Ver2.7 (055), assinado pela empresa, passou nas verificações nativas de aviso de interrupção do serviço, reconexão, encerramento dos processos filhos após término forçado do processo principal, reabertura, cancelamento da saída e saída normal. O serviço incluído também passou nas verificações de início e término, reinício após falha e logs de erro em um caminho com caracteres chineses e espaços; 13 testes relacionados passaram. Todos os registros de negócio da biblioteca de validação foram preservados e a seleção original foi restaurada. Nenhum modelo foi executado e o App não foi recompilado. Esta validação técnica não substitui a matriz completa de falhas de tarefas em execução, qualidade, usuários reais, instalação limpa ou validação de lançamento.

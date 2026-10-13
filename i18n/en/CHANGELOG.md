@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · Initial technical and selection baseline completed
+
+Consolidated technical evidence for the initial text combination on both devices, desktop lifecycle and the same cross-device adapter, and completed current selection decisions and remaining acceptance planning. Ver2.7 (055) remains a technical preview. This update changes records only; no App rebuild or model execution occurred. Completion of the technical baseline does not establish model quality, full feature-matrix, five-user, clean-install or production-release acceptance, and is not a release-date commitment.
+
 ## 2026-10-14 · Desktop lifecycle and recovery validation
 
 The same company-signed Ver2.7 (055) passed native control-service interruption messaging, reconnection, child-process cleanup after forced App-host termination, reopening, cancelled quit and normal quit. Its bundled control service also passed lifecycle, crash/restart and failure-log checks using a path containing Chinese characters and spaces; 13 related tests passed. All acceptance-library business records were preserved, and the original library selection was restored. No model was run or App rebuilt. This desktop technical validation does not replace the complete failure matrix for running tasks, quality, real-user, clean-install or release acceptance.
