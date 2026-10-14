@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · 057 media workflows and atomic advancement on the same bundle
+
+057 has now completed two image→video→Chinese voiceover workflows in the same company-signed App. All six separate exports passed full decoding and opened or played in external applications. Native checks covered uncertain execution after interruption, exit verification, changed-input retry and downstream invalidation. The bundled service’s public API also handled concurrent advancement requests during real cancellation and natural completion: only one advancement succeeded, and replay preserved the result. All 42 workflow regression tests passed. An initial acceptance-script failure and its cancelled attempt remain recorded. No training was performed. This verifies the specified functional combination, not media quality, full M4/M6, five-user acceptance or release readiness.
+
 ## 2026-10-14 · Media failure messages and two workflow checks
 
 056 corrects local execution verification and missing-media messages. The same company-signed candidate completed two image, video and Chinese voiceover workflows, including explicit reuse, input changes, rejection while busy, cancellation and retry after failure. Six media files were separately exported and checked in independent viewers. All 685 frontend tests passed. No training was performed. These results do not establish model quality, full M4/M6 acceptance or release readiness. 057 passes 688 frontend tests and corrects workflow history navigation in the task queue: failed, running and stop-verification entries show the selected attempt. Native checks confirmed an older failure record and return to the current workflow step. The two model workflows were not rerun on 057.

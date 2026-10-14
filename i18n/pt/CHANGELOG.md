@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## 2026-10-14 · 057: fluxos de mídia e avanço atômico no mesmo pacote
+
+057 agora concluiu dois fluxos de imagem→vídeo→voz em chinês no mesmo App assinado pela empresa. As seis exportações separadas passaram pela decodificação completa e foram abertas ou reproduzidas em aplicativos externos. A verificação nativa cobriu estado incerto após interrupção, confirmação de encerramento, nova execução com entrada alterada e invalidação das etapas seguintes. A API pública do serviço incluído tratou solicitações concorrentes durante cancelamento real e conclusão natural: apenas um avanço foi aceito, e a repetição preservou o resultado. Os 42 testes de regressão dos fluxos passaram. A falha inicial do script de verificação e sua execução cancelada foram preservadas. Não houve treinamento. Isso valida as funções da combinação escolhida, sem comprovar qualidade de mídia, M4/M6 completos, validação com cinco usuários ou prontidão para lançamento.
+
 ## 2026-10-14 · Mensagens de falha de mídia e verificação de dois fluxos
 
 056 corrige as mensagens de verificação da execução local e de ausência de mídia. O mesmo candidato assinado pela empresa concluiu dois fluxos de imagem, vídeo e voz em chinês, com reutilização explícita, alteração de entrada, recusa durante ocupação, cancelamento e nova execução após falha. Seis mídias foram exportadas separadamente e abertas em visualizadores independentes. Os 685 testes da interface passaram. Não houve treinamento. Esses resultados não comprovam a qualidade dos modelos, a validação completa de M4/M6 nem a prontidão para lançamento. 057 passa em 688 testes da interface e também corrige a navegação pelo histórico dos fluxos: tarefas com falha, em execução ou aguardando confirmação de parada exibem a execução selecionada. A verificação nativa confirmou o acesso a uma falha antiga e o retorno à etapa atual. Os dois fluxos de cálculo não foram repetidos no 057.
