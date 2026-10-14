@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## Ver2.7 (060) · 2026-10-14 · 060 native exports and independent loading
+
+After upgrade and recovery, the same company-signed 060 candidate exported 16 real objects through its native UI: five models, two adapters, four work types, three revisions, a dataset split and an evaluation report. The 17 successful packages contained 117 verified files; a separate native cancellation passed recheck and retry. Exported copies alone supported three text generations and one each for image, video and audio. The bundled service passed 11 real failure/retry checks, including missing files, digest mismatch, disk exhaustion and process interruption; this does not verify every native error screen. Media opened independently and the original quality failure was preserved. All 100 related tests passed without training; 3,056 original files and daily business data remained intact. The selected local export scope passed. Full recipe coverage, real NVIDIA, quality qualification, five users, clean installation and release acceptance remain incomplete.
+
 ## Ver2.7 (060) · 2026-10-14 · 060 upgrade, recovery and export checks
 
 The same company-signed 060 candidate completed upgrade from 059, rollback and re-upgrade. Native full backup and isolated recovery preserved 2,119 historical resources and 3,056 original asset/evidence files. A corrupt copy was rejected; library switching and cold-start history passed. Three native export packages and 13 further objects through the bundled API yielded 89 verified files; six media files fully decoded. All 255 related tests passed. No training or new model generation ran. Daily business files and the original selector were preserved; only startup diagnostics changed. Full native export coverage, independent model loading, the complete failure matrix, clean installation and M6/release acceptance remain pending.
