@@ -253,6 +253,8 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
         invalidateTaskEntry();
         libraryReadEpoch.current += 1; environmentEpoch.current += 1; environmentInFlight.current = false; pageEpoch.current += 1;
         setHostHealthy(false); setConnected(false); setLoading(false); setPageBusy({});
+        // 断连会卸载工作台；重连先按已记住的选择重读详情，不能用旧草稿冒充尚未执行。
+        setContextReadyProject(null); setProjectResourcesLoaded(false); setProjectResourcesReady(null);
         setEnvironmentReady(false); setEnvironmentBusy(false); setError(event.payload.message || '本机服务未连接。');
       }
     }).then(stop => { if (disposed) stop(); else unlisten = stop; });
