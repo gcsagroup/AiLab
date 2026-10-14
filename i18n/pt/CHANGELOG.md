@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## 2026-10-14 · 057: validação nativa do mercado de dados controlado
+
+O mesmo App 057 assinado pela empresa validou downloads abertos, solicitações restritas pendentes, recusadas e aprovadas, rejeição de estruturas inválidas e retorno ao rascunho de treinamento original. Após encerrar o provedor local de teste, os dados baixados ainda puderam ser verificados, importados e aplicados; a seleção persistiu ao reabrir o App. A comparação campo a campo confirmou que apenas o conjunto de dados mudou, preservando nome, parâmetros, projeto e etapa. Passaram os 31 testes de interface e os 73 testes do serviço de controle. A biblioteca e as configurações de origem foram restauradas, sem treinamento ou execução de modelos. Isso conclui a validação funcional AC-05 da origem controlada. Dados sintéticos e decisões de teste definidas pelo operador não comprovam autorização de mercados externos, qualidade de dados ou modelos nem a conclusão integral de M4/M6.
+
 ## 2026-10-14 · 057: verificação das interfaces de dispositivos e gerenciamento de dados
 
 O mesmo App 057 assinado pela empresa foi verificado nos modos claro e escuro nas larguras 320, 360, 736 e 1024 para a página de dispositivos e na largura 320 para os formulários de backup, restauração, armazenamento, diagnóstico e destino de execução. A verificação nativa por teclado cobriu o ciclo de foco, a seleção de abas, o retorno do foco ao fechar, o limite de 20 execuções no diagnóstico, a substituição de uma seleção e o cancelamento da prévia. Os 40 testes de interface relacionados passaram. Os dados originais, o tamanho da janela e a aparência automática foram restaurados. Não houve treinamento, execução de modelos nem nova conexão remota. A verificação cobre apenas esses subconjuntos; AC-23 completo, validação com usuários reais e M6 continuam pendentes.

@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · 057 : validation native du marché de données contrôlé
+
+La même App 057 signée par l’entreprise a validé le téléchargement ouvert, les demandes restreintes en attente, refusées puis approuvées, le rejet des structures invalides et le retour au brouillon d’entraînement initial. Après l’arrêt du fournisseur local de test, les données téléchargées pouvaient encore être vérifiées, importées et appliquées ; le choix persistait après réouverture. La comparaison de chaque champ confirme que seul le jeu de données change, avec maintien du nom, des paramètres, du projet et de l’étape. Les 31 tests d’interface et 73 tests du service de contrôle ont réussi. La bibliothèque et les réglages de source initiaux ont été rétablis, sans entraînement ni exécution de modèle. Cela clôt la validation fonctionnelle AC-05 pour la source contrôlée. Les données synthétiques et décisions de test fixées par l’opérateur ne prouvent ni l’autorisation d’un marché externe, ni la qualité des données ou des modèles, ni l’achèvement complet de M4/M6.
+
 ## 2026-10-14 · 057 : vérification des interfaces de gestion des appareils et des données
 
 La même App 057 signée par l’entreprise a été vérifiée en apparence claire et sombre aux largeurs 320, 360, 736 et 1024 pour la page des appareils, et à la largeur 320 pour les formulaires de sauvegarde, restauration, stockage, diagnostic et cible d’exécution. Les contrôles natifs au clavier couvrent le cycle de focus, les onglets, le retour du focus à la fermeture, la limite de 20 exécutions dans le diagnostic, le remplacement d’une sélection et l’annulation de l’aperçu. Les 40 tests d’interface associés ont réussi. Les données d’origine, la taille de fenêtre et l’apparence automatique ont été rétablies. Aucun entraînement, calcul de modèle ni nouvelle connexion distante n’a eu lieu. Ce contrôle reste partiel : AC-23 complet, la validation par de vrais utilisateurs et M6 restent à terminer.
