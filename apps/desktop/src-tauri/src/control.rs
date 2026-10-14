@@ -92,6 +92,8 @@ enum StartupFailureStatus {
 enum StartupFailureCode {
     #[serde(rename = "DATABASE_MIGRATION_FAILED")]
     DatabaseMigrationFailed,
+    #[serde(rename = "DATA_DIRECTORY_BUSY")]
+    DataDirectoryBusy,
 }
 
 pub struct ControlProcess {
@@ -303,6 +305,8 @@ impl ControlProcess {
                         return match (failure.status, failure.code) {
                             (StartupFailureStatus::Failed, StartupFailureCode::DatabaseMigrationFailed) =>
                                 Err("数据库迁移失败，运行器未启动。请保留工作库，检查迁移备份与回执后重试。".into()),
+                            (StartupFailureStatus::Failed, StartupFailureCode::DataDirectoryBusy) =>
+                                Err("工作库正在被另一个实例使用。请回到该实例，或退出它后重新连接。".into()),
                         };
                     }
                 };
@@ -636,9 +640,29 @@ mod tests {
     }
 
     #[test]
+    fn busy_library_failure_explains_retry_and_reaps_only_owned_child() {
+        let (dir, config) = fixture("import os,json,time\nfrom pathlib import Path\nPath(__file__).with_suffix('.pid').write_text(str(os.getpid()))\nprint(json.dumps({'status':'failed','code':'DATA_DIRECTORY_BUSY','pid':os.getpid()}),flush=True)\ntime.sleep(20)\n");
+        let mut service = ControlProcess::default();
+        assert_eq!(
+            service.start(&config).unwrap_err(),
+            "工作库正在被另一个实例使用。请回到该实例，或退出它后重新连接。"
+        );
+        assert_eq!(service.status().state, "failed");
+        assert!(service.connection().is_none() && service.child.is_none());
+        let pid: i32 = fs::read_to_string(dir.path().join("service.pid"))
+            .unwrap()
+            .parse()
+            .unwrap();
+        #[cfg(unix)]
+        assert_eq!(unsafe { libc::kill(pid, 0) }, -1);
+    }
+
+    #[test]
     fn invalid_failure_shapes_identity_and_line_bounds_are_rejected() {
         let cases = [
             ("json.dumps({'status':'failed','code':'UNKNOWN_FAILURE','pid':os.getpid()})", "服务启动响应格式无效。"),
+            ("json.dumps({'status':'failed','code':'DATA_DIRECTORY_BUSY','pid':1})", "服务身份校验失败，已停止此服务。"),
+            ("json.dumps({'status':'failed','code':'DATA_DIRECTORY_BUSY','pid':os.getpid(),'message':'private-token-or-path'})", "服务启动响应格式无效。"),
             ("json.dumps({'status':'failed','code':'DATABASE_MIGRATION_FAILED','pid':1})", "服务身份校验失败，已停止此服务。"),
             ("json.dumps({'status':'failed','code':'DATABASE_MIGRATION_FAILED','pid':str(os.getpid())})", "服务启动响应格式无效。"),
             ("json.dumps({'status':'failed','code':'DATABASE_MIGRATION_FAILED','pid':True})", "服务启动响应格式无效。"),

@@ -51,12 +51,12 @@ def main():
     try:
         app = create_app(Settings(args.data_dir, token, args.import_root, args.worker_python, args.worker_script, args.allow_origin, args.parent_pid, args.preflight_script, args.bundled_worker, args.export_root, host_token=host_token, media_python=args.media_python, audio_python=args.audio_python, media_worker_script=args.media_worker_script, media_preflight_script=args.media_preflight_script, audio_worker_script=args.audio_worker_script, audio_preflight_script=args.audio_preflight_script, bundled_media_worker=args.bundled_media_worker, bundled_audio_worker=args.bundled_audio_worker, market_providers=market_providers))
     except Fault as error:
-        if error.code == "DATABASE_MIGRATION_FAILED":
+        if error.code in {"DATABASE_MIGRATION_FAILED", "DATA_DIRECTORY_BUSY"}:
             # 宿主收到失败首行后会回收进程；先刷新原始诊断，避免被终止时丢失。
             traceback.print_exception(error)
             sys.stderr.flush()
             # stdout 只传白名单错误码与本进程身份，不携带内部异常正文。
-            print(json.dumps({"status": "failed", "code": "DATABASE_MIGRATION_FAILED", "pid": os.getpid()}), flush=True)
+            print(json.dumps({"status": "failed", "code": error.code, "pid": os.getpid()}), flush=True)
             raise SystemExit(1) from None
         raise
     listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

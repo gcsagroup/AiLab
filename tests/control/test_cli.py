@@ -72,8 +72,18 @@ def test_real_loopback_token_file_and_process_exclusive_lock(tmp_path):
             assert result.status_code == 200
             project = result.json()
             assert client.get("/projects", headers={"Authorization": "Bearer invalid"}).status_code == 401
-        duplicate, failed_handshake = launch(data)
-        assert failed_handshake is None and duplicate.returncode != 0
+        original_token_file = token_file.read_bytes()
+        duplicate_token_file = tmp_path / "重复实例连接.json"
+        pid, stdout, stderr = startup_failure(data, "--token-file", str(duplicate_token_file))
+        assert pid != child.pid
+        assert json.loads(stdout) == {"status": "failed", "code": "DATA_DIRECTORY_BUSY", "pid": pid}
+        assert stdout.endswith(b"\n") and len(stdout.splitlines()) == 1
+        assert str(data).encode() not in stdout and connection["token"].encode() not in stdout
+        assert "此数据目录已有控制服务运行".encode() in stderr and b"Traceback" in stderr
+        assert not duplicate_token_file.exists() and token_file.read_bytes() == original_token_file
+        assert child.poll() is None
+        with client_for(connection) as client:
+            assert client.get("/projects").json()["items"][0]["id"] == project["id"]
     finally:
         stop(child)
     assert not token_file.exists()
@@ -290,16 +300,17 @@ def test_startup_real_v1_upgrade_keeps_success_handshake_compatible(tmp_path):
         os.kill(child.pid, 0)
 
 
+@pytest.mark.parametrize("code", ["DATABASE_MIGRATION_FAILED", "DATA_DIRECTORY_BUSY"])
 @pytest.mark.parametrize("committed,migration_path", [(False, None), (False, "private-migration-path"), (True, "private-migration-path")])
-def test_startup_known_fault_omits_details_and_preserves_stderr(tmp_path, committed, migration_path):
+def test_startup_known_fault_omits_details_and_preserves_stderr(tmp_path, code, committed, migration_path):
     entrypoint = tmp_path / "故障入口.py"
     entrypoint.write_text("from ailab_control import __main__ as entry\nfrom ailab_control.storage import Fault\n"
                          "def fail(settings):\n"
-                         f"    raise Fault('DATABASE_MIGRATION_FAILED', 'private-exception-token', 503, committed={committed!r}, migration_path={migration_path!r})\n"
+                         f"    raise Fault({code!r}, 'private-exception-token', 503, committed={committed!r}, migration_path={migration_path!r})\n"
                          "entry.create_app = fail\nentry.main()\n")
     token_file = tmp_path / "连接.json"
     pid, stdout, stderr = startup_failure(tmp_path / "库", "--token-file", str(token_file), entrypoint=entrypoint)
-    assert json.loads(stdout) == {"status": "failed", "code": "DATABASE_MIGRATION_FAILED", "pid": pid}
+    assert json.loads(stdout) == {"status": "failed", "code": code, "pid": pid}
     assert b"private" not in stdout and b"Traceback" not in stdout
     assert b"private-exception-token" in stderr and b"Traceback" in stderr
     assert stderr.count(b"ailab_control.storage.Fault: private-exception-token") == 1
