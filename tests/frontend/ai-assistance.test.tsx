@@ -58,6 +58,21 @@ async function generate() {
 }
 
 describe('真实模型建议的人工控制界面', () => {
+  it('重开已执行任务的历史建议时只说明应用结果，不误报任务尚未执行', async () => {
+    const normal = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const path = String(input).replace('/api/v1', '');
+      if (path.startsWith('/ai/requests?')) return { ok: true, json: async () => ({ items: [{ ...request, proposal_id: proposal.id, status: 'applied' }] }) } as Response;
+      if (path === '/ai/proposals/proposal-a') return { ok: true, json: async () => ({ ...proposal, status: 'applied', application: { to_revision: 3 } }) } as Response;
+      if (path.startsWith('/attempts?task_id=')) return { ok: true, json: async () => ({ items: [{ id: 'suggestion-run', task_id: 'suggestion-task', state: 'succeeded' }] }) } as Response;
+      return normal(input, init);
+    });
+    render(<AIAssistance task={{ ...appliedTask, latest_attempt: { id: 'actual-target-run', task_id: target.id, project_id: target.project_id, state: 'succeeded', state_version: 4 } }} models={[model]} onTaskChanged={() => {}} />);
+    await screen.findByText('建议字段已应用到草稿。请在任务记录中查看实际运行状态。');
+    expect(screen.queryByText(/任务尚未执行/)).toBeNull();
+    expect(calls.some(call => call.method === 'POST')).toBe(false);
+  });
+
   it('检查与明确生成分开，结构化预览后才应用和撤销，不提交目标任务', async () => {
     const changed = vi.fn(); render(<AIAssistance task={target} models={[model]} onTaskChanged={changed} />);
     await prepare();

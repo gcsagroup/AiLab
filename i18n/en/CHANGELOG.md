@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## Ver2.7 (059) · 2026-10-14 · 059 AI suggestion boundaries and status messages
+
+Fixed a historical suggestion message that incorrectly said the task had not run; it now directs users to actual run records. Five real local suggestion runs on 058 covered all four supported fields, explicit apply/undo, stale conflicts and rejection after actual submission; one additional target text run verified the submission boundary. The same company-signed 059 App retested historical messages, submission rejection and one new real suggestion with apply/undo. All 32 control tests and 13 frontend tests after the fix passed. The original library was restored; no training occurred. Evidence retains its actual version. Remote suggestions remain unavailable; model quality, full device coverage, real users and release acceptance remain incomplete.
+
 ## Ver2.7 (058) · 2026-10-14 · 058 pagination messages and project draft acceptance
 
 Fixed the false empty-task message when matching tasks are still on later pages. Loading more reveals existing evaluations; an empty state is shown only after all tasks have loaded. All 76 relevant frontend tests passed. The same company-signed 058 App verified reopening text/image drafts in two projects, four category entries and return from existing results, plus image-result ownership when switching projects during execution. The original library was restored; no training occurred. Earlier failed quality results remain unchanged. Full device coverage, five users, clean installation and release acceptance remain incomplete.

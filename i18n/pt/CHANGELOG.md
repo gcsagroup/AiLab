@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## Ver2.7 (059) · 2026-10-14 · 059: limites das sugestões de IA e mensagens de estado
+
+Corrigida uma mensagem histórica que dizia incorretamente que a tarefa ainda não havia sido executada; agora ela orienta a consultar os registros reais. Na versão 058, cinco gerações locais reais de sugestões cobriram os quatro campos disponíveis, aplicação e reversão explícitas, conflitos de versão e rejeição após envio; uma execução de texto da tarefa de destino verificou esse último limite. O mesmo App 059 assinado pela empresa verificou novamente as mensagens históricas, a rejeição após envio e uma nova sugestão real com aplicação e reversão. Passaram os 32 testes de controle e os 13 testes de frontend após a correção. A biblioteca original foi restaurada, sem treinamento. As evidências mantêm suas versões reais. Sugestões remotas seguem indisponíveis; qualidade, cobertura completa dos dispositivos, usuários reais e lançamento continuam pendentes.
+
 ## Ver2.7 (058) · 2026-10-14 · 058: paginação e rascunhos por projeto
 
 Corrigida a indicação incorreta de ausência de tarefas quando elas ainda estão em páginas seguintes. Carregar mais exibe as avaliações existentes; o estado vazio só aparece depois de carregar todas as tarefas. Passaram os 76 testes de frontend relacionados. O mesmo App 058 assinado pela empresa validou a reabertura dos rascunhos de texto/imagem em dois projetos, as quatro entradas e o retorno dos resultados existentes, além de confirmar que uma imagem continua vinculada ao projeto original após trocar de projeto durante a execução. A biblioteca original foi restaurada, sem treinamento. As reprovações anteriores de qualidade permanecem; cobertura completa dos dispositivos, cinco usuários, instalação limpa e lançamento continuam pendentes.

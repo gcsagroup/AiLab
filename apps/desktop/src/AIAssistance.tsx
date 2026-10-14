@@ -135,7 +135,7 @@ export function AIAssistance({ task, models, hasUnsavedChanges = false, taskBusy
       {proposal && <section aria-label="建议变更预览"><h3>{proposal.title}</h3><p className="muted">对应草稿版本 {proposal.expected_revision}，需要重新检查；没有执行动作。</p>{proposal.changes.length ? <table><thead><tr><th>字段</th><th>旧值</th><th>新值</th><th>原因与影响</th></tr></thead><tbody>{proposal.changes.map(item => <tr key={item.field}><th>{fieldLabels[item.field] || item.field}</th><td><pre>{String(item.from) || '（空）'}</pre></td><td><pre>{String(item.to)}</pre></td><td>{item.reason}<br />{item.impact}</td></tr>)}</tbody></table> : <p>模型没有提出可应用的字段变更。</p>}
         {stale && <p className="warning">草稿已有后续修改，此建议不能覆盖当前内容。请重新请求建议。</p>}
         {proposal.status === 'proposed' && <Button primary busy={busy} disabled={stale || hasUnsavedChanges || taskBusy} onClick={() => change(false)}>应用这些字段</Button>}
-        {proposal.status === 'applied' && <><p role="status">建议已应用，任务尚未执行。请重新检查任务配置。</p><Button busy={busy} disabled={stale || hasUnsavedChanges || taskBusy} onClick={() => change(true)}><Undo2 size={16} />撤销本次应用</Button></>}
+        {proposal.status === 'applied' && <><p role="status">建议字段已应用到草稿。请在任务记录中查看实际运行状态。</p><Button busy={busy} disabled={stale || hasUnsavedChanges || taskBusy} onClick={() => change(true)}><Undo2 size={16} />撤销本次应用</Button></>}
         {proposal.status === 'undone' && <p role="status">已撤销本次建议，恢复原字段值。</p>}
         <details><summary>建议来源</summary><p>运行：{proposal.source_attempt_id}</p><p>原始回答 SHA256：{proposal.raw_sha256}</p></details>
       </section>}

@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## Ver2.7 (059) · 2026-10-14 · 059 : limites des suggestions IA et messages d’état
+
+Correction d’un ancien message affirmant à tort que la tâche n’avait pas été exécutée : il renvoie désormais aux exécutions réelles. Sur 058, cinq générations locales réelles de suggestions ont couvert les quatre champs pris en charge, l’application et l’annulation explicites, les conflits de version et le refus après soumission ; une exécution texte de la tâche cible a vérifié cette dernière limite. La même App 059 signée par l’entreprise a revérifié les messages historiques, le refus après soumission et une nouvelle suggestion réelle avec application et annulation. Les 32 tests de contrôle et les 13 tests frontend après correction ont réussi. La bibliothèque d’origine a été restaurée, sans entraînement. Les preuves conservent leur version réelle. Les suggestions distantes restent indisponibles ; qualité, couverture complète des appareils, utilisateurs réels et publication restent à valider.
+
 ## Ver2.7 (058) · 2026-10-14 · 058 : pagination et brouillons par projet
 
 Correction du faux message d’absence de tâches lorsque celles-ci se trouvent sur des pages suivantes. Le chargement supplémentaire révèle les évaluations existantes ; l’état vide apparaît seulement une fois toutes les tâches chargées. Les 76 tests frontend concernés ont réussi. La même App 058 signée par l’entreprise a validé la réouverture des brouillons texte/image de deux projets, les quatre entrées et le retour depuis les résultats existants, ainsi que l’appartenance d’un résultat image au projet d’origine après un changement de projet pendant l’exécution. La bibliothèque d’origine a été rétablie, sans entraînement. Les anciens échecs de qualité restent valables ; la couverture complète des appareils, cinq utilisateurs, l’installation propre et la publication restent à valider.
