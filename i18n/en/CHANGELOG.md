@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## Ver2.7 (058) · 2026-10-14 · 058 pagination messages and project draft acceptance
+
+Fixed the false empty-task message when matching tasks are still on later pages. Loading more reveals existing evaluations; an empty state is shown only after all tasks have loaded. All 76 relevant frontend tests passed. The same company-signed 058 App verified reopening text/image drafts in two projects, four category entries and return from existing results, plus image-result ownership when switching projects during execution. The original library was restored; no training occurred. Earlier failed quality results remain unchanged. Full device coverage, five users, clean installation and release acceptance remain incomplete.
+
 ## 2026-10-14 · 057 candidate differences and remaining acceptance
 
 Completed file-by-file comparison of the signed 055 and 057 packages and mapped all 27 acceptance gaps. All 49 package-identity tests passed. Older component evidence retains its original-version scope; matching source is not final whole-package acceptance. No product changes, App rebuild or model runs occurred. Full real-device coverage, quality, five users, clean installation and official release remain open.

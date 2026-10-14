@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## Ver2.7 (058) · 2026-10-14 · 058: paginação e rascunhos por projeto
+
+Corrigida a indicação incorreta de ausência de tarefas quando elas ainda estão em páginas seguintes. Carregar mais exibe as avaliações existentes; o estado vazio só aparece depois de carregar todas as tarefas. Passaram os 76 testes de frontend relacionados. O mesmo App 058 assinado pela empresa validou a reabertura dos rascunhos de texto/imagem em dois projetos, as quatro entradas e o retorno dos resultados existentes, além de confirmar que uma imagem continua vinculada ao projeto original após trocar de projeto durante a execução. A biblioteca original foi restaurada, sem treinamento. As reprovações anteriores de qualidade permanecem; cobertura completa dos dispositivos, cinco usuários, instalação limpa e lançamento continuam pendentes.
+
 ## 2026-10-14 · 057: diferenças do candidato e validações restantes
 
 Concluímos a comparação arquivo por arquivo dos pacotes assinados 055 e 057 e o mapeamento das lacunas dos 27 critérios de aceitação. Passaram os 49 testes de identidade dos pacotes. As evidências dos componentes antigos mantêm o escopo da versão original; fontes iguais não equivalem à aprovação do pacote final completo. Não houve mudanças no produto, reconstrução do App ou execução de modelos. Cobertura completa dos dispositivos reais, qualidade, cinco usuários, instalação limpa e lançamento oficial continuam pendentes.

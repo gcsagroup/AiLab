@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## Ver2.7 (058) · 2026-10-14 · 058 : pagination et brouillons par projet
+
+Correction du faux message d’absence de tâches lorsque celles-ci se trouvent sur des pages suivantes. Le chargement supplémentaire révèle les évaluations existantes ; l’état vide apparaît seulement une fois toutes les tâches chargées. Les 76 tests frontend concernés ont réussi. La même App 058 signée par l’entreprise a validé la réouverture des brouillons texte/image de deux projets, les quatre entrées et le retour depuis les résultats existants, ainsi que l’appartenance d’un résultat image au projet d’origine après un changement de projet pendant l’exécution. La bibliothèque d’origine a été rétablie, sans entraînement. Les anciens échecs de qualité restent valables ; la couverture complète des appareils, cinq utilisateurs, l’installation propre et la publication restent à valider.
+
 ## 2026-10-14 · 057 : différences du candidat et validations restantes
 
 La comparaison fichier par fichier des paquets signés 055 et 057 et le relevé des lacunes des 27 critères de validation sont terminés. Les 49 tests d’identité des paquets ont réussi. Les preuves des anciens composants restent limitées à leur version ; des sources identiques ne valent pas validation du paquet final entier. Aucun changement produit, aucune reconstruction de l’App ni exécution de modèle. La couverture complète des appareils réels, la qualité, cinq utilisateurs, l’installation propre et la publication officielle restent à valider.

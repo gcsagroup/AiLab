@@ -523,6 +523,7 @@ function LibraryView({ onLibraryChanged }: { onLibraryChanged: () => void }) {
     return '继续配置';
   }
   function taskRows(list: Task[]) {
+    if (!list.length && cursors.tasks) return <Empty title="已加载记录中暂无此类任务">还有较早的任务未加载，请使用页面下方的“加载更多任务”继续查找。</Empty>;
     return list.length ? <div className="task-list">{list.map(task => <button tabIndex={0} className="task-row" key={task.id} onClick={() => void openTask(task)}><div className="task-symbol">{task.operation === 'train' ? <FlaskConical size={17} /> : <Play size={17} />}</div><span className="task-name"><strong>{task.name}</strong><small>{task.kind === 'export' ? '作品' : kindLabels[task.kind]} · {task.operation === 'train' ? '训练 / 微调' : task.operation === 'export' ? '导出' : task.operation === 'evaluate' ? '评测' : task.operation === 'quantize' ? '量化' : '运行 / 试用'} · {formatDate(task.created_at)}</small><small>编号：{task.id}</small></span><span className="task-state"><Badge tone={task.latest_attempt?.state === 'succeeded' ? 'good' : ''}>{task.latest_attempt?.recovery_required ? '停止状态待核实' : stateNames[task.latest_attempt?.state || 'draft'] || '草稿'}</Badge><small>{taskNextStep(task)}</small></span><ChevronRight size={16} /></button>)}</div> : <Empty title="还没有任务记录">创建一次训练或试用，输入、配方和结果会保存在这里。</Empty>;
   }
   const taskEntryReady = connected && contextAvailable && (!projectId || (projectResourcesLoaded && projectResourcesReady === projectId));

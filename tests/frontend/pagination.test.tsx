@@ -49,6 +49,44 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
+it.each(['evaluate', 'quantize'] as const)('实验室 %s 尚在后页时说明未加载，加载后显示真实记录', async operation => {
+  const normal = vi.mocked(fetch).getMockImplementation()!;
+  const older = { ...task, id: 'older-task', name: '后页实验记录', operation };
+  vi.mocked(fetch).mockImplementation(async (input, options) => {
+    const url = String(input);
+    if (url === '/api/v1/tasks?project_id=p1') return response({ items: [task], next_cursor: 'older-tasks' });
+    if (url === '/api/v1/tasks?project_id=p1&cursor=older-tasks') { reads.push(url); return response({ items: [older], next_cursor: null }); }
+    return normal(input, options);
+  });
+  render(<App />); fireEvent.click(await screen.findByRole('button', { name: '模型实验室' }));
+  await screen.findAllByRole('heading', { name: '已加载记录中暂无此类任务' });
+  expect(screen.queryByRole('heading', { name: '还没有任务记录' })).toBeNull();
+  expect(reads.some(path => path.includes('cursor=older-tasks'))).toBe(false);
+  fireEvent.click(screen.getByRole('button', { name: '加载更多任务' }));
+  await screen.findByRole('button', { name: /^后页实验记录/ });
+  expect(screen.queryByRole('heading', { name: '已加载记录中暂无此类任务' })).toBeNull();
+  expect(screen.getAllByRole('heading', { name: '还没有任务记录' })).toHaveLength(1);
+  expect(writes).toEqual([]);
+});
+
+it('分类历史先显示尚有未加载记录，末页仍无同类任务才显示空态', async () => {
+  const normal = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (input, options) => {
+    const url = String(input);
+    if (url === '/api/v1/tasks?project_id=p1') return response({ items: [task], next_cursor: 'older-tasks' });
+    if (url === '/api/v1/tasks?project_id=p1&cursor=older-tasks') return response({ items: [], next_cursor: null });
+    return normal(input, options);
+  });
+  render(<App />); fireEvent.click(await screen.findByRole('button', { name: /图片训练/ }));
+  fireEvent.click(screen.getByRole('tab', { name: '任务与结果' }));
+  await screen.findByRole('heading', { name: '已加载记录中暂无此类任务' });
+  expect(screen.queryByRole('heading', { name: '还没有任务记录' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: '加载更多任务' }));
+  await screen.findByRole('heading', { name: '还没有任务记录' });
+  expect(screen.queryByRole('heading', { name: '已加载记录中暂无此类任务' })).toBeNull();
+  expect(writes).toEqual([]);
+});
+
 it('首屏不追随更多页；明确加载后按ID合并并隐藏已结束的入口', async () => {
   render(<App />); fireEvent.click(await screen.findByRole('button', { name: '模型库' }));
   await screen.findByText('第一页模型'); expect(screen.queryByText('原任务后页模型')).toBeNull();
