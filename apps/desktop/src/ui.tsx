@@ -42,7 +42,7 @@ export function Dialog({ title, children, onClose, wide, preventClose }: { title
     else if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && (document.activeElement === last || document.activeElement === dialog)) { event.preventDefault(); first.focus(); }
   }} onCancel={event => { event.preventDefault(); if (!preventClose) onClose(); }} aria-label={title}>
-    <div className="dialog-title"><h2>{title}</h2><button tabIndex={0} type="button" className="icon-button" aria-label="关闭对话框" disabled={preventClose} onClick={onClose}><X size={18} /></button></div>
+    <div className="dialog-title"><h2>{title}</h2><button tabIndex={0} type="button" className="icon-button" aria-label="关闭对话框" data-timing-action={title === '设备与环境' ? 'close_settings' : undefined} disabled={preventClose} onClick={onClose}><X size={18} /></button></div>
     <div className="dialog-content">{children}</div>
   </dialog>;
 }
