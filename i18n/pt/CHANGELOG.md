@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## 2026-10-14 · 057: diferenças do candidato e validações restantes
+
+Concluímos a comparação arquivo por arquivo dos pacotes assinados 055 e 057 e o mapeamento das lacunas dos 27 critérios de aceitação. Passaram os 49 testes de identidade dos pacotes. As evidências dos componentes antigos mantêm o escopo da versão original; fontes iguais não equivalem à aprovação do pacote final completo. Não houve mudanças no produto, reconstrução do App ou execução de modelos. Cobertura completa dos dispositivos reais, qualidade, cinco usuários, instalação limpa e lançamento oficial continuam pendentes.
+
 ## 2026-10-14 · 057: validação nativa do mercado de dados controlado
 
 O mesmo App 057 assinado pela empresa validou downloads abertos, solicitações restritas pendentes, recusadas e aprovadas, rejeição de estruturas inválidas e retorno ao rascunho de treinamento original. Após encerrar o provedor local de teste, os dados baixados ainda puderam ser verificados, importados e aplicados; a seleção persistiu ao reabrir o App. A comparação campo a campo confirmou que apenas o conjunto de dados mudou, preservando nome, parâmetros, projeto e etapa. Passaram os 31 testes de interface e os 73 testes do serviço de controle. A biblioteca e as configurações de origem foram restauradas, sem treinamento ou execução de modelos. Isso conclui a validação funcional AC-05 da origem controlada. Dados sintéticos e decisões de teste definidas pelo operador não comprovam autorização de mercados externos, qualidade de dados ou modelos nem a conclusão integral de M4/M6.

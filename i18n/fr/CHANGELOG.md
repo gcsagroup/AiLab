@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · 057 : différences du candidat et validations restantes
+
+La comparaison fichier par fichier des paquets signés 055 et 057 et le relevé des lacunes des 27 critères de validation sont terminés. Les 49 tests d’identité des paquets ont réussi. Les preuves des anciens composants restent limitées à leur version ; des sources identiques ne valent pas validation du paquet final entier. Aucun changement produit, aucune reconstruction de l’App ni exécution de modèle. La couverture complète des appareils réels, la qualité, cinq utilisateurs, l’installation propre et la publication officielle restent à valider.
+
 ## 2026-10-14 · 057 : validation native du marché de données contrôlé
 
 La même App 057 signée par l’entreprise a validé le téléchargement ouvert, les demandes restreintes en attente, refusées puis approuvées, le rejet des structures invalides et le retour au brouillon d’entraînement initial. Après l’arrêt du fournisseur local de test, les données téléchargées pouvaient encore être vérifiées, importées et appliquées ; le choix persistait après réouverture. La comparaison de chaque champ confirme que seul le jeu de données change, avec maintien du nom, des paramètres, du projet et de l’étape. Les 31 tests d’interface et 73 tests du service de contrôle ont réussi. La bibliothèque et les réglages de source initiaux ont été rétablis, sans entraînement ni exécution de modèle. Cela clôt la validation fonctionnelle AC-05 pour la source contrôlée. Les données synthétiques et décisions de test fixées par l’opérateur ne prouvent ni l’autorisation d’un marché externe, ni la qualité des données ou des modèles, ni l’achèvement complet de M4/M6.

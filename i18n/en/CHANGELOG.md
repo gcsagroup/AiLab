@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · 057 candidate differences and remaining acceptance
+
+Completed file-by-file comparison of the signed 055 and 057 packages and mapped all 27 acceptance gaps. All 49 package-identity tests passed. Older component evidence retains its original-version scope; matching source is not final whole-package acceptance. No product changes, App rebuild or model runs occurred. Full real-device coverage, quality, five users, clean installation and official release remain open.
+
 ## 2026-10-14 · 057 controlled dataset market native acceptance
 
 The same company-signed 057 App passed open downloads, restricted requests with waiting, denied and approved responses, invalid-structure rejection, and return to the original training draft. After the local test provider stopped, downloaded data could still be checked, imported and applied; the selection survived reopening. Field-by-field comparison confirmed that only the dataset changed, preserving the name, parameters, project and step. All 31 frontend and 73 control-service tests passed. The original library and source settings were restored, with no training or model runs. This closes controlled-source functional acceptance for AC-05. Synthetic data and operator-set test decisions do not establish external-market authorization, data or model quality, or full M4/M6 completion.
