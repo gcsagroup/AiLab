@@ -168,7 +168,9 @@ def dataset_report(path, schema):
                             raise ValueError("messages 至少包含一组提问和回答")
                         expected = "user"
                         for index, message in enumerate(messages):
-                            if not isinstance(message, dict) or not isinstance(message.get("content"), str) or not message["content"].strip():
+                            if not isinstance(message, dict) or not isinstance(message.get("content"), str):
+                                raise ValueError("消息内容必须是文本")
+                            if not message["content"].strip():
                                 raise ValueError("消息内容不能为空")
                             role = message.get("role")
                             if role == "system" and index == 0:
@@ -186,6 +188,9 @@ def dataset_report(path, schema):
                     valid += 1
                     if len(samples) < 3:
                         samples.append(sample)
+                except json.JSONDecodeError as error:
+                    if len(errors) < 100:
+                        errors.append({"line": number, "message": f"JSON 格式无效，请检查第 {error.colno} 列附近的内容。"})
                 except (ValueError, TypeError) as error:
                     if len(errors) < 100:
                         errors.append({"line": number, "message": str(error)[:160]})

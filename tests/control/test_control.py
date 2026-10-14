@@ -227,6 +227,7 @@ def test_jsonl_real_parse_reports_and_rejects_bad_lines(rig):
     path.write_text(json.dumps(sample) + "\nnot-json\n")
     plan = post(client, "/datasets/import-plans", {"project_id": project["id"], "path": str(path), "schema": "sft"})
     assert (plan["sample_count"], plan["failed_count"], plan["issues"][0]["line"]) == (1, 1, 2)
+    assert plan["issues"][0]["message"] == "JSON 格式无效，请检查第 1 列附近的内容。"
     assert not plan["can_import"]
     assert client.post("/api/v1/datasets/imports", json={"plan_id": plan["id"], "manifest_digest": plan["manifest_digest"]}, headers={"Idempotency-Key": "bad"}).status_code == 400
     path.write_text(json.dumps(sample) + "\n")
@@ -236,6 +237,25 @@ def test_jsonl_real_parse_reports_and_rejects_bad_lines(rig):
     assert dataset["sample_count"] == 1
     path.write_bytes(b"\xff")
     assert client.post("/api/v1/datasets/import-plans", json={"project_id": project["id"], "path": str(path)}).status_code == 400
+
+
+@pytest.mark.parametrize("content,message", [
+    ([], "消息内容必须是文本"),
+    ("", "消息内容不能为空"),
+])
+def test_dataset_message_error_keeps_original_line_and_source(rig, content, message):
+    client, service, source, _ = rig
+    project = post(client, "/projects", {"name": "数据行号回归"})
+    sample = {"messages": [{"role": "user", "content": "问题"}, {"role": "assistant", "content": "回答"}]}
+    invalid = copy.deepcopy(sample)
+    invalid["messages"][1]["content"] = content
+    path = source / "带错误的数据.jsonl"
+    original = (json.dumps(sample) + "\n" + json.dumps(invalid) + "\n").encode()
+    path.write_bytes(original)
+    plan = post(client, "/datasets/import-plans", {"project_id": project["id"], "path": str(path)})
+    assert plan["issues"] == [{"line": 2, "message": message}]
+    assert not plan["can_import"] and not service.store.list("dataset")
+    assert path.read_bytes() == original
 
 
 def test_missing_environment_and_unsupported_combinations(rig):

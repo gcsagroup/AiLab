@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## Ver2.7 (060) · 2026-10-14 · 060 import messages and text-data acceptance
+
+Import errors now show original file line numbers and clear Chinese messages for malformed JSON and non-text messages. The same company-signed 060 App retested five model and four dataset rejection cases. An official download stopped on 059 resumed to completion on 060, passed integrity checks, was explicitly registered and produced one real short generation; missing weights produced a real loading failure. Native CPU split results matched reference bytes and created separate training and holdout versions. Zero supervision, duplicate prompts and changed-length expiry were rejected. Tests passed: 86 control, 95 frontend, 70 CPU supervision and 33 split contracts. No training ran; the original library was restored. This covers selected local text functions only. A separate process is not an OS sandbox; full recipe, device, quality, user and release acceptance remain incomplete.
+
 ## Ver2.7 (059) · 2026-10-14 · 059 AI suggestion boundaries and status messages
 
 Fixed a historical suggestion message that incorrectly said the task had not run; it now directs users to actual run records. Five real local suggestion runs on 058 covered all four supported fields, explicit apply/undo, stale conflicts and rejection after actual submission; one additional target text run verified the submission boundary. The same company-signed 059 App retested historical messages, submission rejection and one new real suggestion with apply/undo. All 32 control tests and 13 frontend tests after the fix passed. The original library was restored; no training occurred. Evidence retains its actual version. Remote suggestions remain unavailable; model quality, full device coverage, real users and release acceptance remain incomplete.

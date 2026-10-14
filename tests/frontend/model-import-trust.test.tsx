@@ -70,3 +70,15 @@ it('数据导入不要求模型加载说明', async () => {
   expect(screen.queryByText('加载信任')).toBeNull(); expect(confirm.disabled).toBe(false);
   fireEvent.click(confirm); await waitFor(() => expect(imported).toHaveBeenCalledOnce());
 });
+
+it('数据检查显示原文件行号，拒绝导入并保留未编号错误', async () => {
+  const { confirm, imported } = await inspect({
+    id: 'data-plan', path: '/data.jsonl', can_import: false,
+    issues: [{ line: 2, message: 'JSON 格式无效，请检查第 1 列附近的内容。' }, { message: '文件检查未通过' }],
+  }, 'dataset');
+  expect(screen.getByText('第 2 行：JSON 格式无效，请检查第 1 列附近的内容。')).toBeTruthy();
+  expect(screen.getByText('文件检查未通过')).toBeTruthy();
+  expect(confirm.disabled).toBe(true);
+  fireEvent.click(confirm);
+  expect(api).toHaveBeenCalledTimes(1); expect(imported).not.toHaveBeenCalled();
+});
