@@ -25,7 +25,7 @@ it.each(['import', 'evaluation'] as const)('%s：旧项目 picker 的迟到选�
     ? <ImportDialog kind="dataset" projectId={projectId} onClose={() => {}} onImported={() => {}} />
     : <EvaluationPlanDialog projectId={projectId} onClose={() => {}} onCreated={() => {}} />;
   const view = render(component('project-a'));
-  fireEvent.click(screen.getByRole('button', { name: kind === 'import' ? '选择' : '选择文件' }));
+  fireEvent.click(screen.getByRole('button', { name: kind === 'import' ? '选择数据集文件' : '选择文件' }));
   view.rerender(component('project-b'));
   await act(async () => pending.resolve(selection));
   expect((screen.getByLabelText(kind === 'import' ? '数据集文件路径' : '评测 JSONL 文件') as HTMLInputElement).value).toBe('');
@@ -37,7 +37,7 @@ it.each(['success', 'error'] as const)('导入检查的迟到%s不会覆盖新�
   const pending = deferred<typeof plan>(); vi.mocked(api).mockReturnValue(pending.promise);
   const component = (projectId: string) => <ImportDialog kind="dataset" projectId={projectId} onClose={() => {}} onImported={() => {}} />;
   const view = render(component('project-a'));
-  await act(async () => fireEvent.click(screen.getByRole('button', { name: '选择' })));
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '选择数据集文件' })));
   fireEvent.click(screen.getByRole('button', { name: '检查数据集' }));
   view.rerender(component('project-b'));
   await act(async () => outcome === 'success' ? pending.resolve(plan) : pending.reject(new Error('旧项目检查错误')));
@@ -52,7 +52,7 @@ it('导入保存迟到时不触发旧实例的 onImported 或关闭新表单', a
   const imported = vi.fn(); const closed = vi.fn();
   const component = (projectId: string) => <ImportDialog key={projectId} kind="dataset" projectId={projectId} onClose={closed} onImported={imported} />;
   const view = render(component('project-a'));
-  await act(async () => fireEvent.click(screen.getByRole('button', { name: '选择' })));
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '选择数据集文件' })));
   await act(async () => fireEvent.click(screen.getByRole('button', { name: '检查数据集' })));
   fireEvent.click(screen.getByRole('button', { name: /确认导入/ }));
   view.rerender(component('project-b'));
@@ -79,10 +79,13 @@ it('同项目正常导入的重试保留幂等编号并只在成功后回调', a
   vi.mocked(pickImport).mockResolvedValue(selection);
   vi.mocked(api).mockResolvedValueOnce(plan).mockRejectedValueOnce(new Error('回执待确认')).mockResolvedValueOnce({ id: 'dataset-new' });
   const imported = vi.fn(); render(<ImportDialog kind="dataset" projectId="project-a" onClose={() => {}} onImported={imported} />);
-  await act(async () => fireEvent.click(screen.getByRole('button', { name: '选择' })));
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '选择数据集文件' })));
   await act(async () => fireEvent.click(screen.getByRole('button', { name: '检查数据集' })));
   await act(async () => fireEvent.click(screen.getByRole('button', { name: /确认导入/ })));
   expect(imported).not.toHaveBeenCalled();
+  const recheck = screen.getByRole('button', { name: '重新检查数据集' });
+  expect(recheck.getAttribute('aria-disabled')).toBe('true');
+  fireEvent.click(recheck); expect(api).toHaveBeenCalledTimes(2);
   await act(async () => fireEvent.click(screen.getByRole('button', { name: /确认导入/ })));
   expect(imported).toHaveBeenCalledTimes(1);
   expect(vi.mocked(api).mock.calls[0]).toMatchObject(['POST', '/datasets/import-plans', { project_id: 'project-a', ...selection }]);
@@ -94,11 +97,11 @@ it('同项目切换导入类别后拒绝旧选择，新的模型选择仍可继�
   const old = deferred<typeof selection>(); vi.mocked(pickImport).mockReturnValueOnce(old.promise).mockResolvedValueOnce({ path: '/models/new', grant_id: 'grant-new' });
   const component = (kind: 'dataset' | 'model') => <ImportDialog key={`project-a:${kind}`} kind={kind} projectId="project-a" onClose={() => {}} onImported={() => {}} />;
   const view = render(component('dataset'));
-  fireEvent.click(screen.getByRole('button', { name: '选择' }));
+  fireEvent.click(screen.getByRole('button', { name: '选择数据集文件' }));
   view.rerender(component('model'));
   await act(async () => old.resolve(selection));
   expect((screen.getByLabelText('模型文件路径') as HTMLInputElement).value).toBe('');
-  await act(async () => fireEvent.click(screen.getByRole('button', { name: '选择' })));
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '选择模型文件' })));
   expect((screen.getByLabelText('模型文件路径') as HTMLInputElement).value).toBe('/models/new');
   expect(api).not.toHaveBeenCalled();
 });
@@ -108,7 +111,7 @@ it.each(['import', 'evaluation'] as const)('%s：同项目取消 picker 不覆�
   render(kind === 'import'
     ? <ImportDialog kind="dataset" projectId="project-a" onClose={() => {}} onImported={() => {}} />
     : <EvaluationPlanDialog projectId="project-a" onClose={() => {}} onCreated={() => {}} />);
-  const button = screen.getByRole('button', { name: kind === 'import' ? '选择' : '选择文件' });
+  const button = screen.getByRole('button', { name: kind === 'import' ? '选择数据集文件' : '选择文件' });
   await act(async () => fireEvent.click(button));
   await act(async () => fireEvent.click(button));
   expect((screen.getByLabelText(kind === 'import' ? '数据集文件路径' : '评测 JSONL 文件') as HTMLInputElement).value).toBe(selection.path);
