@@ -3,13 +3,16 @@ import argparse
 import json
 import math
 from pathlib import Path
+from interaction_intervals import analyze_intervals
 
 ACTIONS = {"navigate_models", "open_settings", "close_settings", "open_task", "preview_preset"}
 
 
 def analyze(report, action, warmup=2, samples=20):
-    if report.get("schema") != 1 or action not in ACTIONS or warmup < 0 or samples < 1:
+    if report.get("schema") not in (1, 2) or action not in ACTIONS or warmup < 0 or samples < 1:
         raise ValueError("记录格式、操作类别或样本数无效")
+    if report["schema"] == 2:
+        return analyze_intervals(report, action, warmup, samples)
     problems = []
     if report.get("reason") != "manual" or report.get("hidden") is not False:
         problems.append("记录曾不可见或并非手动完整结束")
