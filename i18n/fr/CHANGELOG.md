@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · 057 : vérification des interfaces de gestion des appareils et des données
+
+La même App 057 signée par l’entreprise a été vérifiée en apparence claire et sombre aux largeurs 320, 360, 736 et 1024 pour la page des appareils, et à la largeur 320 pour les formulaires de sauvegarde, restauration, stockage, diagnostic et cible d’exécution. Les contrôles natifs au clavier couvrent le cycle de focus, les onglets, le retour du focus à la fermeture, la limite de 20 exécutions dans le diagnostic, le remplacement d’une sélection et l’annulation de l’aperçu. Les 40 tests d’interface associés ont réussi. Les données d’origine, la taille de fenêtre et l’apparence automatique ont été rétablies. Aucun entraînement, calcul de modèle ni nouvelle connexion distante n’a eu lieu. Ce contrôle reste partiel : AC-23 complet, la validation par de vrais utilisateurs et M6 restent à terminer.
+
 ## 2026-10-14 · 057 : flux média et progression atomique dans le même paquet
 
 057 a désormais terminé deux flux image→vidéo→voix chinoise dans la même App signée par l’entreprise. Les six exports séparés ont passé le décodage complet et ont été ouverts ou lus dans des applications externes. Les contrôles natifs couvrent l’état incertain après interruption, la confirmation de sortie, la reprise avec de nouvelles entrées et l’invalidation des étapes suivantes. L’API publique du service intégré a traité des demandes concurrentes lors d’une annulation réelle et d’une fin naturelle : une seule progression a réussi et la répétition a conservé le résultat. Les 42 tests de régression des flux ont réussi. L’échec initial du script de vérification et l’exécution annulée restent consignés. Aucun entraînement n’a eu lieu. Cela valide les fonctions de la combinaison choisie, sans valider la qualité média, M4/M6 dans leur intégralité, les cinq utilisateurs ou la publication.

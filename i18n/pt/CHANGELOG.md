@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## 2026-10-14 · 057: verificação das interfaces de dispositivos e gerenciamento de dados
+
+O mesmo App 057 assinado pela empresa foi verificado nos modos claro e escuro nas larguras 320, 360, 736 e 1024 para a página de dispositivos e na largura 320 para os formulários de backup, restauração, armazenamento, diagnóstico e destino de execução. A verificação nativa por teclado cobriu o ciclo de foco, a seleção de abas, o retorno do foco ao fechar, o limite de 20 execuções no diagnóstico, a substituição de uma seleção e o cancelamento da prévia. Os 40 testes de interface relacionados passaram. Os dados originais, o tamanho da janela e a aparência automática foram restaurados. Não houve treinamento, execução de modelos nem nova conexão remota. A verificação cobre apenas esses subconjuntos; AC-23 completo, validação com usuários reais e M6 continuam pendentes.
+
 ## 2026-10-14 · 057: fluxos de mídia e avanço atômico no mesmo pacote
 
 057 agora concluiu dois fluxos de imagem→vídeo→voz em chinês no mesmo App assinado pela empresa. As seis exportações separadas passaram pela decodificação completa e foram abertas ou reproduzidas em aplicativos externos. A verificação nativa cobriu estado incerto após interrupção, confirmação de encerramento, nova execução com entrada alterada e invalidação das etapas seguintes. A API pública do serviço incluído tratou solicitações concorrentes durante cancelamento real e conclusão natural: apenas um avanço foi aceito, e a repetição preservou o resultado. Os 42 testes de regressão dos fluxos passaram. A falha inicial do script de verificação e sua execução cancelada foram preservadas. Não houve treinamento. Isso valida as funções da combinação escolhida, sem comprovar qualidade de mídia, M4/M6 completos, validação com cinco usuários ou prontidão para lançamento.

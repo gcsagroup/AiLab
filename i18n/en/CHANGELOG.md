@@ -2,6 +2,10 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## 2026-10-14 · 057 device and data-management interface checks
+
+The same company-signed 057 App was checked in light and dark appearance at widths of 320, 360, 736 and 1024 on the device page, and at width 320 for backup, restore, storage, diagnostics and execution-target forms. Native keyboard checks covered focus cycling, tab selection, return of focus after closing, the 20-item diagnostics limit, replacing a selection and cancelling a preview. All 40 related interface tests passed. Original data, window size and automatic appearance were restored. No training, model execution or new remote connection occurred. This covers only these interface subsets; full AC-23, real-user acceptance and M6 remain incomplete.
+
 ## 2026-10-14 · 057 media workflows and atomic advancement on the same bundle
 
 057 has now completed two image→video→Chinese voiceover workflows in the same company-signed App. All six separate exports passed full decoding and opened or played in external applications. Native checks covered uncertain execution after interruption, exit verification, changed-input retry and downstream invalidation. The bundled service’s public API also handled concurrent advancement requests during real cancellation and natural completion: only one advancement succeeded, and replay preserved the result. All 42 workflow regression tests passed. An initial acceptance-script failure and its cancelled attempt remain recorded. No training was performed. This verifies the specified functional combination, not media quality, full M4/M6, five-user acceptance or release readiness.
