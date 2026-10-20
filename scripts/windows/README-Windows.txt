@@ -20,5 +20,10 @@ GCSA AI Lab — Windows UI 预览版 3.0.0
 4. 如需更改输出目录，先设置 AILAB_WINDOWS_OUTPUT_DIR 环境变量。
 
 GitHub 下载：
-进入仓库 Actions，选择 Windows UI Preview 的成功运行记录，
-在 Artifacts 中下载 GCSA-AiLab-Windows-UI-x64 并解压。
+本地编译和验证后上传的便携包：
+https://github.com/gcsagroup/AiLab/releases/download/windows-ui-preview-20261020/GCSA-AiLab-Windows-UI-3.0-x64.zip
+下载并解压后双击 AiLab-UI.exe。无需运行 GitHub Actions。
+本分支已移除云端自动打包流程。
+
+便携包 SHA-256：
+8e26c0ab56363d8a1530ecc25910c714561b7699904c91bb4bc2ddde1d92287f
