@@ -557,6 +557,33 @@ class ConversionInput(Strict):
     name: str | None = Field(default=None, min_length=1, max_length=120, pattern=r"\S")
 
 
+class ModelLabInput(Strict):
+    project_id: str
+    model_id: str
+    operation: Literal["merge", "distill"]
+    adapter_id: str | None = None
+    teacher_model_id: str | None = None
+    dataset_id: str | None = None
+    merge_weight: float = Field(default=1, ge=0.01, le=1, allow_inf_nan=False)
+    steps: int = Field(default=4, ge=1, le=200)
+    max_seq_length: int = Field(default=512, ge=32, le=2048)
+    teacher_max_tokens: int = Field(default=64, ge=8, le=256)
+    name: str | None = Field(default=None, min_length=1, max_length=120, pattern=r"\S")
+
+
+class FormatConversionInput(Strict):
+    project_id: str
+    model_id: str
+    target_format: Literal["coreml", "onnx", "torchscript"]
+
+
+class FormatTrialInput(Strict):
+    project_id: str
+    model_id: str
+    prompt: str = Field(min_length=1, max_length=16000, pattern=r"\S")
+    max_tokens: int = Field(default=32, ge=1, le=64)
+
+
 class DiagnosticPreviewInput(Strict):
     project_id: str | None = Field(default=None, min_length=1, max_length=100)
     attempt_ids: list[str] = Field(default_factory=list, max_length=20)
@@ -763,6 +790,18 @@ def create_app(settings):
     @app.post("/api/v1/attempts/{attempt_id}/adapters")
     def save_adapter(attempt_id: str, payload: AdapterInput, idempotency_key: str | None = Header(default=None)):
         return service.delivery.save_adapter(attempt_id, payload.model_dump(), idempotency_key)
+
+    @app.post("/api/v1/format-conversions")
+    def format_conversion(payload: FormatConversionInput, idempotency_key: str | None = Header(default=None)):
+        return service.format_conversions.new_task(payload.model_dump(), idempotency_key)
+
+    @app.post("/api/v1/formatted-model-trials")
+    def format_trial(payload: FormatTrialInput, idempotency_key: str | None = Header(default=None)):
+        return service.format_conversions.new_task(payload.model_dump(), idempotency_key, trial=True)
+
+    @app.post("/api/v1/model-lab/tasks")
+    def model_lab_task(payload: ModelLabInput, idempotency_key: str | None = Header(default=None)):
+        return service.model_lab.new_task(payload.model_dump(), idempotency_key)
 
     @app.post("/api/v1/conversions")
     def conversion_task(payload: ConversionInput, idempotency_key: str | None = Header(default=None)):

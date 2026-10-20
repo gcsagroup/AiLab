@@ -279,6 +279,9 @@ fn validate_request(request: &ApiRequest) -> Result<(), Value> {
             | "cleanup-plans"
             | "cleanups"
             | "conversions"
+            | "model-lab"
+            | "format-conversions"
+            | "formatted-model-trials"
             | "evaluation-plans"
             | "candidates"
             | "devices"
@@ -2401,6 +2404,9 @@ mod tests {
             "/api/v1/restore-plans",
             "/api/v1/restores",
             "/api/v1/conversions",
+            "/api/v1/model-lab/tasks",
+            "/api/v1/format-conversions",
+            "/api/v1/formatted-model-trials",
             "/api/v1/attempts/ab-12/converted-models",
             "/api/v1/checkpoints/checkpoint-123/restore-task",
             "/api/v1/cleanup-plans",

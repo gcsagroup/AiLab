@@ -133,6 +133,10 @@ class Service:
         self.backup_manager = Backup(self)
         from .conversion import Conversion
         self.conversion = Conversion(self)
+        from .model_lab import ModelLab
+        self.model_lab = ModelLab(self)
+        from .format_conversions import FormatConversions
+        self.format_conversions = FormatConversions(self)
         from .checkpoints import Checkpoints
         self.checkpoints = Checkpoints(self)
         from .cleanup import Cleanup
@@ -497,6 +501,8 @@ class Service:
         return environment
 
     def inspect_task(self, task):
+        if self.format_conversions.handles(task):
+            return self.format_conversions.inspect(task)
         if task['draft']['kind'] != 'text':
             return self.media.inspect(task)
         draft, blocking = task["draft"], []
@@ -535,6 +541,8 @@ class Service:
             model = self.store.get("model", draft["model_id"])
             if model["project_id"] != task["project_id"]:
                 raise Fault("PROJECT_MISMATCH", "模型不属于当前项目。", 403)
+            if model.get("format") in {"coreml", "onnx", "torchscript"}:
+                blocking.append({"code": "CONVERTED_ENGINE_MISMATCH", "message": "转换模型需要从模型库使用其对应格式引擎试用。", "field": "model_id"})
             config = model["model_config"]
             quantization = config.get("quantization") or config.get("quantization_config")
             try:
@@ -542,7 +550,7 @@ class Service:
             except ValueError as error:
                 profile = None
                 blocking.append({"code": "MODEL_UNVERIFIED", "message": str(error), "field": "model_id"})
-            if profile and draft["operation"] == "train" and draft["runtime"].get("num_layers", 2) > profile["num_hidden_layers"]:
+            if profile and draft["operation"] in {"train", "distill"} and draft["runtime"].get("num_layers", 2) > profile["num_hidden_layers"]:
                 blocking.append({"code": "INVALID_CONFIG", "message": "训练层数超过所选基座的总层数。", "field": "runtime.num_layers"})
             if profile and profile["name"] == "qwen25-7b" and (quantization or draft["operation"] == "quantize" or model_evaluation):
                 blocking.append({"code": "MODEL_UNVERIFIED", "message": "7B 当前只接受未量化基座；权重量化尚未通过独立验证。", "field": "model_id"})
@@ -558,7 +566,7 @@ class Service:
             dataset = self.store.get("dataset", draft["dataset_id"])
             if dataset["project_id"] != task["project_id"]:
                 raise Fault("PROJECT_MISMATCH", "数据不属于当前项目。", 403)
-            if draft["operation"] != "train":
+            if draft["operation"] not in {"train", "distill"}:
                 blocking.append({"code": "UNSUPPORTED_COMBINATION", "message": "当前操作不读取训练数据，请清空数据集选择。", "field": "dataset_id"})
             elif dataset["schema"] != "sft" or dataset["total_bytes"] > 64 * 1024 * 1024:
                 blocking.append({"code": "DATA_SCHEMA_MISMATCH", "message": "首期训练需要不超过 64 MiB 的 SFT 对话数据。", "field": "dataset_id"})
@@ -567,10 +575,10 @@ class Service:
                     verify_manifest(Path(dataset["storage_path"]), dataset["manifest"])
                 except Fault as error:
                     blocking.append({"code": error.code, "message": error.message, "field": "dataset_id"})
-        elif draft["operation"] == "train":
+        elif draft["operation"] in {"train", "distill"}:
             blocking.append({"code": "DATASET_NOT_READY", "message": "请先导入并选择 SFT 数据。", "field": "dataset_id"})
         dataset_split_fields = {}
-        if dataset and draft['operation'] == 'train':
+        if dataset and draft['operation'] in {'train', 'distill'}:
             try:
                 dataset_split_fields = self.dataset_splits.training_fields(task, dataset, model)
             except Fault as error:
@@ -579,7 +587,7 @@ class Service:
             adapter = self.store.get("adapter", draft["adapter_id"])
             if adapter["project_id"] != task["project_id"]:
                 raise Fault("PROJECT_MISMATCH", "适配器不属于当前项目。", 403)
-            if draft["operation"] not in {"generate", "evaluate"} or not model or adapter["base_model_id"] != model["id"] or adapter["base_manifest_digest"] != model["manifest_digest"]:
+            if draft["operation"] not in {"generate", "evaluate", "merge"} or not model or adapter["base_model_id"] != model["id"] or adapter["base_manifest_digest"] != model["manifest_digest"]:
                 blocking.append({"code": "ADAPTER_BASE_MISMATCH", "message": "适配器仅可在其固定基座上进行显式试用或评测。", "field": "adapter_id"})
             try:
                 verify_manifest(Path(adapter["storage_path"]), adapter["manifest"])
@@ -608,13 +616,18 @@ class Service:
             blocking.append({"code": "EVALUATION_PLAN_REQUIRED", "message": "请先选择冻结评测计划。", "field": "evaluation_plan_id"})
         if model_evaluation_fields and plan:
             model_evaluation_fields["evaluation_plan_created_at"] = plan["created_at"]
+        lab_fields = {}
+        try:
+            lab_fields = self.model_lab.fields(task)
+        except (Fault, ValueError) as error:
+            blocking.append({"code": getattr(error, "code", "MODEL_LAB_INVALID"), "message": str(error), "field": "teacher_model_id"})
         checkpoint_fields = {}
         if draft.get("checkpoint_id"):
             try:
                 checkpoint_fields = self.checkpoints.fields(task, environment)
             except Fault as error:
                 blocking.append({"code": error.code, "message": error.message, "field": "checkpoint_id"})
-        result = {"blocking": blocking, "environment": environment, "model": model, "dataset": dataset, "adapter": adapter, "evaluation_plan": plan, "evaluation_fields": plan_fields, "checkpoint_fields": checkpoint_fields, "model_evaluation_fields": model_evaluation_fields, "dataset_split_fields": dataset_split_fields}
+        result = {"blocking": blocking, "environment": environment, "model": model, "dataset": dataset, "adapter": adapter, "evaluation_plan": plan, "evaluation_fields": plan_fields, "checkpoint_fields": checkpoint_fields, "model_evaluation_fields": model_evaluation_fields, "dataset_split_fields": dataset_split_fields, "lab_fields": lab_fields}
         if not blocking:
             snapshot = {"operation": draft["operation"], "model_path": model["storage_path"], "model_manifest": model["manifest"], "model_manifest_digest": model["manifest_digest"], "input": draft["input"], "runtime": draft["runtime"]}
             if dataset:
@@ -622,6 +635,7 @@ class Service:
                 snapshot.update(dataset_manifest=dataset["manifest"], dataset_manifest_digest=dataset["manifest_digest"])
             if adapter:
                 snapshot.update(adapter_path=adapter["storage_path"], adapter_manifest=adapter["manifest"], adapter_manifest_digest=adapter["manifest_digest"], adapter_training_recipe_digest=adapter["training_recipe_digest"])
+            snapshot.update(lab_fields)
             snapshot.update(plan_fields)
             snapshot.update(model_evaluation_fields)
             snapshot.update(checkpoint_fields)
@@ -641,7 +655,7 @@ class Service:
                         raise ValueError("阻断字段无效")
                     result["check"] = report
                     blocking.extend(report["blocking"])
-                    if dataset_split_fields and report.get('can_submit') and report.get('tokenization_recipe_digest') != dataset_split_fields['dataset_split_ref']['tokenization_recipe_digest']:
+                    if dataset_split_fields and report.get('can_submit') and report.get('source_dataset_tokenization_recipe_digest', report.get('tokenization_recipe_digest')) != dataset_split_fields['dataset_split_ref']['tokenization_recipe_digest']:
                         blocking.append({'code': 'DATASET_SPLIT_CHECK_EXPIRED', 'message': '当前分词配方与来源组检查不同，请重新准备划分。', 'field': 'dataset_id'})
                 except (OSError, ValueError, subprocess.TimeoutExpired):
                     blocking.append({"code": "PREFLIGHT_FAILED", "message": "分词与监督检查未完成，请检查已选环境。"})
@@ -674,6 +688,7 @@ class Service:
                                    expires_at=(datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat())
             checked = inspected.get("check", {})
             result.update(effective_config=checked.get("effective_config", task["draft"]["runtime"]), tokenization_recipe_digest=checked.get("tokenization_recipe_digest"), tokenization_recipe=checked.get("recipe"), check_report=checked.get("check_report"), dataset_digest=inspected["dataset"]["manifest_digest"] if inspected["dataset"] else None)
+            result["lab_inputs_digest"] = digest(inspected.get("lab_fields", {}))
             result["adapter_digest"] = inspected["adapter"]["manifest_digest"] if inspected["adapter"] else None
             result["evaluation_plan_digest"] = inspected["evaluation_fields"].get("evaluation_plan_digest")
             result["evaluation_plan_id"] = inspected["evaluation_fields"].get("evaluation_plan_id")
@@ -743,6 +758,8 @@ class Service:
                 raise Fault("ENVIRONMENT_CHANGED", "分词配方或数据版本已变化，请重新检查。", 409)
             if check.get('dataset_split_ref') != inspected.get('dataset_split_fields', {}).get('dataset_split_ref'):
                 raise Fault('DATASET_SPLIT_CHANGED', '来源组划分身份已变化，请重新检查。', 409)
+            if check.get("lab_inputs_digest", digest({})) != digest(inspected.get("lab_fields", {})):
+                raise Fault("MODEL_LAB_SOURCE_CHANGED", "教师版本或实验输入变化，请重新检查。", 409)
             if check.get("adapter_digest") != (inspected["adapter"]["manifest_digest"] if inspected["adapter"] else None):
                 raise Fault("ENVIRONMENT_CHANGED", "适配器版本已变化，请重新检查。", 409)
             if check.get("evaluation_plan_digest") != inspected["evaluation_fields"].get("evaluation_plan_digest"):
@@ -777,6 +794,7 @@ class Service:
             if inspected["adapter"]:
                 adapter = inspected["adapter"]
                 snapshot.update(adapter_id=adapter["id"], adapter_version_id=adapter["version_id"], adapter_path=adapter["storage_path"], adapter_manifest=adapter["manifest"], adapter_manifest_digest=adapter["manifest_digest"], adapter_training_recipe_digest=adapter["training_recipe_digest"])
+            snapshot.update(inspected.get("lab_fields", {}))
             snapshot.update(inspected["evaluation_fields"])
             snapshot.update(model_evaluation_fields)
             snapshot.update(inspected["checkpoint_fields"])
@@ -990,7 +1008,7 @@ class Service:
                 (run_dir / "launcher.py").write_text(LAUNCHER_SOURCE, encoding="utf-8")
                 stderr = (run_dir / "worker.stderr.log").open("wb")
                 try:
-                    if attempt['snapshot']['kind'] != 'text':
+                    if attempt['snapshot']['kind'] != 'text' or attempt['snapshot']['runtime']['engine'] in {'coreml', 'onnx', 'torchscript'}:
                         binary = self.media.bundled(attempt['snapshot']['kind'])
                         if binary:
                             command = [str(binary), '--mode', 'launch', '--snapshot', str(snapshot_path), '--output-dir', str(output), '--controller-pid', str(os.getpid())]
@@ -1186,12 +1204,16 @@ class Service:
         registered = []
         failure = None
         try:
+            total_bytes = 0
             for item in manifest["artifacts"]:
                 source = regular_path(output_dir / item["path"])
                 if not source.is_relative_to(output_dir) or not source.is_file():
                     raise Fault("ARTIFACT_CORRUPT", "产物文件越出本次输出目录或不是常规文件。")
-                if source.stat().st_size > 256 * 1024 * 1024:
-                    raise Fault("ARTIFACT_CORRUPT", "首期文本产物超过 256 MiB 限制。")
+                model_output = attempt['snapshot']['operation'] in {'merge', 'distill', 'convert'} and Path(item['path']).parts[0] == 'model'
+                limit = 8 * 1024**3 if model_output else 256 * 1024**2
+                total_bytes += source.stat().st_size
+                if source.stat().st_size > limit or total_bytes > 32 * 1024**3:
+                    raise Fault("ARTIFACT_CORRUPT", "产物超过本次收集限额：模型文件 8 GiB，其他文件 256 MiB，总计 32 GiB。")
                 record = {"path": source.name, "size": source.stat().st_size, "sha256": item["sha256"]}
                 destination = copy_asset(source, self.root / "assets", [record], digest(record))
                 artifact_id = "artifact-" + digest({"attempt_id": attempt_id, "manifest": manifest["digest"], "path": item["path"]})[:32]

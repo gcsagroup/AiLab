@@ -136,7 +136,7 @@ def verify_snapshot_manifest(path, entries, expected_digest, kind):
 def validate_snapshot(snapshot, output):
     if output.is_symlink() or output.resolve() != output:
         raise WorkerError("OUTPUT_SYMLINK", "输出路径不能经符号链接跳转")
-    if not isinstance(snapshot, dict) or snapshot.get("operation") not in {"generate", "train", "quantize", "evaluate"}:
+    if not isinstance(snapshot, dict) or snapshot.get("operation") not in {"generate", "train", "quantize", "evaluate", "merge", "distill"}:
         raise WorkerError("UNSUPPORTED_OPERATION", "当前执行器只支持文本生成、SFT LoRA、固定文本评测与指定 MLX 量化")
     model_evaluation = snapshot.get("operation") == "evaluate" and snapshot.get("evaluation_kind") == "quantized_model"
     if (snapshot.get("candidate_model_path") or snapshot.get("evaluation_kind")) and not model_evaluation:
@@ -149,7 +149,7 @@ def validate_snapshot(snapshot, output):
     common = {"engine", "device_id", "seed"}
     generate_keys = {"max_tokens", "temperature", "top_p"}
     train_keys = {"training_type", "update_method", "recipe_id", "steps", "learning_rate", "max_seq_length", "lora_rank", "lora_alpha", "num_layers", "batch_size", "gradient_accumulation", "optimizer", "weight_decay", "lora_dropout"}
-    operation_keys = {"generate": generate_keys | INFERENCE_FIELDS, "evaluate": generate_keys, "train": train_keys, "quantize": {"bits", "group_size", "mode"}}
+    operation_keys = {"generate": generate_keys | INFERENCE_FIELDS, "evaluate": generate_keys, "train": train_keys, "quantize": {"bits", "group_size", "mode"}, "merge": {"merge_weight"}, "distill": train_keys | {"teacher_max_tokens"}}
     unknown = set(runtime) - common - operation_keys[snapshot["operation"]]
     if unknown:
         raise WorkerError("UNSUPPORTED_PARAMETER", "未支持参数：" + "、".join(sorted(unknown)))
@@ -186,7 +186,7 @@ def validate_snapshot(snapshot, output):
     effective = {"engine": "mlx", "device_id": "apple-gpu", "seed": number(runtime, "seed", 0, 0, 2**32 - 1, True)}
     effective["input_quantization"] = quantization
     if snapshot.get("adapter_path"):
-        if snapshot["operation"] not in {"generate", "evaluate"} or quantization:
+        if snapshot["operation"] not in {"generate", "evaluate", "merge"} or quantization:
             raise WorkerError("ADAPTER_OPERATION_UNSUPPORTED", "当前适配器仅支持在未量化基座上推理")
         adapter = Path(snapshot["adapter_path"])
         if not adapter.is_absolute() or not adapter.is_dir():
@@ -208,7 +208,7 @@ def validate_snapshot(snapshot, output):
             raise WorkerError("UNSUPPORTED_PARAMETER", "7B 的 q4 KV 缓存尚未通过质量验证，请使用普通缓存")
         if config.get("num_attention_heads") != profile["num_attention_heads"] or config.get("num_key_value_heads") != profile["num_key_value_heads"]:
             raise WorkerError("MODEL_UNVERIFIED", "注意力头与当前固定 Qwen 结构不符")
-    elif snapshot["operation"] == "train":
+    elif snapshot["operation"] in {"train", "distill"}:
         fixed = {"training_type": "sft", "update_method": "lora", "recipe_id": RECIPE_ID, "batch_size": 1, "gradient_accumulation": 1, "optimizer": "adamw", "weight_decay": 0, "lora_dropout": 0}
         for key, value in fixed.items():
             if runtime.get(key, value) != value or isinstance(runtime.get(key), bool):
@@ -228,6 +228,12 @@ def validate_snapshot(snapshot, output):
             value = verify_checkpoint(checkpoint["path"], checkpoint["manifest_digest"], compatibility(snapshot) if snapshot.get("tokenization_recipe_digest") else None, check_cancel)
             if value["source_attempt_id"] != checkpoint["source_attempt_id"]:
                 raise WorkerError("CHECKPOINT_INVALID", "检查点与来源运行不一致")
+    elif snapshot["operation"] == "merge":
+        if not snapshot.get("adapter_path"):
+            raise WorkerError("ADAPTER_REQUIRED", "合并需要来源明确的 LoRA 适配器")
+        if snapshot.get("input") not in ({}, {"prompt": ""}, None):
+            raise WorkerError("UNSUPPORTED_INPUT", "合并不接受生成输入")
+        effective["merge_weight"] = number(runtime, "merge_weight", 1, 0.01, 1)
     elif snapshot["operation"] == "quantize":
         if snapshot.get("input") not in ({}, {"prompt": ""}, None):
             raise WorkerError("UNSUPPORTED_INPUT", "量化操作不接受提示词或训练样本")
@@ -242,6 +248,20 @@ def validate_snapshot(snapshot, output):
         if snapshot.get("input") not in ({}, {"prompt": ""}, None):
             raise WorkerError("UNSUPPORTED_INPUT", "评测提示词只取自冻结评测集")
         effective.update(max_tokens=number(runtime, "max_tokens", 128, 1, 512, True), temperature=number(runtime, "temperature", 0, 0, 0), top_p=number(runtime, "top_p", 1, 1, 1))
+    if snapshot["operation"] == "distill":
+        from workers.mlx_lab import distillation_prompts
+        teacher = snapshot.get("teacher", {})
+        teacher_path = Path(teacher.get("path", ""))
+        if not teacher_path.is_absolute() or not teacher_path.is_dir() or teacher_path.resolve() != teacher_path:
+            raise WorkerError("TEACHER_NOT_LOCAL", "教师必须是明确的本地模型")
+        if output == teacher_path or output.is_relative_to(teacher_path) or teacher_path.is_relative_to(output):
+            raise WorkerError("OUTPUT_OVERLAP", "输出不能与教师模型重叠")
+        verify_snapshot_manifest(teacher_path, teacher.get("manifest"), teacher.get("manifest_digest"), "TEACHER")
+        teacher_config = json.loads((teacher_path / "config.json").read_text())
+        model_profile(teacher_config)
+        if teacher_config.get("quantization") or teacher_config.get("quantization_config"):
+            raise WorkerError("TEACHER_UNSUPPORTED", "当前教师要求未量化 Qwen2.5 0.5B 或 7B")
+        effective.update(teacher_max_tokens=number(runtime, "teacher_max_tokens", 64, 8, 256, True), teacher_manifest_digest=teacher["manifest_digest"], distillation_samples=len(distillation_prompts(snapshot)))
     if snapshot["operation"] == "evaluate" or snapshot.get("evaluation_plan_digest"):
         from adapters.mlx_text.evaluation import load_plan
         rows, criteria, plan_digest = load_plan(snapshot)
@@ -568,7 +588,7 @@ def main():
             else:
                 model, tokenizer = load(str(model_path), tokenizer_config={"trust_remote_code": False, "local_files_only": True})
             if snapshot.get("adapter_path") and snapshot["operation"] != "evaluate":
-                if snapshot["operation"] != "generate":
+                if snapshot["operation"] not in {"generate", "merge"}:
                     raise WorkerError("RESUME_UNSUPPORTED", "首个训练执行器不支持增量续训")
                 effective["adapter_sha256"] = load_validated_adapter(model, tokenizer, snapshot["adapter_path"], before["sha256"], snapshot["model_manifest_digest"], snapshot["adapter_training_recipe_digest"])
                 effective["adapter_manifest_digest"] = snapshot["adapter_manifest_digest"]
@@ -577,7 +597,8 @@ def main():
                 mx.eval(model.parameters())
                 mx.synchronize()
                 effective["model_load_seconds"] = time.perf_counter() - model_load_started
-        recipe, recipe_digest = build_recipe(model_path, tokenizer, snapshot["operation"], effective.get("max_seq_length"))
+        from workers.mlx_lab import build_execution_recipe
+        recipe, recipe_digest = build_execution_recipe(model_path, tokenizer, snapshot["operation"], effective.get("max_seq_length"))
         if not snapshot.get("tokenization_recipe_digest"):
             raise WorkerError("TOKENIZATION_IDENTITY_REQUIRED", "执行快照缺少提交前分词配方摘要")
         if snapshot["tokenization_recipe_digest"] != recipe_digest:
@@ -598,6 +619,9 @@ def main():
                 run_generate(model, tokenizer, snapshot, effective, output)
             elif snapshot["operation"] == "train":
                 run_train(model, tokenizer, snapshot, effective, output)
+            elif snapshot["operation"] in {"merge", "distill"}:
+                from workers.mlx_lab import run_merge, run_distill
+                (run_merge if snapshot["operation"] == "merge" else run_distill)(model, tokenizer, snapshot, effective, output)
             elif snapshot["operation"] == "quantize":
                 run_quantize(model, model_path, effective, output)
             else:
@@ -606,7 +630,7 @@ def main():
         if model_manifest(model_path) != before:
             raise WorkerError("SOURCE_MODEL_CHANGED", "执行期间源模型摘要发生变化，拒绝登记完成")
         verify_snapshot_manifest(model_path, snapshot["model_manifest"], snapshot["model_manifest_digest"], "MODEL")
-        if snapshot["operation"] == "train":
+        if snapshot["operation"] in {"train", "distill"}:
             verify_snapshot_manifest(Path(snapshot["dataset_path"]), snapshot["dataset_manifest"], snapshot["dataset_manifest_digest"], "DATASET")
         if snapshot.get("adapter_path"):
             verify_snapshot_manifest(Path(snapshot["adapter_path"]), snapshot["adapter_manifest"], snapshot["adapter_manifest_digest"], "ADAPTER")
@@ -635,4 +659,5 @@ def main():
 
 
 if __name__ == "__main__":
+    sys.modules["workers.mlx_worker"] = sys.modules[__name__]
     raise SystemExit(main())

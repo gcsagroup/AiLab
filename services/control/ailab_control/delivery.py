@@ -28,6 +28,10 @@ def portable_recipe(snapshot):
     if 'dataset_split_ref' in snapshot:
         from .dataset_splits import portable_split_ref
         result['dataset_split_ref'] = portable_split_ref(snapshot['dataset_split_ref'])
+    if snapshot.get("teacher"):
+        result["teacher"] = {key: value for key, value in snapshot["teacher"].items() if key != "path"}
+    if snapshot.get("format_provenance"):
+        result["format_provenance"] = snapshot["format_provenance"]
     return result
 
 
@@ -63,7 +67,7 @@ class Delivery:
             if previous := self.store.replay(scope, key, payload):
                 return previous
             attempt = self.store.get("attempt", attempt_id)
-            if attempt["snapshot"]["operation"] != "train" or attempt["compute_outcome"] != "succeeded" or attempt["collection_state"] != "succeeded":
+            if attempt["snapshot"]["operation"] not in {"train", "distill"} or attempt["compute_outcome"] != "succeeded" or attempt["collection_state"] != "succeeded":
                 raise Fault("ADAPTER_NOT_READY", "仅可保存已完成计算和产物收集的真实训练适配器。", 409)
             existing = [item for item in self.store.list("adapter", attempt["project_id"]) if item["source_attempt_id"] == attempt_id]
             if existing:
@@ -207,7 +211,7 @@ class Delivery:
             if item["collection_state"] != "succeeded" or not item.get("output_manifest_ref"):
                 raise Fault("REPORT_NOT_READY", "本次执行尚无已完整保存的报告产物。", 409)
             for part in item["output_manifest_ref"]["artifacts"]:
-                if part.get("media_type") == "application/json":
+                if part.get("media_type") == "application/json" or item["snapshot"].get("operation") == "distill" and part["path"] == "teacher-data.jsonl":
                     artifact = self.artifact_for_path(item, part["path"])
                     add_file("report/" + part["path"], artifact["storage_path"], artifact["sha256"], artifact["size"])
             if not files:

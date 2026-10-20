@@ -234,6 +234,9 @@ def execute(snapshot, output):
 
 
 def main():
+    from workers.format_worker import handles, main as format_main
+    if "--snapshot" in sys.argv and handles(json.loads(Path(sys.argv[sys.argv.index("--snapshot") + 1]).read_text())):
+        return format_main()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--snapshot", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)

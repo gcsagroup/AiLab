@@ -77,6 +77,8 @@ class Conversion:
             return task
 
     def save_model(self, attempt_id, payload, key):
+        if self.store.get("attempt", attempt_id)["snapshot"]["operation"] in {"merge", "distill", "convert"}:
+            return self.service.model_lab.save_model(attempt_id, payload, key)
         scope = f"save-converted-model:{attempt_id}"
         with self.store.transaction():
             if previous := self.store.replay(scope, key, payload):

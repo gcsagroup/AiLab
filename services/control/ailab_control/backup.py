@@ -37,7 +37,7 @@ def remap_reference_paths(value, source_root: Path, target_root: Path, key=None)
         return [remap_reference_paths(item, source_root, target_root) for item in value]
     if isinstance(value, dict):
         return {name: remap_reference_paths(item, source_root, target_root,
-                                           "storage_path" if key == "checkpoint_ref" and name == "path" else name)
+                                           "storage_path" if key in {"checkpoint_ref", "teacher"} and name == "path" else name)
                 for name, item in value.items()}
     if key in PATH_FIELDS and isinstance(value, str) and Path(value).is_absolute() and Path(value).is_relative_to(source_root):
         return str(target_root / Path(value).relative_to(source_root))
@@ -315,9 +315,18 @@ def referenced_files(resources, source_root, files_root=None):
                     fail('任务或运行快照缺少完整且一致的来源组证明。', 'BACKUP_REFERENCE_MISSING')
                 split = split_records[reference['id']]
                 training_identity = {'dataset_version_id': reference['train_version_id'], 'dataset_manifest_digest': reference['train_manifest_digest'],
-                                     'model_manifest_digest': split['model_manifest_digest'], 'tokenization_recipe_digest': reference['tokenization_recipe_digest']}
+                                     'model_manifest_digest': split['model_manifest_digest']}
+                recipe_identity = configuration.get('tokenization_recipe_digest')
+                if configuration.get('operation') == 'distill' and recipe_identity:
+                    recipe = configuration.get('tokenization_recipe', {})
+                    if hashlib.sha256(json.dumps(recipe, sort_keys=True).encode()).hexdigest() != recipe_identity or recipe.get('recipe_id') != 'qwen25-offline-distillation-v1':
+                        fail('蒸馏执行配方身份不完整。', 'BACKUP_REFERENCE_MISSING')
+                    recipe_identity = recipe.get('source_dataset_tokenization_recipe_digest')
+                    if not recipe_identity:
+                        fail('蒸馏缺少原训练子集的分词配方身份。', 'BACKUP_REFERENCE_MISSING')
                 if (configuration.get('dataset_id') != reference['train_dataset_id']
                         or any(name in configuration and configuration[name] != value for name, value in training_identity.items())
+                        or recipe_identity is not None and recipe_identity != reference['tokenization_recipe_digest']
                         or 'dataset_manifest' in configuration and digest(configuration['dataset_manifest']) != reference['train_manifest_digest']
                         or 'runtime' in configuration and (not isinstance(configuration['runtime'], dict)
                                                            or configuration['runtime'].get('max_seq_length') != reference['max_seq_length'])):

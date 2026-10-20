@@ -65,7 +65,7 @@ it.each(['evaluate', 'quantize'] as const)('实验室 %s 尚在后页时说明�
   fireEvent.click(screen.getByRole('button', { name: '加载更多任务' }));
   await screen.findByRole('button', { name: /^后页实验记录/ });
   expect(screen.queryByRole('heading', { name: '已加载记录中暂无此类任务' })).toBeNull();
-  expect(screen.getAllByRole('heading', { name: '还没有任务记录' })).toHaveLength(1);
+  expect(screen.getAllByRole('heading', { name: '还没有任务记录' })).toHaveLength(2);
   expect(writes).toEqual([]);
 });
 

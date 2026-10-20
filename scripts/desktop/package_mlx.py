@@ -13,7 +13,7 @@ from PyInstaller.utils.hooks import collect_all, copy_metadata
 
 def build(root, source):
     artifacts = root / ".artifacts/desktop"
-    for relative in ["workers/mlx_worker.py", "workers/mlx_evaluate_worker.py", "adapters/mlx_text/recipe.py", "adapters/mlx_text/evaluation.py", "adapters/mlx_text/preflight.py", "adapters/mlx_text/split_check.py", "adapters/mlx_text/checkpoint.py", "adapters/mlx_text/inference.py", "adapters/mlx_text/generation.py"]:
+    for relative in ["workers/mlx_worker.py", "workers/mlx_evaluate_worker.py", "workers/mlx_lab.py", "adapters/mlx_text/recipe.py", "adapters/mlx_text/evaluation.py", "adapters/mlx_text/preflight.py", "adapters/mlx_text/split_check.py", "adapters/mlx_text/checkpoint.py", "adapters/mlx_text/inference.py", "adapters/mlx_text/generation.py"]:
         if not (source / relative).is_file():
             raise RuntimeError("缺少内置执行模块，停止打包：" + relative)
     data = artifacts / "mlx-packaging-data"
@@ -45,7 +45,7 @@ def build(root, source):
         options.extend(["--add-binary", f"{path}:{destination}"])
     for module in sorted(set(hiddenimports)):
         options.extend(["--hidden-import", module])
-    options.extend(["--hidden-import", "workers.mlx_evaluate_worker", "--hidden-import", "adapters.mlx_text.split_check", "--hidden-import", "adapters.mlx_text.checkpoint", "--hidden-import", "adapters.mlx_text.inference", "--hidden-import", "adapters.mlx_text.generation", str(source / "entry/mlx_entry.py")])
+    options.extend(["--hidden-import", "workers.mlx_lab", "--hidden-import", "workers.mlx_evaluate_worker", "--hidden-import", "adapters.mlx_text.split_check", "--hidden-import", "adapters.mlx_text.checkpoint", "--hidden-import", "adapters.mlx_text.inference", "--hidden-import", "adapters.mlx_text.generation", str(source / "entry/mlx_entry.py")])
     PyInstaller.__main__.run(options)
     output = artifacts / "mlx-dist/ailab-mlx"
     licenses = output / "licenses"

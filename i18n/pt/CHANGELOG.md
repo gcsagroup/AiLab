@@ -2,6 +2,16 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## Ver3.0 (070) · 2026-10-20
+
+O laboratório agora executa fusão LoRA ponderada, destilação local de respostas offline e conversão Core ML, ONNX e TorchScript. As bases e os alunos se limitam ao Qwen2.5-0.5B não quantizado; os professores locais podem ser 0.5B ou 7B. Foram realizados cálculo real, carregamento independente, geração, salvamento e verificação física das exportações. As entradas são preservadas. Os modelos continuam experimentais; exemplos fixos não comprovam melhoria geral de qualidade.
+
+O mesmo App 070 assinado pela empresa concluiu, pela interface, fusão, destilação de quatro passos, conversão Core ML e geração independente (saída 9). A destilação cancelada no passo 41/200 e os modelos permaneceram após reiniciar. Os runtimes finais executaram os três formatos e verificaram as exportações. Um teste professor 7B/aluno 0.5B obteve 3/3 para o professor e 2/3 para o aluno antes e depois em três perguntas fixas: não comprovou ganho de qualidade. A biblioteca cotidiana foi preservada e restaurada. Testes aprovados: controle 1175, interface 720, Rust 88, repetição direcionada 87. Rust teve 3 ignorados; empacotamento teve 43 aprovados e 1 pulado.
+
+Uso: escolha fusão, destilação ou conversão no laboratório, crie a tarefa, verifique e inicie explicitamente. A fusão usa a base original e seu LoRA, com peso de 0,01 a 1. Para destilar, separe os dados por grupo de origem e escolha um subconjunto de treinamento de turno único com 1–64 linhas. O professor local gera respostas e o aluno treina por 1–200 passos. Salve o modelo experimental, teste pela biblioteca ou exporte. O relatório contém origem, parâmetros, respostas do professor e comparação.
+
+Limites: CPU, FP32, contexto fixo de 128 tokens e sem cache KV nos três formatos. GPU e ANE não estão validados para Core ML; TorchScript usa uma API de exportação descontinuada pelo projeto de origem. Entrada mais saída reservada acima do limite é rejeitada sem truncamento. Fusão de vários modelos, destilação online ou KL, retomada de checkpoint de destilação, outras arquiteturas, formas dinâmicas e outras plataformas permanecem incompletas. Heretic/Abliterix não têm entrada nem executor. Outros métodos de treinamento, decodificação especulativa, hardware, qualidade de negócio independente, cinco usuários reais, instalação limpa, publicação e M5/M6 continuam pendentes.
+
 ## Ver2.8 (066) · 2026-10-14
 
 066 corrige a perda de foco após a inspeção de importação, mantém a nova verificação e associa os erros ao arquivo. O mesmo App assinado verificou rejeição de arquivos inválidos, nova inspeção, caminhos chineses com espaços, nomes longos e preservação após reiniciar. Passaram 714 testes frontend e 12 de versão, além de 17 testes específicos e 37 de contratos executados novamente. Os 2.465 recursos, 1.321 artefatos e 3.056 arquivos originais foram preservados e a biblioteca diária restaurada. Janelas estreitas e ajuda do leitor de tela ainda não foram verificadas. A sondagem real NVIDIA passou, sem validar as operações remotas de 066.

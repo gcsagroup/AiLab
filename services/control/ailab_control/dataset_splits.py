@@ -838,7 +838,7 @@ class DatasetSplits:
             return self.applied(latest)
 
     def training_fields(self, task, dataset, model):
-        if task['operation'] != 'train' or task['kind'] != 'text':
+        if task['operation'] not in {'train', 'distill'} or task['kind'] != 'text':
             return {}
         if dataset.get('dataset_split_role') == 'validation':
             failure('DATASET_SPLIT_VALIDATION_NOT_TRAINABLE', '留出验证集不能用于训练，请选择配对训练集。')

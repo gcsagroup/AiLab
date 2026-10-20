@@ -114,6 +114,7 @@ class Media:
             return {**result, 'digest': digest(result)}
         root = worker.parent.parent
         names = ['adapters/media/tts_cli.py', 'adapters/media/tts_prepare.py'] if audio else ['adapters/media/image_cli.py', 'adapters/media/video_cli.py', 'adapters/media/prepare_tiny_sd.py', 'adapters/media/prepare_svd.py', 'adapters/media/requirements.lock.txt', 'workers/mlx_worker.py']
+        names.extend(['workers/format_worker.py', 'adapters/media/text_formats.py', 'services/control/ailab_control/format_assets.py'])
         names.extend('services/control/ailab_control/' + name for name in ('assets.py', 'storage.py', 'media_assets.py', 'media_model_cards.py'))
         paths = list(dict.fromkeys([worker, preflight, *[root / name for name in names]]))
         if not all(path.is_file() for path in paths):

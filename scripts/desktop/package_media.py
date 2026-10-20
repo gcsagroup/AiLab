@@ -21,8 +21,8 @@ transformers_index = importlib.util.module_from_spec(_INDEX_SPEC)
 _INDEX_SPEC.loader.exec_module(transformers_index)
 
 PROFILES = {
-    "diffusers": {"python": "3.13.9", "packages": ["torch", "diffusers", "transformers", "peft", "accelerate", "tokenizers", "safetensors", "numpy", "PIL"],
-                  "modules": ["workers.media_worker", "adapters.media.preflight", "adapters.media.image_cli", "adapters.media.video_cli", "prepare_tiny_sd", "prepare_svd", "image_cli"]},
+    "diffusers": {"python": "3.13.9", "packages": ["torch", "diffusers", "transformers", "peft", "accelerate", "tokenizers", "safetensors", "numpy", "PIL", "coremltools", "onnx", "onnxruntime", "ml_dtypes"],
+                  "modules": ["workers.format_worker", "adapters.media.text_formats", "ailab_control.format_assets", "workers.media_worker", "adapters.media.preflight", "adapters.media.image_cli", "adapters.media.video_cli", "prepare_tiny_sd", "prepare_svd", "image_cli"]},
     "kokoro": {"python": "3.10.19", "packages": ["torch", "kokoro", "misaki", "transformers", "tokenizers", "safetensors", "numpy", "spacy", "spacy_curated_transformers", "jieba", "pypinyin", "pypinyin_dict", "cn2an", "espeakng_loader", "_soundfile_data"],
                "modules": ["workers.tts_worker", "tts_cli", "tts_prepare"]},
 }

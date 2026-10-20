@@ -32,7 +32,7 @@ def check(snapshot, output):
         profile = model_profile(json.loads((model / "config.json").read_text()))
         config = {}
         if snapshot.get("adapter_path"):
-            if snapshot["operation"] not in {"generate", "evaluate"}:
+            if snapshot["operation"] not in {"generate", "evaluate", "merge"}:
                 raise WorkerError("RESUME_UNSUPPORTED", "首个训练执行器不支持增量续训")
             adapter, config = validate_adapter_metadata(snapshot["adapter_path"], model_manifest(model)["sha256"], template_digest, snapshot["model_manifest_digest"], snapshot["adapter_training_recipe_digest"], profile["num_hidden_layers"])
             from safetensors import safe_open
@@ -49,11 +49,13 @@ def check(snapshot, output):
                              thinking_supported=False, thinking_reason='Qwen2.5 模型和固定模板没有思考切换能力；模型默认行为不做输出隐藏。',
                              stream_scope='控制执行器 token 增量事件；阶段事件和最终结果始终保留。',
                              stop_scope='精确匹配解码文本，跨块保留前缀；命中时关闭生成器，结果不含命中序列。')
-        elif snapshot["operation"] == "train":
+        elif snapshot["operation"] in {"train", "distill"}:
             samples, report = check_dataset(tokenizer, snapshot["dataset_path"], effective["max_seq_length"])
             if not samples:
                 return {"can_submit": False, "blocking": [{"code": "NO_TRAINABLE_DATA", "message": "没有可训练的助手监督样本"}], "effective_config": effective, "check_report": report}
             effective.update(template_sha256=TEMPLATE_SHA256, dataset_sha256=sha256(snapshot["dataset_path"]))
+        elif snapshot["operation"] == "merge":
+            report = {"operation": "merge", "method": "base_plus_lora", "merge_weight": effective["merge_weight"], "output_format": "safetensors", "independent_load_required": True}
         elif snapshot["operation"] == "quantize":
             report = {"operation": "quantize", "output_format": "mlx-safetensors", "bits": effective["bits"], "group_size": effective["group_size"], "mode": effective["mode"], "shard_budget_bytes": effective["shard_budget_bytes"], "quality_acceptance": "需要独立加载与固定评测"}
         else:
@@ -71,7 +73,8 @@ def check(snapshot, output):
             if candidate_tokenizer is not None:
                 report.update(evaluation_kind="quantized_model", prospective_basis="first_quantized_model_evaluation", prospective_plan_bound=model_plan_bound(snapshot), model_comparison=snapshot["model_comparison"],
                               quality_acceptance="量化模型使用首次固定方案，完成实际独立对照并通过门槛后才可明确登记；其他方案只作对照。")
-        recipe, digest = build_recipe(model, tokenizer, snapshot["operation"], effective.get("max_seq_length"))
+        from workers.mlx_lab import build_execution_recipe
+        recipe, digest = build_execution_recipe(model, tokenizer, snapshot["operation"], effective.get("max_seq_length"))
         if snapshot.get("evaluation_kind") == "quantized_model":
             _, candidate_digest = build_recipe(Path(snapshot["candidate_model_path"]), candidate_tokenizer, "evaluate", None)
             if candidate_digest != digest:
@@ -88,7 +91,7 @@ def check(snapshot, output):
             if value["sample_count"] != report["accepted_samples"]:
                 raise CheckpointError("CHECKPOINT_INCOMPATIBLE", "检查点数据位置与本次数据检查不一致")
             report["resumed_from"] = {"source_attempt_id": ref["source_attempt_id"], "completed_steps": value["step"], "total_steps": value["total_steps"], "manifest_digest": value["digest"]}
-        return {"can_submit": True, "blocking": [], "effective_config": effective, "tokenization_recipe_digest": digest, "recipe": recipe, "check_report": report}
+        return {"can_submit": True, "blocking": [], "effective_config": effective, "tokenization_recipe_digest": digest, "recipe": recipe, "check_report": report, **({"source_dataset_tokenization_recipe_digest": build_recipe(model, tokenizer, "train", effective["max_seq_length"])[1]} if snapshot["operation"] == "distill" else {})}
 
 
 def main():
