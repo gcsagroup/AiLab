@@ -13,7 +13,7 @@ args = parser.parse_args()
 snapshot = json.loads(args.snapshot.read_text())
 recipe = {"id": "control-fixture-only"}
 effective = dict(snapshot["runtime"])
-if snapshot.get("evaluation_kind") == "quantized_model":
+if snapshot.get("evaluation_kind") in {"quantized_model", "capability_comparison"}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from adapters.mlx_text.evaluation import model_evaluation_identity
     recipe["evaluation_implementation_sha256"] = hashlib.sha256((Path(__file__).resolve().parents[2] / "adapters/mlx_text/evaluation.py").read_bytes()).hexdigest()

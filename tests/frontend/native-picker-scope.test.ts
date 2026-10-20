@@ -12,6 +12,7 @@ function deferred<T>() {
 const changed = { error: { code: 'CONTROL_CONNECTION_CHANGED' } };
 const operations = [
   ['pick_import_path', () => bridge.pickImport('dataset'), { kind: 'dataset' }],
+  ['pick_import_path', () => bridge.pickImport('source-report'), { kind: 'source-report' }],
   ['pick_export_directory', () => bridge.pickExportDirectory(), {}],
   ['pick_worker_python', () => bridge.pickWorkerPython(), {}],
   ['pick_media_python', () => bridge.pickMediaPython('kokoro'), { engine: 'kokoro' }],

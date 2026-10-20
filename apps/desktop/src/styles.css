@@ -26,6 +26,9 @@
 .evaluation-report th, .evaluation-report td { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
 .evaluation-samples article { padding: 16px 0; border-bottom: 1px solid var(--line); }
 .evaluation-samples pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.capability-reviews { padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.capability-reviews pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; }
+.capability-reviews fieldset { min-width: 0; }
 .break-anywhere { overflow-wrap: anywhere; }
 
 .backup-content { margin: 20px 0; }

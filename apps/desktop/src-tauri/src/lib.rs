@@ -299,6 +299,7 @@ fn validate_request(request: &ApiRequest) -> Result<(), Value> {
             | "restores"
             | "workflow-runs"
             | "evaluations"
+            | "source-checks"
             | "recipes"
             | "health"
     ) {
@@ -1092,11 +1093,11 @@ async fn pick_import_path(
 ) -> Result<Option<ImportSelection>, Value> {
     if !matches!(
         kind.as_str(),
-        "model" | "dataset" | "image-dataset" | "material" | "backup"
+        "model" | "dataset" | "image-dataset" | "material" | "backup" | "source-report"
     ) {
         return Err(error(
             "INVALID_CONFIG",
-            "请选择模型、数据集、PNG 素材或备份。",
+            "请选择模型、数据集、PNG 素材、来源报告或备份。",
         ));
     }
     let state = app.state::<HostState>();
@@ -1118,6 +1119,11 @@ async fn pick_import_path(
                 dialog
                     .set_title("选择 PNG 图片素材")
                     .add_filter("PNG 图片", &["png"])
+                    .pick_file()
+            } else if kind == "source-report" {
+                dialog
+                    .set_title("选择外部来源 JSON 报告")
+                    .add_filter("来源报告", &["json"])
                     .pick_file()
             } else {
                 dialog
@@ -2389,6 +2395,7 @@ mod tests {
             "/api/v1/cleanups",
             "/api/v1/materials?project_id=project_123",
             "/api/v1/evaluation-plans/ep_123",
+            "/api/v1/source-checks?project_id=project_123",
             "/api/v1/candidates/c_123",
             "/api/v1/settings",
         ] {
@@ -2399,6 +2406,9 @@ mod tests {
             "/api/v1/attempts/ab-12/collections",
             "/api/v1/exports",
             "/api/v1/evaluation-plans",
+            "/api/v1/source-checks",
+            "/api/v1/evaluations/capability",
+            "/api/v1/evaluations/attempt-123/reviews",
             "/api/v1/candidates/c_123/register",
             "/api/v1/backups",
             "/api/v1/restore-plans",

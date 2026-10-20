@@ -68,6 +68,34 @@ def test_concurrent_apply_with_same_and_different_keys_registers_one_split(rig, 
     assert service.store.db.execute("SELECT COUNT(*) FROM commands WHERE scope='dataset-split-apply'").fetchone()[0] == 3
 
 
+def test_completed_concurrent_apply_can_clean_stage_before_other_verification(rig, monkeypatch):
+    import ailab_control.dataset_splits as module
+    client, service, *_ = rig
+    values = setup_split(rig, monkeypatch, apply=False)
+    plan = service.store.get('dataset-split-plan', values['plan']['id'])
+    body = {'plan_id': plan['id'], 'plan_digest': plan['plan_digest']}
+    entered, release = threading.Event(), threading.Event()
+    original = module.verify_ready_plan
+
+    def paused_verification(*args, **kwargs):
+        if not entered.is_set():
+            entered.set()
+            assert release.wait(timeout=10)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(module, 'verify_ready_plan', paused_verification)
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        delayed = pool.submit(post, client, '/datasets/splits', body, 'delayed-apply')
+        assert entered.wait(timeout=10)
+        try:
+            finished = post(client, '/datasets/splits', body, 'completed-apply')
+            assert not Path(plan['storage_path']).exists()
+        finally:
+            release.set()
+        assert delayed.result(timeout=10) == finished
+    assert len(service.store.list('dataset-split')) == 1
+
+
 @pytest.mark.parametrize('fault', ['second_copy', 'second_dataset_put'])
 def test_partial_apply_failure_rolls_back_registration_and_reuses_fixed_intent(rig, monkeypatch, fault):
     import ailab_control.dataset_splits as module

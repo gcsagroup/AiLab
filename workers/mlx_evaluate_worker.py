@@ -72,19 +72,26 @@ def run_evaluate(snapshot, effective, output, emit, check_cancel):
                         process.wait(timeout=5)
         emit("metric", variant=variant, completed_samples=len(rows), total_samples=len(rows))
     passes = {variant: json.loads((output / variant / "predictions.json").read_text()) for variant in ("baseline", "candidate")}
-    model_evaluation = snapshot.get("evaluation_kind") == "quantized_model"
+    model_evaluation = snapshot.get("evaluation_kind") in {"quantized_model", "capability_comparison"}
     config = {} if model_evaluation else json.loads((Path(snapshot["adapter_path"]) / "adapter_config.json").read_text())
     report = summarize(rows, criteria, passes["baseline"]["outputs"], passes["candidate"]["outputs"], model_plan_bound(snapshot) if model_evaluation else config.get("evaluation_plan_digest") == plan_digest)
     report.update(evaluation_plan_digest=plan_digest, evaluation_dataset_manifest_digest=snapshot["evaluation_dataset_manifest_digest"], evaluation_criteria_manifest_digest=snapshot["evaluation_criteria_manifest_digest"], model_manifest_digest=snapshot["model_manifest_digest"], adapter_manifest_digest=snapshot.get("adapter_manifest_digest"), adapter_training_recipe_digest=snapshot.get("adapter_training_recipe_digest"), independent_loads={name: result["identity"] for name, result in passes.items()}, rules_implementation_sha256=worker.sha256(Path(__file__).resolve().parents[1] / "adapters/mlx_text/evaluation.py"))
     report.update(observations={name: result["observations"] for name, result in passes.items()},
                   observation_scope="逐题保留 MLX 实际词元与结束回执，包含结束词元；stop 为引擎停止，length 为输出上限，unknown 为缺少结束信号。单轮计时不代表性能验收。")
-    if model_evaluation:
+    if snapshot.get("evaluation_kind") == "quantized_model":
         report.update(evaluation_kind="quantized_model", prospective_basis="first_quantized_model_evaluation", candidate_model_manifest_digest=snapshot["candidate_model_manifest_digest"], model_comparison=snapshot["model_comparison"], model_comparison_digest=snapshot["model_comparison_digest"], quality_plan_ref_digest=snapshot["quality_plan_ref"]["digest"], model_evaluation_recipe_digest=effective["model_evaluation_recipe_digest"],
                       performance_scope="同机顺序各加载一次；逐题时间与内存仅作本次观测，未作冷热缓存及重复采样性能验收。",
                       quality_scope="仅代表此量化模型首次固定文本规则集的独立对照；不代表其他任务或普遍质量、速度收益。")
         for issue in report["blocking"]:
             if issue["code"] == "POSTHOC_EVALUATION":
                 issue.update(code="MODEL_QUALITY_PLAN_MISMATCH", message="本次不是该量化模型首次固定的准入方案，仅能作对照")
+    if snapshot.get("evaluation_kind") == "capability_comparison":
+        report.update(evaluation_kind="capability_comparison", eligible=False, prospective_plan_bound=False,
+                      model_comparison=snapshot["model_comparison"], model_comparison_digest=snapshot["model_comparison_digest"],
+                      candidate_model_manifest_digest=snapshot["candidate_model_manifest_digest"], model_evaluation_recipe_digest=effective["model_evaluation_recipe_digest"],
+                      quality_scope="8 道固定普通题目的实际对照；数学采用严格最终答案，日常题需人工复核。不是通用基准成绩，不用于候选准入。")
+        report["blocking"] = [{"code": "COMPARISON_ONLY", "message": "本结果仅作普通能力对照；人工复核独立保存，不改变自动评分或候选资格。"}]
+        report["status"] = "needs_review"
     load_plan(snapshot)
     effective.update(evaluation_plan_digest=plan_digest, evaluation_sample_count=len(rows), independent_loads=2, quality_status=report["status"], eligible=report["eligible"], evaluation_criteria=criteria)
     worker.write_json(output / "evaluation-report.json", report)
@@ -104,7 +111,7 @@ def pass_main():
         snapshot = json.loads(args.snapshot.read_text())
         output = args.output_dir.absolute()
         model_path, effective = worker.validate_snapshot(snapshot, output)
-        model_evaluation = snapshot.get("evaluation_kind") == "quantized_model"
+        model_evaluation = snapshot.get("evaluation_kind") in {"quantized_model", "capability_comparison"}
         loaded_path = Path(snapshot["candidate_model_path"]) if model_evaluation and args.variant == "candidate" else model_path
         loaded_manifest_digest = snapshot["candidate_model_manifest_digest"] if model_evaluation and args.variant == "candidate" else snapshot["model_manifest_digest"]
         rows, criteria, plan_digest = load_plan(snapshot)
@@ -149,7 +156,7 @@ def pass_main():
             worker.check_cancel()
             identity = {"pid": os.getpid(), "variant": args.variant, "model_manifest_digest": loaded_manifest_digest, "adapter_manifest_digest": snapshot["adapter_manifest_digest"] if args.variant == "candidate" and not model_evaluation else None, "evaluation_plan_digest": plan_digest, "tokenization_recipe_digest": recipe_digest, "device": mx.device_info(), "generation": criteria["generation"], "peak_memory_bytes": mx.get_peak_memory()}
             if model_evaluation:
-                identity.update(evaluation_kind="quantized_model", model_evaluation_recipe_digest=evaluation_digest, input_quantization=json.loads((loaded_path / "config.json").read_text()).get("quantization"))
+                identity.update(evaluation_kind=snapshot["evaluation_kind"], model_evaluation_recipe_digest=evaluation_digest, input_quantization=json.loads((loaded_path / "config.json").read_text()).get("quantization"))
             identity["load_seconds"] = load_seconds
             worker.write_json(output / "predictions.json", {"outputs": outputs, "identity": identity, "observations": observations})
         worker.emit("completed", variant=args.variant, completed_samples=len(rows))

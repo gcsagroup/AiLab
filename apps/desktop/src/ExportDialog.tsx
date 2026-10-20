@@ -4,7 +4,7 @@ import { api, canPickFile, errorMessage, pickExportDirectory, type ImportSelecti
 import { Badge, Button, Dialog, ErrorNotice, readableSize, stateNames } from './ui';
 import { LibraryReadContext } from './LibraryReadContext';
 
-export type ExportObject = { work_revision_id?: string | null; type: 'model' | 'adapter' | 'work' | 'report' | 'dataset-split'; id: string; name: string };
+export type ExportObject = { work_revision_id?: string | null; type: 'model' | 'adapter' | 'work' | 'report' | 'dataset-split' | 'source-check'; id: string; name: string };
 type ExportPlan = { id: string; plan_digest: string; can_export: boolean; blocking: { message: string }[]; disclosures?: string[]; total_bytes: number; file_count: number; target_dir: string; files: { path: string; size: number; sha256: string }[]; dependencies: { type: string; id: string; included: boolean; description: string }[] };
 export type ExportRecord = { id: string; task_id: string; attempt_id: string; object_type: ExportObject['type']; object_id: string; object_name?: string; work_revision_id?: string | null; selection_warning?: string; state: string; state_version: number; progress?: number | null; verified_path?: string; error?: { message: string }; allowed_actions?: string[] };
 const terminal = new Set(['succeeded', 'failed', 'cancelled']);

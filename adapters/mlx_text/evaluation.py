@@ -114,8 +114,8 @@ def model_plan_bound(snapshot):
 def model_evaluation_identity(snapshot, tokenization_recipe_digest):
     root = Path(__file__).resolve().parents[2]
     sources = ["adapters/mlx_text/evaluation.py", "adapters/mlx_text/recipe.py", "adapters/mlx_text/preflight.py", "workers/mlx_evaluate_worker.py", "workers/mlx_worker.py"]
-    recipe = {"schema_version": "mlx-model-evaluation-v1", "model_comparison_digest": snapshot["model_comparison_digest"], "evaluation_plan_digest": snapshot["evaluation_plan_digest"],
-              "quality_plan_ref_digest": snapshot["quality_plan_ref"]["digest"], "tokenization_recipe_digest": tokenization_recipe_digest,
+    recipe = {"schema_version": "mlx-model-evaluation-v1", "evaluation_kind": snapshot.get("evaluation_kind"), "model_comparison_digest": snapshot["model_comparison_digest"], "evaluation_plan_digest": snapshot["evaluation_plan_digest"],
+              "quality_plan_ref_digest": snapshot.get("quality_plan_ref", {}).get("digest"), "tokenization_recipe_digest": tokenization_recipe_digest,
               "source_sha256": {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in sources}}
     return recipe, canonical_digest(recipe)
 

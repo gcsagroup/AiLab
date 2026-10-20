@@ -129,6 +129,8 @@ class Service:
         self.delivery = Delivery(self)
         from .evaluation import Evaluation
         self.evaluation = Evaluation(self)
+        from .source_checks import SourceChecks
+        self.source_checks = SourceChecks(self)
         from .backup import Backup
         self.backup_manager = Backup(self)
         from .conversion import Conversion
@@ -248,7 +250,7 @@ class Service:
     def public(self, value):
         if value.get('resource_type') in {'dataset-split', 'dataset-split-plan'}:
             return self.dataset_splits.public(value)
-        result = {key: item for key, item in value.items() if key not in {"storage_path", "manifest", "source_path", "grant_id", "source_files", "final_path", "evaluation_dataset_path", "evaluation_criteria_path"}}
+        result = {key: item for key, item in value.items() if key not in {"storage_path", "manifest", "source_path", "grant_id", "source_files", "source_document", "final_path", "evaluation_dataset_path", "evaluation_criteria_path"}}
         if value.get('resource_type') == 'work':
             result['favorite'] = value.get('favorite', False)
         if value.get("resource_type") == "artifact":
@@ -506,7 +508,7 @@ class Service:
         if task['draft']['kind'] != 'text':
             return self.media.inspect(task)
         draft, blocking = task["draft"], []
-        model_evaluation = draft.get("operation") == "evaluate" and draft.get("evaluation_kind") == "quantized_model"
+        model_evaluation = draft.get("operation") == "evaluate" and draft.get("evaluation_kind") in {"quantized_model", "capability_comparison"}
         model_evaluation_fields = {}
         if (draft.get("candidate_model_id") or draft.get("evaluation_kind")) and not model_evaluation:
             blocking.append({"code": "MODEL_COMPARISON_UNSUPPORTED", "message": "量化模型对照字段只能用于专用质量评测任务。", "field": "candidate_model_id"})
@@ -597,7 +599,7 @@ class Service:
             blocking.append({"code": "ADAPTER_NOT_READY", "message": "独立评测必须选择已保存的实验适配器。", "field": "adapter_id"})
         if model_evaluation:
             try:
-                model_evaluation_fields = self.evaluation.model_fields(task)
+                model_evaluation_fields = self.evaluation.capability_fields(task) if draft.get("evaluation_kind") == "capability_comparison" else self.evaluation.model_fields(task)
             except Fault as error:
                 blocking.append({"code": error.code, "message": error.message, "field": "candidate_model_id"})
         if draft.get("evaluation_plan_id"):
@@ -709,7 +711,7 @@ class Service:
                 result["warnings"].append({"code": "EVALUATION_PLAN_NOT_BOUND", "message": "本次训练未绑定冻结评测计划，产物仅能保存为实验适配器，事后评测不能准入。"})
             if task["operation"] == "evaluate" and inspected["adapter"] and inspected["adapter"]["config"].get("evaluation_plan_digest") != result["evaluation_plan_digest"]:
                 result["warnings"].append({"code": "POSTHOC_EVALUATION", "message": "来源训练未绑定此计划；允许查看事后对照，但不能登记候选。"})
-            if model_evaluation_fields and any(model_evaluation_fields["quality_plan_ref"][key] != result[key] for key in ("evaluation_plan_id", "evaluation_plan_digest")):
+            if model_evaluation_fields.get("quality_plan_ref") and any(model_evaluation_fields["quality_plan_ref"][key] != result[key] for key in ("evaluation_plan_id", "evaluation_plan_digest")):
                 result["warnings"].append({"code": "MODEL_QUALITY_PLAN_MISMATCH", "message": "本次不是该量化模型首次固定的准入方案；可生成完整对照报告，但不能据此登记。"})
             result["preflight_id"] = result["id"]
             self.store.put("preflight", result)

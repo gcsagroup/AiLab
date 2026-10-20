@@ -61,7 +61,7 @@ def check(snapshot, output):
         else:
             rows, criteria, plan_digest = load_plan(snapshot)
             counts = {}
-            candidate_tokenizer = load_tokenizer(snapshot["candidate_model_path"], {"local_files_only": True, "trust_remote_code": False}) if snapshot.get("evaluation_kind") == "quantized_model" else None
+            candidate_tokenizer = load_tokenizer(snapshot["candidate_model_path"], {"local_files_only": True, "trust_remote_code": False}) if snapshot.get("evaluation_kind") in {"quantized_model", "capability_comparison"} else None
             for row in rows:
                 tokens = tokenizer.apply_chat_template([{"role": "user", "content": row["prompt"]}], tokenize=True, add_generation_prompt=True)
                 if len(tokens) + criteria["generation"]["max_tokens"] > 4096:
@@ -73,9 +73,11 @@ def check(snapshot, output):
             if candidate_tokenizer is not None:
                 report.update(evaluation_kind="quantized_model", prospective_basis="first_quantized_model_evaluation", prospective_plan_bound=model_plan_bound(snapshot), model_comparison=snapshot["model_comparison"],
                               quality_acceptance="量化模型使用首次固定方案，完成实际独立对照并通过门槛后才可明确登记；其他方案只作对照。")
+        if snapshot.get("evaluation_kind") == "capability_comparison":
+            report.update(evaluation_kind="capability_comparison", prospective_basis="comparison_only", prospective_plan_bound=False, quality_acceptance="固定普通题集的对照观察，人工复核不改变原输出，也不用于候选准入。")
         from workers.mlx_lab import build_execution_recipe
         recipe, digest = build_execution_recipe(model, tokenizer, snapshot["operation"], effective.get("max_seq_length"))
-        if snapshot.get("evaluation_kind") == "quantized_model":
+        if snapshot.get("evaluation_kind") in {"quantized_model", "capability_comparison"}:
             _, candidate_digest = build_recipe(Path(snapshot["candidate_model_path"]), candidate_tokenizer, "evaluate", None)
             if candidate_digest != digest:
                 raise WorkerError("TOKENIZATION_IDENTITY_MISMATCH", "权重量化两侧分词配方不一致")

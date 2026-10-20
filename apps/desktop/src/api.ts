@@ -86,7 +86,7 @@ export async function api<T>(method: string, path: string, body?: unknown, idemp
 export type ImportSelection = { path: string; grant_id?: string };
 export const canPickFile = () => isTauri();
 export type ImportKind = 'model' | 'dataset' | 'image-dataset' | 'material';
-export const pickImport = (kind: ImportKind | 'backup') => invokeBound<ImportSelection | null>('pick_import_path', connectionId => ({ kind, connectionId }));
+export const pickImport = (kind: ImportKind | 'backup' | 'source-report') => invokeBound<ImportSelection | null>('pick_import_path', connectionId => ({ kind, connectionId }));
 export const pickExportDirectory = () => invokeBound<ImportSelection | null>('pick_export_directory', connectionId => ({ connectionId }));
 export const beginBackupRecovery = () => changeNativeConnection('begin_backup_recovery');
 export const restartControl = () => changeNativeConnection('restart_control');

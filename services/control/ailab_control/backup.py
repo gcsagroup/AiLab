@@ -33,6 +33,9 @@ TABLE_COLUMNS = {
 
 def remap_reference_paths(value, source_root: Path, target_root: Path, key=None):
     """仅迁移业务文件引用；原检查点清单内的来源摘要保持不变。"""
+    if isinstance(value, dict) and value.get("resource_type") in {"source-check", "capability-review"}:
+        # 外部原文和人工记录是不可变证据，其中的同名路径字段不属于工作库引用。
+        return value
     if isinstance(value, list):
         return [remap_reference_paths(item, source_root, target_root) for item in value]
     if isinstance(value, dict):

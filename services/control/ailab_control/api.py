@@ -473,7 +473,7 @@ class AdapterInput(Strict):
 
 class ExportPlanInput(Strict):
     project_id: str
-    object_type: Literal["model", "adapter", "work", "report", "dataset-split"]
+    object_type: Literal["model", "adapter", "work", "report", "dataset-split", "source-check"]
     object_id: str
     target_dir: str = Field(min_length=1, max_length=4096)
     grant_id: str | None = None
@@ -518,6 +518,28 @@ class EvaluationPlanInput(ProjectInput):
     dataset_path: str = Field(min_length=1, max_length=4096)
     dataset_grant_id: str | None = None
     criteria: EvaluationCriteria
+
+
+class SourceCheckInput(Strict):
+    project_id: str
+    model_id: str
+    report_path: str = Field(min_length=1, max_length=4096)
+    grant_id: str | None = None
+
+
+class CapabilityInput(Strict):
+    project_id: str
+    model_id: str
+    candidate_model_id: str
+    name: str = Field(default="普通能力对照", min_length=1, max_length=120)
+
+
+class CapabilityReviewInput(Strict):
+    expected_revision: int = Field(ge=0)
+    sample_id: str = Field(min_length=1, max_length=80)
+    variant: Literal["baseline", "candidate"]
+    verdict: Literal["normal", "false_refusal", "uncertain"]
+    note: str = Field(min_length=1, max_length=2000)
 
 
 class EvaluationInput(Strict):
@@ -879,6 +901,22 @@ def create_app(settings):
     @app.get("/api/v1/exports/{export_id}")
     def export(export_id: str):
         return service.delivery.export_record(service.store.get("export", export_id))
+
+    @app.post("/api/v1/source-checks")
+    def source_check(payload: SourceCheckInput, idempotency_key: str | None = Header(default=None)):
+        return service.source_checks.create(payload.model_dump(), idempotency_key)
+
+    @app.get("/api/v1/source-checks")
+    def source_checks(project_id: str, cursor: str | None = None, limit: int = Query(default=20, ge=1, le=100)):
+        return listing("source-check", project_id, cursor, limit)
+
+    @app.post("/api/v1/evaluations/capability")
+    def capability_task(payload: CapabilityInput, idempotency_key: str | None = Header(default=None)):
+        return service.evaluation.new_capability_task(payload.model_dump(), idempotency_key)
+
+    @app.post("/api/v1/evaluations/{evaluation_id}/reviews")
+    def capability_review(evaluation_id: str, payload: CapabilityReviewInput, idempotency_key: str | None = Header(default=None)):
+        return service.evaluation.review(evaluation_id, payload.model_dump(), idempotency_key)
 
     @app.post("/api/v1/evaluation-plans")
     def evaluation_plan(payload: EvaluationPlanInput, idempotency_key: str | None = Header(default=None)):

@@ -2,6 +2,16 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## Ver3.1 (072) · 2026-10-20
+
+Le laboratoire ajoute la vérification de provenance et d’environnement ainsi que la comparaison de capacités ordinaires. Il lit les rapports JSON Heretic reproduce v4 ou Abliterix schema 2, compare versions, provenance déclarée, empreintes réelles, manifeste importé et dépendances MLX actuelles. Les octets du rapport original sont conservés pour consultation et export. Aucun code, configuration ou recette de reproduction du rapport n’est exécuté. Des empreintes identiques n’authentifient pas l’auteur et ne prouvent pas une reproduction.
+
+Utilisation : créer une vérification dans le laboratoire, choisir un modèle importé et un JSON externe, puis vérifier et enregistrer. Examiner les différences et exporter original et constatations. Pour comparer les capacités, sélectionner référence et candidat, figer les questions, vérifier la configuration puis démarrer explicitement. Consulter les réponses réelles et saisir question, modèle, décision et motif dans la revue manuelle. Les revues sont ajoutées avec historique, sans modifier réponses ou scores automatiques. L’export comprend questions, règles et revues.
+
+La comparaison est limitée à Qwen2.5-0.5B avec tokenizer et modèle de conversation identiques : référence non quantifiée, candidat fusionné/distillé non quantifié ou MLX 4-bit/64/affine. Huit questions fixes couvrent trois calculs, deux formats, un tri et deux tâches courantes. Le calcul compare strictement la sortie entière demandée ; une explication échoue à cette règle même si le nombre est juste. Une réponse coopérative ne garantit pas sa justesse ; les refus injustifiés nécessitent une revue humaine. Aucune admission de candidat n’en découle. GSM8K complet, évaluations générales, autres architectures et tokenizers restent indisponibles. FP8 vers BF16 est reporté sans nouveau bouton.
+
+Des modèles locaux réels ont terminé chargements séparés, sauvegarde, annulation, réouverture et vérification physique des exports. L’app signée par la même entreprise a été manipulée dans une bibliothèque isolée pour la provenance, la comparaison et la revue. Les deux modèles ont obtenu les mêmes scores automatiques stricts, sans gain de capacité démontré. Les tests du parseur utilisent des rapports de protocole représentatifs et de vraies empreintes, sans prétendre prouver une publication en amont. La bibliothèque quotidienne a été préservée et restaurée.
+
 ## Ver3.0 (070) · 2026-10-20
 
 Le laboratoire exécute désormais la fusion LoRA pondérée, la distillation locale hors ligne de réponses et la conversion Core ML, ONNX et TorchScript. Les bases de fusion et élèves sont limités à Qwen2.5-0.5B non quantifié ; les enseignants locaux peuvent être 0.5B ou 7B. Calcul réel, chargement indépendant, génération, sauvegarde et vérification physique des exports ont été effectués. Les entrées sont préservées. Les modèles restent expérimentaux : des exemples fixes ne prouvent pas une amélioration globale.

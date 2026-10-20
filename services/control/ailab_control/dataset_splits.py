@@ -795,8 +795,19 @@ class DatasetSplits:
         source, model = self.inputs(record)
         if self.checker_identity() != record['checker_identity']:
             failure('DATASET_CHECK_IDENTITY_CHANGED', '检查环境已变化，请重新准备计划。')
-        verify_ready_plan(record, lambda resource_id: self.store.get('dataset', resource_id), lambda resource_id: self.store.get('model', resource_id))
-        directory = regular_path(record['storage_path'])
+        try:
+            verify_ready_plan(record, lambda resource_id: self.store.get('dataset', resource_id), lambda resource_id: self.store.get('model', resource_id))
+            directory = regular_path(record['storage_path'])
+        except (Fault, OSError):
+            # 并发请求可能已完成登记并清理暂存；只接受同一冻结计划的正式结果。
+            with self.store.transaction():
+                previous = self.store.replay(scope, key, payload)
+                latest = self.store.get('dataset-split-plan', record['id'])
+                if latest['status'] == 'applied' and latest['plan_digest'] == payload['plan_digest']:
+                    if not previous:
+                        self.store.remember(scope, key, payload, {'id': record['id']})
+                    return self.applied(latest)
+            raise
         with self.store.transaction():
             previous = self.store.replay(scope, key, payload)
             latest = self.store.get('dataset-split-plan', record['id'])

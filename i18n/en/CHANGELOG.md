@@ -2,6 +2,16 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## Ver3.1 (072) · 2026-10-20
+
+The model lab adds source and environment verification and ordinary capability comparison. Verification reads Heretic reproduce v4 or Abliterix schema 2 JSON, checks tool versions, reported provenance, actual file hashes, the imported manifest and current MLX dependency versions, and preserves the original report bytes for reopening and export. It does not execute report code, configuration or reproduction recipes. Matching checksums do not authenticate the publisher or prove reproduction.
+
+Workflow: open the model lab, create a source check, select an imported model and external JSON, then verify and save. Inspect file and environment differences or export the original report and findings. For capability comparison, select baseline and candidate, freeze the fixed questions, inspect the configuration and explicitly start. Review real outputs per question; choose the question, model and verdict and enter a reason in manual review. Reviews are appended with history and never overwrite outputs or automatic scores. Report export includes questions, rules and manual reviews.
+
+Comparison currently supports Qwen2.5-0.5B with matching tokenizers and templates: an unquantized baseline and an unquantized fused/distilled or MLX 4-bit/64/affine candidate. The eight fixed questions cover three arithmetic, two format, one sorting and two everyday tasks. Arithmetic strictly compares the requested integer-only output; explanatory text fails that rule even if its number is correct. Normal assistance does not establish correctness; false refusals require manual review. Results do not qualify candidates for admission. Full GSM8K/general benchmarks, additional architectures and different tokenizers remain unsupported. FP8-to-BF16 is deferred with no new entry.
+
+Real local models completed separate-process loading, saved results, cancellation, cold reopening and physical export verification. The same company-signed app was operated in an isolated library for source checks, comparison and manual review. Both models had identical strict automatic scores on this fixed set; no capability gain was established. Parser acceptance used representative protocol test reports with real model hashes, not evidence of upstream model publication. The daily library was preserved and restored.
+
 ## Ver3.0 (070) · 2026-10-20
 
 The model lab now runs weighted LoRA fusion, local offline response distillation, and Core ML, ONNX and TorchScript conversion. Fusion bases and students are limited to unquantized Qwen2.5-0.5B; local teachers can be 0.5B or 7B. Each path has real computation, independent loading and generation, saved models and physically verified exports. Inputs remain unchanged. Outputs are experimental models; fixed examples do not establish overall quality improvement.

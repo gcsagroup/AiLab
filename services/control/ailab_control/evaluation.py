@@ -185,6 +185,80 @@ class Evaluation:
             if any(normalized_prompt(message["content"]) in prompts for message in row["messages"] if message["role"] == "user"):
                 raise Fault("DATASET_EVALUATION_OVERLAP", "训练数据与冻结评测集包含相同提示词，请先分离数据。", 409, line=index)
 
+    def new_capability_task(self, payload, key=None):
+        from .capability import ROWS, CRITERIA
+        with self.store.transaction():
+            if key and (previous := self.store.replay("capability-task", key, payload)):
+                return previous
+            task = self.service.resource("task", payload["project_id"], name=payload["name"], kind="text", operation="evaluate", immutable_draft=True, draft_revision=1,
+                draft={"kind": "text", "operation": "evaluate", "evaluation_kind": "capability_comparison", "model_id": payload["model_id"], "candidate_model_id": payload["candidate_model_id"], "dataset_id": None, "adapter_id": None, "input": {"prompt": ""}, "runtime": {"engine": "mlx", "device_id": "apple-gpu", **CRITERIA["generation"]}})
+        self.capability_fields(task)
+        with tempfile.TemporaryDirectory(prefix="capability-plan-", dir=self.service.root) as directory:
+            path = Path(directory) / "evaluation.jsonl"
+            path.write_text("".join(encode(row) + "\n" for row in ROWS), encoding="utf-8")
+            grant = self.service.grant(str(path))
+            try:
+                plan = self.create_plan({"project_id": payload["project_id"], "name": "普通能力固定题集 v1 · 8 题", "dataset_path": str(path), "dataset_grant_id": grant["grant_id"], "criteria": CRITERIA})
+            finally:
+                self.service.grants.pop(grant["grant_id"], None)
+        task["draft"]["evaluation_plan_id"] = plan["id"]
+        with self.store.transaction():
+            if key and (previous := self.store.replay("capability-task", key, payload)):
+                return previous
+            self.store.put("task", task)
+            if key:
+                self.store.remember("capability-task", key, payload, task)
+            return task
+
+    def capability_fields(self, task):
+        from .model_profiles import model_profile
+        draft = task["draft"]
+        base, candidate = [self.store.get("model", draft[key]) for key in ("model_id", "candidate_model_id")]
+        if base["id"] == candidate["id"] or base["manifest_digest"] == candidate["manifest_digest"]:
+            raise Fault("COMPARISON_SAME_MODEL", "请选择文件身份不同的两个模型。", 409)
+        for model in (base, candidate):
+            if model["project_id"] != task["project_id"]:
+                raise Fault("PROJECT_MISMATCH", "对照模型必须属于当前项目。", 403)
+            try:
+                profile = model_profile(model.get("model_config", {}))
+            except ValueError as error:
+                raise Fault("MODEL_COMPARISON_UNSUPPORTED", str(error), 409) from None
+            if model.get("format") not in {"safetensors", "mlx-safetensors"} or model.get("default_engine", "mlx") != "mlx" or profile["name"] != "qwen25-0.5b":
+                raise Fault("MODEL_COMPARISON_UNSUPPORTED", "当前普通能力对照支持本机 Qwen2.5-0.5B 的 safetensors 模型。", 409)
+            verify_manifest(Path(model["storage_path"]), model["manifest"])
+        if base["model_config"].get("quantization") or base["model_config"].get("quantization_config"):
+            raise Fault("MODEL_COMPARISON_UNSUPPORTED", "当前基线需要未量化模型；候选可选合并、蒸馏或 MLX 4-bit 模型。", 409)
+        comparison = {"kind": "capability_comparison", "baseline_model_id": base["id"], "baseline_model_version_id": base["version_id"], "baseline_model_manifest_digest": base["manifest_digest"], "candidate_model_id": candidate["id"], "candidate_model_version_id": candidate["version_id"], "candidate_model_manifest_digest": candidate["manifest_digest"]}
+        return {"evaluation_kind": "capability_comparison", "model_id": base["id"], "model_version_id": base["version_id"], "candidate_model_id": candidate["id"], "candidate_model_version_id": candidate["version_id"], "candidate_model_path": candidate["storage_path"], "candidate_model_manifest": candidate["manifest"], "candidate_model_manifest_digest": candidate["manifest_digest"], "model_comparison": comparison, "model_comparison_digest": digest(comparison)}
+
+    def reviews(self, attempt_id):
+        records = self.store.list("capability-review", self.store.get("attempt", attempt_id)["project_id"])
+        records = sorted((r for r in records if r["attempt_id"] == attempt_id), key=lambda r: r["revision"])
+        return {"revision": records[-1]["revision"] if records else 0, "items": records}
+
+    def review(self, attempt_id, payload, key=None):
+        if not payload["note"].strip():
+            raise Fault("REVIEW_NOTE_REQUIRED", "请填写非空复核理由。")
+        attempt = self.store.get("attempt", attempt_id)
+        if attempt["snapshot"].get("evaluation_kind") != "capability_comparison":
+            raise Fault("REVIEW_UNSUPPORTED", "仅普通能力对照支持逐题复核记录。", 409)
+        report, artifact = self.report(attempt)
+        if not any(row["id"] == payload["sample_id"] for row in report["samples"]):
+            raise Fault("REVIEW_SAMPLE_MISSING", "所选题目不在原评测报告中。", 409)
+        with self.store.transaction():
+            scope = "capability-review:" + attempt_id
+            if key and (previous := self.store.replay(scope, key, payload)):
+                return previous
+            reviews = self.reviews(attempt_id)
+            if payload["expected_revision"] != reviews["revision"]:
+                raise Fault("REVIEW_REVISION_CONFLICT", "复核记录已更新，请重新打开本次评测后再保存。", 409)
+            review = self.service.resource("capability-review", attempt["project_id"], attempt_id=attempt_id, revision=reviews["revision"] + 1, report_sha256=artifact["sha256"], **{k: v for k, v in payload.items() if k != "expected_revision"})
+            self.store.put("capability-review", review)
+            result = self.reviews(attempt_id)
+            if key:
+                self.store.remember(scope, key, payload, result)
+            return result
+
     def new_task(self, payload, key=None):
         if payload.get("candidate_model_id"):
             return self.new_model_task(payload, key)
@@ -268,6 +342,8 @@ class Evaluation:
         # 列表不携带所有产物正文；明细报告只在单条接口返回。
         result.pop("artifacts", None)
         result.update(adapter_id=attempt["snapshot"].get("adapter_id"), evaluation_kind=attempt["snapshot"].get("evaluation_kind", "adapter"), candidate_model_id=attempt["snapshot"].get("candidate_model_id"), evaluation_plan_id=attempt["snapshot"]["evaluation_plan_id"], report=None, report_error=None)
+        if attempt["snapshot"].get("evaluation_kind") == "capability_comparison" and detailed:
+            result["reviews"] = self.reviews(attempt["id"])
         if attempt["collection_state"] == "succeeded":
             try:
                 report, artifact = self.report(attempt)

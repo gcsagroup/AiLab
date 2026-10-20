@@ -2,6 +2,16 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## Ver3.1 (072) · 2026-10-20
+
+O laboratório adiciona verificação de origem e ambiente e comparação de capacidades comuns. Ele lê JSON Heretic reproduce v4 ou Abliterix schema 2, compara versões, origem declarada, hashes reais, manifesto importado e dependências MLX atuais. Os bytes originais do relatório são preservados para consulta e exportação. Nenhum código, configuração ou receita de reprodução do relatório é executado. Hashes iguais não autenticam o publicador nem comprovam reprodução.
+
+Uso: crie uma verificação no laboratório, escolha um modelo importado e um JSON externo, verifique e salve. Veja diferenças de arquivos e ambiente e exporte o original com os resultados. Para comparar capacidades, selecione base e candidato, fixe as perguntas, confira a configuração e inicie explicitamente. Consulte respostas reais por pergunta e registre pergunta, modelo, decisão e motivo na revisão manual. As revisões são acrescentadas com histórico, sem substituir respostas ou pontuações automáticas. A exportação inclui perguntas, regras e revisões.
+
+A comparação limita-se ao Qwen2.5-0.5B com tokenizer e template iguais: base não quantizada e candidato fundido/destilado não quantizado ou MLX 4-bit/64/affine. Oito perguntas fixas cobrem três cálculos, dois formatos, uma ordenação e duas tarefas cotidianas. O cálculo compara estritamente a saída inteira solicitada; explicações falham nessa regra mesmo com número correto. Ajuda normal não garante correção; recusas indevidas exigem revisão humana. Os resultados não admitem candidatos como aprovados. GSM8K completo, benchmarks gerais, outras arquiteturas e tokenizers não estão disponíveis. FP8 para BF16 foi adiado sem novo botão.
+
+Modelos locais reais concluíram carregamentos separados, salvamento, cancelamento, reabertura e verificação física das exportações. O mesmo app assinado pela empresa foi operado numa biblioteca isolada para origem, comparação e revisão. Os dois modelos tiveram pontuações automáticas estritas iguais, sem melhoria comprovada. Os testes do parser usam relatórios representativos do protocolo e hashes reais, sem alegar publicação pelo projeto de origem. A biblioteca diária foi preservada e restaurada.
+
 ## Ver3.0 (070) · 2026-10-20
 
 O laboratório agora executa fusão LoRA ponderada, destilação local de respostas offline e conversão Core ML, ONNX e TorchScript. As bases e os alunos se limitam ao Qwen2.5-0.5B não quantizado; os professores locais podem ser 0.5B ou 7B. Foram realizados cálculo real, carregamento independente, geração, salvamento e verificação física das exportações. As entradas são preservadas. Os modelos continuam experimentais; exemplos fixos não comprovam melhoria geral de qualidade.

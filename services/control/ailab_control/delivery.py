@@ -166,7 +166,16 @@ class Delivery:
         item = self.store.get("attempt" if object_type == "report" else object_type, object_id)
         if item["project_id"] != project_id:
             raise Fault("PROJECT_MISMATCH", "导出对象属于其他项目。", 403)
-        if object_type == "dataset-split":
+        if object_type == "source-check":
+            if digest({k: v for k, v in item.items() if k != "record_digest"}) != item.get("record_digest"):
+                raise Fault("SOURCE_CHECK_CHANGED", "来源核验记录摘要不一致。", 409)
+            contents = item["source_document"]
+            if hashlib.sha256(contents.encode()).hexdigest() != item["source_report_sha256"]:
+                raise Fault("SOURCE_CHECK_CHANGED", "保存的外部原报告摘要不一致。", 409)
+            files.append({"path": "source-report.json", "contents": contents, "sha256": item["source_report_sha256"], "size": len(contents.encode())})
+            add_json("source-check.json", {k: v for k, v in item.items() if k != "source_document"})
+            metadata = {"id": item["id"], "name": item["name"], "scope": item["result"]["scope"]}
+        elif object_type == "dataset-split":
             from .dataset_splits import verify_split_record
             reference = verify_split_record(item, lambda identity: self.store.get("dataset", identity))
             for role in ("source", "train", "validation"):
@@ -217,6 +226,8 @@ class Delivery:
             if not files:
                 raise Fault("REPORT_NOT_READY", "本次执行没有可导出的JSON报告。", 409)
             add_json("recipe.json", portable_recipe(item["snapshot"]))
+            if item["snapshot"].get("evaluation_kind") == "capability_comparison":
+                add_json("reviews.json", self.service.evaluation.reviews(item["id"]))
             add_split_dependency(item['snapshot'])
             if item["snapshot"].get("evaluation_plan_id"):
                 evaluation_plan = self.store.get("evaluation-plan", item["snapshot"]["evaluation_plan_id"])

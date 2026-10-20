@@ -79,18 +79,20 @@ if snapshot["operation"] == "evaluate":
     outputs = {row["id"]: row["rule"].get("expected", " ".join(row["rule"].get("keywords", []))) for row in rows}
     outputs = {key: json.dumps(value) if not isinstance(value, str) else value for key, value in outputs.items()}
     candidate = {row["id"]: "夹具未通过" if row["prompt"] == "__eval_fail__" else outputs[row["id"]] for row in rows}
-    model_mode = snapshot.get("evaluation_kind") == "quantized_model"
+    model_mode = snapshot.get("evaluation_kind") in {"quantized_model", "capability_comparison"}
     config = {} if model_mode else json.loads((Path(snapshot["adapter_path"]) / "adapter_config.json").read_text())
     report = summarize(rows, criteria, outputs, candidate, model_plan_bound(snapshot) if model_mode else config.get("evaluation_plan_digest") == plan_digest)
     identities = {name: {"pid": os.getpid() + index, "variant": name, "model_manifest_digest": snapshot["candidate_model_manifest_digest"] if model_mode and name == "candidate" else snapshot["model_manifest_digest"], "adapter_manifest_digest": snapshot["adapter_manifest_digest"] if name == "candidate" and not model_mode else None, "evaluation_plan_digest": plan_digest, "tokenization_recipe_digest": snapshot["tokenization_recipe_digest"], "generation": criteria["generation"], "fixture_only": True} for index, name in enumerate(("baseline", "candidate"), 1)}
     report.update(fixture_only=True, independent_loads=identities, **{key: snapshot.get(key) for key in ("evaluation_plan_digest", "evaluation_dataset_manifest_digest", "evaluation_criteria_manifest_digest", "model_manifest_digest", "adapter_manifest_digest", "adapter_training_recipe_digest")})
-    if model_mode:
+    if snapshot.get("evaluation_kind") == "quantized_model":
         identity_digest = snapshot["effective_config"]["model_evaluation_recipe_digest"]
         report.update(evaluation_kind="quantized_model", prospective_basis="first_quantized_model_evaluation", model_comparison=snapshot["model_comparison"], model_comparison_digest=snapshot["model_comparison_digest"], quality_plan_ref_digest=snapshot["quality_plan_ref"]["digest"], candidate_model_manifest_digest=snapshot["candidate_model_manifest_digest"], model_evaluation_recipe_digest=identity_digest, rules_implementation_sha256=snapshot["tokenization_recipe"]["evaluation_implementation_sha256"])
         for name, identity in identities.items():
             identity.update(evaluation_kind="quantized_model", model_evaluation_recipe_digest=identity_digest, input_quantization=snapshot["model_comparison"]["quantization"] if name == "candidate" else None)
         for issue in report["blocking"]:
             if issue["code"] == "POSTHOC_EVALUATION": issue["code"] = "MODEL_QUALITY_PLAN_MISMATCH"
+    if snapshot.get("evaluation_kind") == "capability_comparison":
+        report.update(evaluation_kind="capability_comparison", eligible=False, prospective_plan_bound=False)
     path = args.output_dir / "evaluation-report.json"
     path.write_text(json.dumps(report, ensure_ascii=False))
     artifacts.append({"path": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "media_type": "application/json"})

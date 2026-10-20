@@ -138,7 +138,7 @@ def validate_snapshot(snapshot, output):
         raise WorkerError("OUTPUT_SYMLINK", "输出路径不能经符号链接跳转")
     if not isinstance(snapshot, dict) or snapshot.get("operation") not in {"generate", "train", "quantize", "evaluate", "merge", "distill"}:
         raise WorkerError("UNSUPPORTED_OPERATION", "当前执行器只支持文本生成、SFT LoRA、固定文本评测与指定 MLX 量化")
-    model_evaluation = snapshot.get("operation") == "evaluate" and snapshot.get("evaluation_kind") == "quantized_model"
+    model_evaluation = snapshot.get("operation") == "evaluate" and snapshot.get("evaluation_kind") in {"quantized_model", "capability_comparison"}
     if (snapshot.get("candidate_model_path") or snapshot.get("evaluation_kind")) and not model_evaluation:
         raise WorkerError("MODEL_COMPARISON_UNSUPPORTED", "量化对照参数只能用于专用质量评测")
     runtime = snapshot.get("runtime", {})
@@ -283,6 +283,19 @@ def validate_comparison_model(snapshot, output, base_path):
         raise WorkerError("OUTPUT_OVERLAP", "量化对照的基线、候选和输出目录必须独立")
     verify_snapshot_manifest(candidate, snapshot.get("candidate_model_manifest"), snapshot.get("candidate_model_manifest_digest"), "CANDIDATE_MODEL")
     config = json.loads((candidate / "config.json").read_text())
+    if snapshot.get("evaluation_kind") == "capability_comparison":
+        profile = model_profile(config)
+        quantization = config.get("quantization") or config.get("quantization_config")
+        expected_quantization = {"bits": 4, "group_size": 64, "mode": "affine"}
+        if profile["name"] != "qwen25-0.5b" or quantization not in (None, expected_quantization) or any(config.get(key) not in (None, expected_quantization) for key in ("quantization", "quantization_config")) or not list(candidate.glob("*.safetensors")):
+            raise WorkerError("MODEL_COMPARISON_UNSUPPORTED", "普通能力候选需要未量化或固定 MLX 4-bit Qwen2.5-0.5B")
+        expected = {"kind": "capability_comparison", "baseline_model_id": snapshot.get("model_id"), "baseline_model_version_id": snapshot.get("model_version_id"), "baseline_model_manifest_digest": snapshot["model_manifest_digest"], "candidate_model_id": snapshot.get("candidate_model_id"), "candidate_model_version_id": snapshot.get("candidate_model_version_id"), "candidate_model_manifest_digest": snapshot["candidate_model_manifest_digest"]}
+        if snapshot.get("model_comparison") != expected or canonical_digest(expected) != snapshot.get("model_comparison_digest") or expected["baseline_model_manifest_digest"] == expected["candidate_model_manifest_digest"]:
+            raise WorkerError("MODEL_COMPARISON_CHANGED", "普通能力对照模型身份不完整或发生变化")
+        tokenizer_files = {"tokenizer.json", "tokenizer_config.json", "vocab.json", "merges.txt", "chat_template.jinja", "generation_config.json"}
+        if {item["path"]: item for item in snapshot["model_manifest"] if item["path"] in tokenizer_files} != {item["path"]: item for item in snapshot["candidate_model_manifest"] if item["path"] in tokenizer_files}:
+            raise WorkerError("TOKENIZATION_IDENTITY_MISMATCH", "当前普通能力对照要求两侧分词器和模板一致")
+        return candidate
     quantization = {"bits": 4, "group_size": 64, "mode": "affine"}
     if config.get("model_type") != "qwen2" or config.get("hidden_size") != 896 or config.get("num_hidden_layers") != 24 or config.get("quantization") != quantization or config.get("quantization_config") not in (None, quantization) or not list(candidate.glob("*.safetensors")):
         raise WorkerError("MODEL_COMPARISON_UNSUPPORTED", "量化候选格式须为固定 Qwen MLX 4-bit／64／affine")
@@ -604,7 +617,7 @@ def main():
         if snapshot["tokenization_recipe_digest"] != recipe_digest:
             raise WorkerError("TOKENIZATION_IDENTITY_CHANGED", "分词器、模板或监督实现与提交前检查不一致")
         effective["tokenization_recipe_digest"] = recipe_digest
-        if snapshot.get("evaluation_kind") == "quantized_model":
+        if snapshot.get("evaluation_kind") in {"quantized_model", "capability_comparison"}:
             from adapters.mlx_text.evaluation import model_evaluation_identity
             evaluation_recipe, evaluation_digest = model_evaluation_identity(snapshot, recipe_digest)
             if snapshot.get("effective_config", {}).get("model_evaluation_recipe_digest") != evaluation_digest:
