@@ -1,0 +1,8 @@
+{
+  "name": "gcsa-ailab-windows-ui",
+  "productName": "GCSA AI Lab UI Preview",
+  "version": "3.0.0",
+  "description": "GCSA AI Lab Windows UI 预览版",
+  "private": true,
+  "main": "main.cjs"
+}

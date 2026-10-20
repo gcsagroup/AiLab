@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite --config apps/desktop/vite.config.ts",
     "build": "tsc --noEmit -p apps/desktop/tsconfig.json && vite build --config apps/desktop/vite.config.ts",
+    "build:windows-ui": "node scripts/windows/build-ui.mjs",
     "test": "vitest run --config apps/desktop/vite.config.ts",
     "check:docs": "python3 scripts/check_public_docs.py",
     "test:docs": "python3 -m unittest discover -s scripts -p test_public_docs.py",
@@ -27,6 +28,7 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
     "@vitejs/plugin-react": "6.1.1",
+    "electron": "44.9.1",
     "jsdom": "29.1.1",
     "typescript": "7.0.2",
     "vite": "8.2.2",

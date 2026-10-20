@@ -71,6 +71,10 @@ export function errorMessage(error: unknown): string {
 }
 
 export async function api<T>(method: string, path: string, body?: unknown, idempotencyKey?: string): Promise<T> {
+  if (import.meta.env.VITE_UI_PREVIEW === 'true') {
+    const { previewApi } = await import('./previewApi');
+    return previewApi<T>(method, path, body);
+  }
   const fullPath = `/api/v1${path}`;
   if (isTauri()) {
     return invokeBound<T>('api_request', connection_id => ({ request: { connection_id, method, path: fullPath, body, idempotency_key: idempotencyKey } }));

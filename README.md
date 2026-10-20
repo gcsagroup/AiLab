@@ -4,6 +4,8 @@
 
 GCSA AI Lab 是用于本地模型试用、LoRA 微调、评测和作品管理的桌面工作台。项目把模型、数据、任务与输出保存在一起，便于继续任务和追溯结果。
 
+本分支提供 **Windows x64 UI 预览版**：复用现有界面，支持离线浏览页面、打开弹窗、创建项目与保存任务草稿。模型执行、训练、下载及远程连接尚未接入；界面保留的 Apple GPU／MLX 配置仅供预览。使用 Node.js 24 在项目根目录执行 `npm ci` 和 `npm run build:windows-ui`，随后双击上一级 `release/GCSA-AiLab-Windows-UI/AiLab-UI.exe`。请保留完整程序文件夹。也可从本分支的 [Windows UI Preview 构建记录](https://github.com/gcsagroup/AiLab/actions/workflows/windows-ui-preview.yml?query=branch%3Awindows-ui-preview) 下载成功运行的 `GCSA-AiLab-Windows-UI-x64` artifact。详见 [Windows 使用说明](scripts/windows/README-Windows.txt)。
+
 当前版本为 **Ver3.0（070），技术预览**。Ver2.7（054）已在原生 App 中通过 SSH 隧道验证 Qwen2.5-0.5B-Instruct 的 Jetson Orin 生成、两步 LoRA 训练、产物回收，以及同份适配器在 Apple GPU 上运行。此验证限于指定模型和环境，不代表质量提升；直接 HTTPS 部署、干净安装、首次用户测试及正式发行验收仍未完成。当前没有已验收的正式安装包或自动更新渠道。 055 修复上传断线后的原因提示与终态说明，并在原生 App 中验证中断、核实和重新传输；未重跑 054 的完整跨设备模型流程。
 
 模型实验室新增可执行的 LoRA 带权合并、本地离线回答蒸馏，以及 Core ML、ONNX、TorchScript 转换。合并与学生仅支持未量化 Qwen2.5-0.5B，教师可选本地 0.5B 或 7B。每项都经过真实计算、独立加载与生成、保存及导出文件校验；输入文件保持。产物仍为实验模型，固定样例通过不代表整体质量提升。
