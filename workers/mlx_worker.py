@@ -173,13 +173,13 @@ def validate_snapshot(snapshot, output):
     except ValueError as exc:
         raise WorkerError("MODEL_UNVERIFIED", str(exc)) from exc
     quantization = config.get("quantization") or config.get("quantization_config")
-    if profile["name"] == "qwen25-7b" and (quantization or snapshot["operation"] == "quantize" or model_evaluation):
+    if profile["name"] == "qwen25-7b" and (quantization or snapshot["operation"] == "quantize" or (model_evaluation and snapshot.get("evaluation_kind") != "capability_comparison")):
         raise WorkerError("MODEL_OPERATION_UNSUPPORTED", "7B 当前只开放未量化基座的生成、SFT LoRA 与适配器评测；量化需独立验证")
     if quantization:
         expected_quantization = {"group_size": 64, "bits": 4, "mode": "affine"}
         if quantization != expected_quantization or any(config.get(key) not in (None, expected_quantization) for key in ["quantization", "quantization_config"]):
             raise WorkerError("MODEL_FORMAT_UNSUPPORTED", "当前只验证 MLX 4-bit／64／affine 量化格式")
-        if snapshot["operation"] != "generate":
+        if snapshot["operation"] != "generate" and snapshot.get("evaluation_kind") != "capability_comparison":
             raise WorkerError("MODEL_OPERATION_UNSUPPORTED", "当前量化模型只开放推理，训练和再次量化需要未量化源模型")
     if not list(model_path.glob("*.safetensors")):
         raise WorkerError("MODEL_WEIGHTS_MISSING", "模型缺少 safetensors 权重")
@@ -247,7 +247,7 @@ def validate_snapshot(snapshot, output):
             raise WorkerError("ADAPTER_REQUIRED", "评测需要指定来源明确的 LoRA 候选")
         if snapshot.get("input") not in ({}, {"prompt": ""}, None):
             raise WorkerError("UNSUPPORTED_INPUT", "评测提示词只取自冻结评测集")
-        effective.update(max_tokens=number(runtime, "max_tokens", 128, 1, 512, True), temperature=number(runtime, "temperature", 0, 0, 0), top_p=number(runtime, "top_p", 1, 1, 1))
+        effective.update(max_tokens=number(runtime, "max_tokens", 128, 1, 1024 if snapshot.get("evaluation_kind") == "capability_comparison" else 512, True), temperature=number(runtime, "temperature", 0, 0, 0), top_p=number(runtime, "top_p", 1, 1, 1))
     if snapshot["operation"] == "distill":
         from workers.mlx_lab import distillation_prompts
         teacher = snapshot.get("teacher", {})
@@ -287,14 +287,11 @@ def validate_comparison_model(snapshot, output, base_path):
         profile = model_profile(config)
         quantization = config.get("quantization") or config.get("quantization_config")
         expected_quantization = {"bits": 4, "group_size": 64, "mode": "affine"}
-        if profile["name"] != "qwen25-0.5b" or quantization not in (None, expected_quantization) or any(config.get(key) not in (None, expected_quantization) for key in ("quantization", "quantization_config")) or not list(candidate.glob("*.safetensors")):
+        if (profile["name"] == "qwen25-7b" and quantization) or quantization not in (None, expected_quantization) or any(config.get(key) not in (None, expected_quantization) for key in ("quantization", "quantization_config")) or not list(candidate.glob("*.safetensors")):
             raise WorkerError("MODEL_COMPARISON_UNSUPPORTED", "普通能力候选需要未量化或固定 MLX 4-bit Qwen2.5-0.5B")
         expected = {"kind": "capability_comparison", "baseline_model_id": snapshot.get("model_id"), "baseline_model_version_id": snapshot.get("model_version_id"), "baseline_model_manifest_digest": snapshot["model_manifest_digest"], "candidate_model_id": snapshot.get("candidate_model_id"), "candidate_model_version_id": snapshot.get("candidate_model_version_id"), "candidate_model_manifest_digest": snapshot["candidate_model_manifest_digest"]}
         if snapshot.get("model_comparison") != expected or canonical_digest(expected) != snapshot.get("model_comparison_digest") or expected["baseline_model_manifest_digest"] == expected["candidate_model_manifest_digest"]:
             raise WorkerError("MODEL_COMPARISON_CHANGED", "普通能力对照模型身份不完整或发生变化")
-        tokenizer_files = {"tokenizer.json", "tokenizer_config.json", "vocab.json", "merges.txt", "chat_template.jinja", "generation_config.json"}
-        if {item["path"]: item for item in snapshot["model_manifest"] if item["path"] in tokenizer_files} != {item["path"]: item for item in snapshot["candidate_model_manifest"] if item["path"] in tokenizer_files}:
-            raise WorkerError("TOKENIZATION_IDENTITY_MISMATCH", "当前普通能力对照要求两侧分词器和模板一致")
         return candidate
     quantization = {"bits": 4, "group_size": 64, "mode": "affine"}
     if config.get("model_type") != "qwen2" or config.get("hidden_size") != 896 or config.get("num_hidden_layers") != 24 or config.get("quantization") != quantization or config.get("quantization_config") not in (None, quantization) or not list(candidate.glob("*.safetensors")):

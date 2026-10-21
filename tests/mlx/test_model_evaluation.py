@@ -37,7 +37,7 @@ def test_both_models_and_first_plan_are_bound_to_execution_code(tmp_path):
     assert validate_comparison_model(snapshot, output, base) == candidate
     assert model_plan_bound(snapshot)
     recipe, identity = model_evaluation_identity(snapshot, "d" * 64)
-    assert canonical_digest(recipe) == identity and len(recipe["source_sha256"]) == 5
+    assert canonical_digest(recipe) == identity and set(recipe["source_sha256"]) >= {"workers/mlx_worker.py", "workers/mlx_evaluate_worker.py", "adapters/mlx_text/evaluation.py"}
     for key in ("model_comparison_digest", "evaluation_plan_digest"):
         changed = copy.deepcopy(snapshot); changed[key] = "e" * 64
         assert model_evaluation_identity(changed, "d" * 64)[1] != identity

@@ -63,11 +63,17 @@ def check(snapshot, output):
             counts = {}
             candidate_tokenizer = load_tokenizer(snapshot["candidate_model_path"], {"local_files_only": True, "trust_remote_code": False}) if snapshot.get("evaluation_kind") in {"quantized_model", "capability_comparison"} else None
             for row in rows:
-                tokens = tokenizer.apply_chat_template([{"role": "user", "content": row["prompt"]}], tokenize=True, add_generation_prompt=True)
-                if len(tokens) + criteria["generation"]["max_tokens"] > 4096:
+                benchmark = criteria["schema_version"] == "gsm8k-cot-8shot-v1"
+                from adapters.mlx_text.benchmark import prompt_for
+                tokens = tokenizer.encode(prompt_for(row, criteria), add_special_tokens=False) if benchmark else tokenizer.apply_chat_template([{"role": "user", "content": row["prompt"]}], tokenize=True, add_generation_prompt=True)
+                if len(tokens) + criteria["generation"]["max_tokens"] > criteria.get("context_limit", 4096):
                     raise WorkerError("CONTEXT_TOO_LONG", "评测样本与最大输出合计超过 4096 词元")
-                if candidate_tokenizer is not None and candidate_tokenizer.apply_chat_template([{"role": "user", "content": row["prompt"]}], tokenize=True, add_generation_prompt=True) != tokens:
-                    raise WorkerError("TOKENIZATION_IDENTITY_MISMATCH", "同一冻结问题在原权重与量化模型的分词结果不同")
+                if candidate_tokenizer is not None:
+                    candidate_tokens = candidate_tokenizer.encode(prompt_for(row, criteria), add_special_tokens=False) if benchmark else candidate_tokenizer.apply_chat_template([{"role": "user", "content": row["prompt"]}], tokenize=True, add_generation_prompt=True)
+                    if len(candidate_tokens) + criteria["generation"]["max_tokens"] > criteria.get("context_limit", 4096):
+                        raise WorkerError("CONTEXT_TOO_LONG", "候选模型的输入输出长度超过冻结预算")
+                    if snapshot.get("evaluation_kind") != "capability_comparison" and candidate_tokens != tokens:
+                        raise WorkerError("TOKENIZATION_IDENTITY_MISMATCH", "同一冻结问题在原权重与量化模型的分词结果不同")
                 counts[row["category"]] = counts.get(row["category"], 0) + 1
             report = {"operation": "evaluate", "evaluation_plan_digest": plan_digest, "sample_count": len(rows), "category_counts": counts, "criteria": criteria, "prospective_plan_bound": config.get("evaluation_plan_digest") == plan_digest, "quality_acceptance": "待真实独立评测，事后评测不得登记为通过"}
             if candidate_tokenizer is not None:
@@ -75,13 +81,24 @@ def check(snapshot, output):
                               quality_acceptance="量化模型使用首次固定方案，完成实际独立对照并通过门槛后才可明确登记；其他方案只作对照。")
         if snapshot.get("evaluation_kind") == "capability_comparison":
             report.update(evaluation_kind="capability_comparison", prospective_basis="comparison_only", prospective_plan_bound=False, quality_acceptance="固定普通题集的对照观察，人工复核不改变原输出，也不用于候选准入。")
+            import shutil
+            free = shutil.disk_usage(output.parent).free
+            if free < 1024**3:
+                raise WorkerError("EVALUATION_DISK_BUDGET", "工作库可用空间不足 1 GiB，请腾出报告与恢复记录空间后重试")
+            sizes = [sum(item["size"] for item in snapshot[field] if item["path"].endswith(".safetensors")) for field in ("model_manifest", "candidate_model_manifest")]
+            report["resource_summary"] = f"两模型依次加载；权重分别约 {sizes[0] / 1024**3:.2f} / {sizes[1] / 1024**3:.2f} GiB，工作库可用磁盘 {free / 1024**3:.1f} GiB。权重大小不等于运行峰值内存；请先试跑观察用时。"
+
         from workers.mlx_lab import build_execution_recipe
         recipe, digest = build_execution_recipe(model, tokenizer, snapshot["operation"], effective.get("max_seq_length"))
         if snapshot.get("evaluation_kind") in {"quantized_model", "capability_comparison"}:
             _, candidate_digest = build_recipe(Path(snapshot["candidate_model_path"]), candidate_tokenizer, "evaluate", None)
-            if candidate_digest != digest:
+            if snapshot.get("evaluation_kind") != "capability_comparison" and candidate_digest != digest:
                 raise WorkerError("TOKENIZATION_IDENTITY_MISMATCH", "权重量化两侧分词配方不一致")
-            evaluation_recipe, evaluation_digest = model_evaluation_identity(snapshot, digest)
+            effective["candidate_tokenization_recipe_digest"] = candidate_digest
+            evaluation_recipe, evaluation_digest = model_evaluation_identity(snapshot, digest, candidate_digest)
+            ref = snapshot.get("evaluation_resume_ref")
+            if ref and ref["recipe_digest"] != evaluation_digest:
+                raise WorkerError("EVALUATION_RESUME_CHANGED", "模型、提示、运行代码或规则变化，请新建评测")
             effective.update(model_evaluation_recipe=evaluation_recipe, model_evaluation_recipe_digest=evaluation_digest)
         if snapshot["operation"] == "generate":
             effective['tokenization_recipe_digest'] = digest

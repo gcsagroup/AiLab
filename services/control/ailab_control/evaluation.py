@@ -124,7 +124,7 @@ class Evaluation:
     def __init__(self, service):
         self.service, self.store = service, service.store
 
-    def create_plan(self, payload, key=None):
+    def create_plan(self, payload, key=None, *, benchmark=False):
         with self.store.transaction():
             if key and (previous := self.store.replay("evaluation-plan", key, payload)):
                 return previous
@@ -136,7 +136,13 @@ class Evaluation:
                 raise Fault("IMPORT_GRANT_EXPIRED", "文件选择已失效，请重新选择评测集。", 403)
             roots.append(grant)
         source = authorized_path(payload["dataset_path"], roots)
-        rows, counts = read_rows(source)
+        if benchmark:
+            from adapters.mlx_text.benchmark import validate_plan
+            rows = [strict_json(line) for line in source.read_text().splitlines()]
+            validate_plan(rows, payload["criteria"])
+            counts = {category: sum(row["category"] == category for row in rows) for category in CATEGORIES}
+        else:
+            rows, counts = read_rows(source)
         with tempfile.TemporaryDirectory(prefix="evaluation-plan-", dir=self.service.root) as directory:
             temporary = Path(directory)
             (temporary / "evaluation.jsonl").write_text("".join(encode(row) + "\n" for row in rows), encoding="utf-8")
@@ -187,6 +193,10 @@ class Evaluation:
 
     def new_capability_task(self, payload, key=None):
         from .capability import ROWS, CRITERIA
+        mode = payload.get("benchmark", "ordinary8")
+        if mode != "ordinary8":
+            from adapters.mlx_text.benchmark import make_plan
+            ROWS, CRITERIA = make_plan(mode)
         with self.store.transaction():
             if key and (previous := self.store.replay("capability-task", key, payload)):
                 return previous
@@ -198,7 +208,7 @@ class Evaluation:
             path.write_text("".join(encode(row) + "\n" for row in ROWS), encoding="utf-8")
             grant = self.service.grant(str(path))
             try:
-                plan = self.create_plan({"project_id": payload["project_id"], "name": "普通能力固定题集 v1 · 8 题", "dataset_path": str(path), "dataset_grant_id": grant["grant_id"], "criteria": CRITERIA})
+                plan = self.create_plan({"project_id": payload["project_id"], "name": "普通能力固定题集 v1 · 8 题" if mode == "ordinary8" else "GSM8K · " + ("完整 1,319 题" if mode == "gsm8k-full" else "试跑 12 题"), "dataset_path": str(path), "dataset_grant_id": grant["grant_id"], "criteria": CRITERIA}, benchmark=mode != "ordinary8")
             finally:
                 self.service.grants.pop(grant["grant_id"], None)
         task["draft"]["evaluation_plan_id"] = plan["id"]
@@ -223,18 +233,67 @@ class Evaluation:
                 profile = model_profile(model.get("model_config", {}))
             except ValueError as error:
                 raise Fault("MODEL_COMPARISON_UNSUPPORTED", str(error), 409) from None
-            if model.get("format") not in {"safetensors", "mlx-safetensors"} or model.get("default_engine", "mlx") != "mlx" or profile["name"] != "qwen25-0.5b":
-                raise Fault("MODEL_COMPARISON_UNSUPPORTED", "当前普通能力对照支持本机 Qwen2.5-0.5B 的 safetensors 模型。", 409)
+            if model.get("format") not in {"safetensors", "mlx-safetensors"} or model.get("default_engine", "mlx") != "mlx" or profile["name"] not in {"qwen25-0.5b", "qwen25-7b"}:
+                raise Fault("MODEL_COMPARISON_UNSUPPORTED", "普通能力对照支持本机 Qwen2.5-0.5B 与未量化 7B 的 safetensors 模型。", 409)
+            quant = model["model_config"].get("quantization") or model["model_config"].get("quantization_config")
+            expected = {"bits": 4, "group_size": 64, "mode": "affine"}
+            if quant and (profile["name"] != "qwen25-0.5b" or quant != expected or any(model["model_config"].get(k) not in (None, expected) for k in ("quantization", "quantization_config"))):
+                raise Fault("MODEL_COMPARISON_UNSUPPORTED", "量化对照仅支持已有 0.5B MLX 4-bit／64／affine 权重。", 409)
             verify_manifest(Path(model["storage_path"]), model["manifest"])
-        if base["model_config"].get("quantization") or base["model_config"].get("quantization_config"):
-            raise Fault("MODEL_COMPARISON_UNSUPPORTED", "当前基线需要未量化模型；候选可选合并、蒸馏或 MLX 4-bit 模型。", 409)
         comparison = {"kind": "capability_comparison", "baseline_model_id": base["id"], "baseline_model_version_id": base["version_id"], "baseline_model_manifest_digest": base["manifest_digest"], "candidate_model_id": candidate["id"], "candidate_model_version_id": candidate["version_id"], "candidate_model_manifest_digest": candidate["manifest_digest"]}
-        return {"evaluation_kind": "capability_comparison", "model_id": base["id"], "model_version_id": base["version_id"], "candidate_model_id": candidate["id"], "candidate_model_version_id": candidate["version_id"], "candidate_model_path": candidate["storage_path"], "candidate_model_manifest": candidate["manifest"], "candidate_model_manifest_digest": candidate["manifest_digest"], "model_comparison": comparison, "model_comparison_digest": digest(comparison)}
+        return {**({"evaluation_resume_ref": draft["evaluation_resume_ref"]} if draft.get("evaluation_resume_ref") else {}), "evaluation_kind": "capability_comparison", "model_id": base["id"], "model_version_id": base["version_id"], "candidate_model_id": candidate["id"], "candidate_model_version_id": candidate["version_id"], "candidate_model_path": candidate["storage_path"], "candidate_model_manifest": candidate["manifest"], "candidate_model_manifest_digest": candidate["manifest_digest"], "model_comparison": comparison, "model_comparison_digest": digest(comparison)}
 
     def reviews(self, attempt_id):
         records = self.store.list("capability-review", self.store.get("attempt", attempt_id)["project_id"])
         records = sorted((r for r in records if r["attempt_id"] == attempt_id), key=lambda r: r["revision"])
         return {"revision": records[-1]["revision"] if records else 0, "items": records}
+
+    def continue_task(self, attempt_id, key=None):
+        """停止后的继续评测创建新任务，原运行和已确认回答保留不动。"""
+        scope = "continue-evaluation:" + attempt_id
+        with self.store.transaction():
+            if key and (previous := self.store.replay(scope, key, {})):
+                return previous
+            source = self.store.get("attempt", attempt_id)
+            if (source["state"] not in {"cancelled", "failed"} or source.get("recovery_required")
+                    or source.get("stop_status") != "confirmed"
+                    or source["snapshot"].get("evaluation_kind") != "capability_comparison"):
+                raise Fault("EVALUATION_RESUME_UNAVAILABLE", "请先停止评测并确认进程退出，再继续已保存题目。", 409)
+            original = self.store.get("task", source["task_id"])
+        self.capability_fields(original)
+        plan = self.store.get("evaluation-plan", source["snapshot"]["evaluation_plan_id"])
+        self.plan_fields(plan)
+        rows = [strict_json(line) for line in Path(plan["evaluation_dataset_path"]).read_text().splitlines()]
+        progress = source.get("evaluation_progress", {})
+        if not any(item["count"] for item in progress.values()):
+            raise Fault("EVALUATION_RESUME_EMPTY", "没有已确认保存的完整回答，请重新开始评测。", 409)
+        from adapters.mlx_text.evaluation_journal import read_prefix
+        recipe = source["snapshot"]["effective_config"]["model_evaluation_recipe_digest"]
+        with tempfile.TemporaryDirectory(prefix="evaluation-resume-", dir=self.service.root) as directory:
+            staging = Path(directory)
+            try:
+                for variant in ("baseline", "candidate"):
+                    receipt = progress.get(variant, {"count": 0, "head": None})
+                    journal = regular_path(self.service.root / "runs" / attempt_id / "output" / variant / "answers.jsonl") if receipt["count"] else None
+                    records = read_prefix(journal, receipt["count"], receipt["head"], rows, variant, recipe)
+                    (staging / (variant + ".jsonl")).write_text("".join(encode(r) + "\n" for r in records))
+            except (OSError, ValueError, KeyError) as error:
+                raise Fault("EVALUATION_RESUME_CORRUPT", "已保存回答不完整或摘要变化，不能继续。", 409) from error
+            manifest = [{"path": p.name, "size": p.stat().st_size, "sha256": file_hash(p)} for p in sorted(staging.iterdir())]
+            manifest_digest = digest(manifest)
+            destination = copy_asset(staging, self.service.root / "assets", manifest, manifest_digest)
+        reference = {"source_attempt_id": attempt_id, "recipe_digest": recipe, "path": str(destination),
+                     "manifest": manifest, "manifest_digest": manifest_digest, "progress": progress}
+        with self.store.transaction():
+            if key and (previous := self.store.replay(scope, key, {})):
+                return previous
+            task = self.service.resource("task", original["project_id"], name=original["name"].removesuffix(" · 继续") + " · 继续",
+                                         kind="text", operation="evaluate", immutable_draft=True, draft_revision=1,
+                                         draft={**original["draft"], "evaluation_resume_ref": reference})
+            self.store.put("task", task)
+            if key:
+                self.store.remember(scope, key, {}, task)
+            return self.service.public(task)
 
     def review(self, attempt_id, payload, key=None):
         if not payload["note"].strip():
@@ -333,9 +392,9 @@ class Evaluation:
         entry = next((item for item in manifest["artifacts"] if item["path"] == "evaluation-report.json"), None)
         if not entry or entry["sha256"] != artifact["sha256"]:
             raise Fault("EVALUATION_REPORT_INVALID", "评测报告已偏离原执行产物清单。", 409)
-        return safe_json(Path(artifact["storage_path"])), artifact
+        return safe_json(Path(artifact["storage_path"]), maximum=64 * 1024 * 1024), artifact
 
-    def record(self, attempt, detailed=True):
+    def record(self, attempt, detailed=True, sample_offset=0, sample_limit=10, sample_filter="all"):
         if attempt["snapshot"]["operation"] != "evaluate":
             raise Fault("RESOURCE_NOT_FOUND", "此记录不是独立评测。", 404)
         result = self.service.public(attempt)
@@ -347,6 +406,24 @@ class Evaluation:
         if attempt["collection_state"] == "succeeded":
             try:
                 report, artifact = self.report(attempt)
+                if report.get("benchmark_metrics"):
+                    samples = report["samples"]
+                    def matches(sample):
+                        if sample_filter == "wrong":
+                            return sample["candidate"]["status"] != "passed"
+                        if sample_filter == "different":
+                            return sample["baseline"]["status"] != sample["candidate"]["status"]
+                        if sample_filter == "missing":
+                            return sample["candidate"]["strict_answer"] is None
+                        if sample_filter == "truncated":
+                            return report["observations"]["candidate"][sample["id"]]["finish_reason"] == "length"
+                        return True
+                    selected = [sample for sample in samples if matches(sample)]
+                    page = selected[sample_offset:sample_offset + sample_limit] if detailed else []
+                    ids = {sample["id"] for sample in page}
+                    report = {**report, "samples": page,
+                              "sample_page": {"offset": sample_offset, "limit": sample_limit, "filter": sample_filter, "matched": len(selected), "total": len(samples)},
+                              "observations": {variant: {sample: {k: v for k, v in observation.items() if k != "output_token_ids"} for sample, observation in values.items() if sample in ids} for variant, values in report.get("observations", {}).items()}}
                 result.update(report=report if detailed else {key: value for key, value in report.items() if key not in {"samples", "independent_loads"}}, report_artifact_id=artifact["id"])
             except (Fault, OSError, ValueError) as error:
                 result["report_error"] = {"code": error.code if isinstance(error, Fault) else "EVALUATION_REPORT_INVALID", "message": "评测报告缺失或完整性检查失败。"}

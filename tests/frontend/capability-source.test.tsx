@@ -47,7 +47,18 @@ describe('真实来源核验与普通能力对照入口', () => {
     fireEvent.click(screen.getByRole('button', { name: '冻结题集并创建对照' }));
     await waitFor(() => expect(created).toHaveBeenCalledOnce());
     expect(calls).toHaveLength(1); expect(calls[0].path).toBe('/evaluations/capability');
-    expect(calls[0].body).toEqual({ project_id: 'project', model_id: 'base', candidate_model_id: 'student' });
+    expect(calls[0].body).toEqual({ project_id: 'project', model_id: 'base', candidate_model_id: 'student', benchmark: 'ordinary8' });
+  });
+
+  it('可选择完整 GSM8K 并明确冻结模式，7B 与已有 4-bit 均可作为对照对象', async () => {
+    const extended = [...models, { ...models[0], id: 'seven', name: '7B', model_config: { model_type: 'qwen2', hidden_size: 3584, num_hidden_layers: 28 } }, { ...models[0], id: 'four', name: '0.5B 4-bit', model_config: { ...models[0].model_config, quantization: { bits: 4, group_size: 64, mode: 'affine' } } }] as Model[];
+    const created = vi.fn(); render(<CapabilityDialog projectId="project" models={extended} onClose={() => {}} onCreated={created} />);
+    fireEvent.change(screen.getByLabelText('评测题集'), { target: { value: 'gsm8k-full' } });
+    fireEvent.change(screen.getByLabelText('基线模型'), { target: { value: 'four' } });
+    fireEvent.change(screen.getByLabelText('候选模型'), { target: { value: 'seven' } });
+    fireEvent.click(screen.getByRole('button', { name: '冻结题集并创建对照' }));
+    await waitFor(() => expect(created).toHaveBeenCalledOnce());
+    expect(calls[0].body).toEqual({ project_id: 'project', model_id: 'four', candidate_model_id: 'seven', benchmark: 'gsm8k-full' });
   });
 
   it('复核保留实际输出，理由必填且请求绑定记录版本', async () => {

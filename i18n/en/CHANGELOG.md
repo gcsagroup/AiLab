@@ -2,6 +2,16 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## Ver3.2 (075) · 2026-10-21
+
+The model lab now includes the official English GSM8K test set: all 1,319 questions and a separate fixed 12-question trial. The frozen protocol uses 8-shot CoT examples, raw-text prompts, greedy generation, at most 1,024 output tokens per question and an 8,192-token context limit. Strict and flexible extraction are scored separately. Missing extractions and truncated answers remain in the denominator; flexible scores do not replace strict scores. Reports preserve source provenance, model manifests, runtime identity and raw answers.
+
+Workflow: create a capability comparison, choose the ordinary eight questions, GSM8K trial or full set, and select both models. Freeze the set, check configuration and explicitly start. Models load separately and show saved-answer counts. After stopping and confirming process exit, continue saved evaluation to create a linked task, check again and start; only confirmed answers are reused, preserving the original task. Filter errors, differing verdicts, missing strict answers or truncations, page through outputs and export complete records. The ordinary eight questions retain manual review; GSM8K does not use that review or candidate admission.
+
+Both sides support unquantized Qwen2.5-0.5B, existing 0.5B MLX 4-bit/64/affine weights and unquantized Qwen2.5-7B. Cross-size comparison freezes each tokenizer separately. Preflight checks models, prompt length, storage and runtime; continuation also checks the original recipe and answer chain. Other architectures, quantized 7B, broader benchmark suites and FP8-to-BF16 remain deferred without placeholder entries. Ordinary tasks retain strict rules; explanatory text does not automatically pass an integer-only rule.
+
+The fixed company-signed app completed a real full comparison in an isolated library, with 1,319 questions per model, stopping during execution, quitting and reopening before continuation, filtering, pagination and complete export verification. The packaged runtime also ran an existing real 0.5B 4-bit model on the trial, and continuation after backup restoration was verified. Confirmed answers were neither regenerated nor changed; the daily library was preserved and restored. Scores describe this fixed protocol only, not general ability, candidate admission or public release qualification.
+
 ## Ver3.1 (072) · 2026-10-20
 
 The model lab adds source and environment verification and ordinary capability comparison. Verification reads Heretic reproduce v4 or Abliterix schema 2 JSON, checks tool versions, reported provenance, actual file hashes, the imported manifest and current MLX dependency versions, and preserves the original report bytes for reopening and export. It does not execute report code, configuration or reproduction recipes. Matching checksums do not authenticate the publisher or prove reproduction.

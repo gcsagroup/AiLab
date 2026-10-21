@@ -528,6 +528,7 @@ class SourceCheckInput(Strict):
 
 
 class CapabilityInput(Strict):
+    benchmark: Literal["ordinary8", "gsm8k-full", "gsm8k-smoke"] = "ordinary8"
     project_id: str
     model_id: str
     candidate_model_id: str
@@ -918,6 +919,10 @@ def create_app(settings):
     def capability_review(evaluation_id: str, payload: CapabilityReviewInput, idempotency_key: str | None = Header(default=None)):
         return service.evaluation.review(evaluation_id, payload.model_dump(), idempotency_key)
 
+    @app.post("/api/v1/evaluations/{evaluation_id}/continue")
+    def continue_evaluation(evaluation_id: str, payload: EmptyInput, idempotency_key: str | None = Header(default=None)):
+        return service.evaluation.continue_task(evaluation_id, idempotency_key)
+
     @app.post("/api/v1/evaluation-plans")
     def evaluation_plan(payload: EvaluationPlanInput, idempotency_key: str | None = Header(default=None)):
         return service.evaluation.create_plan(payload.model_dump(), idempotency_key)
@@ -936,8 +941,11 @@ def create_app(settings):
         return {**page, "items": [service.evaluation.record(item, detailed=False) for item in page["items"]]}
 
     @app.get("/api/v1/evaluations/{evaluation_id}")
-    def evaluation(evaluation_id: str):
-        return service.evaluation.record(service.store.get("attempt", evaluation_id))
+    def evaluation(evaluation_id: str, sample_offset: int = Query(default=0, ge=0, le=1319),
+                   sample_limit: int = Query(default=10, ge=1, le=50),
+                   sample_filter: Literal["all", "wrong", "different", "missing", "truncated"] = "all"):
+        return service.evaluation.record(service.store.get("attempt", evaluation_id), sample_offset=sample_offset,
+                                         sample_limit=sample_limit, sample_filter=sample_filter)
 
     @app.get("/api/v1/candidates")
     def candidates(project_id: str | None = None, cursor: str | None = None, limit: int = Query(default=100, ge=1, le=200)):

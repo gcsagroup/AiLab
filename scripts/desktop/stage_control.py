@@ -36,6 +36,7 @@ def stage(root: Path, destination: Path):
     # 外部媒体 Python 与其配方摘要也需要同一份控制层受限解析源码。
     shutil.copytree(destination / "control/ailab_control", destination / "services/control/ailab_control")
     selected = [str(path.relative_to(root)) for directory in [root / "workers", root / "adapters/mlx_text", root / "adapters/media", root / "adapters/nvidia_text"] for path in directory.glob("*.py")]
+    selected.extend(str(path.relative_to(root)) for path in (root / "adapters/mlx_text/benchmark_data").iterdir() if path.is_file())
     selected.extend(["adapters/mlx_text/requirements.lock.txt", "adapters/media/requirements.lock.txt", "adapters/nvidia_text/requirements.txt"])
     for relative in selected:
         target = destination / relative

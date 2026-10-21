@@ -11,14 +11,28 @@ function useCurrentView() {
   return () => { const libraryCurrent = captureLibraryRead(); return () => live.current && libraryCurrent(); };
 }
 
+function comparisonUnsupported(model: Model): string | null {
+  const config = model.model_config;
+  if (model.modality !== 'text' || !['safetensors', 'mlx-safetensors'].includes(model.format) || (model.default_engine && model.default_engine !== 'mlx')) return '需要本地 MLX safetensors 文本模型';
+  if (config?.model_type !== 'qwen2') return '此模型架构尚未适配';
+  const small = config.hidden_size === 896 && config.num_hidden_layers === 24;
+  const large = config.hidden_size === 3584 && config.num_hidden_layers === 28;
+  if (!small && !large) return '当前仅验证 0.5B 与 7B 结构';
+  const quantizations = [config.quantization, config.quantization_config].filter(Boolean);
+  if (large && quantizations.length) return '7B 量化尚未验证';
+  if (quantizations.some(value => { const q = value as Record<string, unknown>; return q.bits !== 4 || q.group_size !== 64 || q.mode !== 'affine' || Object.keys(q).length !== 3; })) return '只支持已有 MLX 4-bit／64／affine 权重';
+  return null;
+}
+
 export function CapabilityDialog({ projectId, models, onClose, onCreated }: { projectId: string; models: Model[]; onClose: () => void; onCreated: (task: Task) => void }) {
   const capture = useCurrentView();
-  const supported = models.filter(model => model.modality === 'text' && ['safetensors', 'mlx-safetensors'].includes(model.format) && (!model.default_engine || model.default_engine === 'mlx') && model.model_config?.model_type === 'qwen2' && model.model_config.hidden_size === 896 && model.model_config.num_hidden_layers === 24);
-  const baselines = supported.filter(model => !model.model_config?.quantization && !model.model_config?.quantization_config);
+  const supported = models.filter(model => !comparisonUnsupported(model));
+  const baselines = supported;
   const [baseline, setBaseline] = useState(baselines[0]?.id || ''); const [candidate, setCandidate] = useState(supported.find(model => model.id !== baselines[0]?.id)?.id || '');
+  const [benchmark, setBenchmark] = useState('ordinary8');
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const key = useRef<string | null>(null);
-  async function create() { const isCurrent = capture(); setBusy(true); setError(''); key.current ||= crypto.randomUUID(); try { const task = await api<Task>('POST', '/evaluations/capability', { project_id: projectId, model_id: baseline, candidate_model_id: candidate }, key.current); if (isCurrent()) onCreated(task); } catch (e) { if (isCurrent()) setError(errorMessage(e)); } finally { if (isCurrent()) setBusy(false); } }
-  return <Dialog title="新建普通能力对照" wide preventClose={busy} onClose={onClose}><div className="form-stack"><p>使用固定 8 题：3 道整数数学题、2 道格式题、1 道排序题和 2 道普通日常题。两模型分别加载，参数相同，逐题保留实际回答。</p><p className="muted">当前支持 Qwen2.5-0.5B，基线为未量化权重，候选可为合并、蒸馏或 MLX 4-bit 模型；两侧分词器和模板须一致。人工复核独立保存，本对照不用于质量准入。</p><p className="muted">模型未列出时，请检查模型库中是否已有符合条件的 Qwen2.5-0.5B 权重。</p><fieldset className="task-fields" disabled={busy}>{([['基线模型', baseline, setBaseline], ['候选模型', candidate, setCandidate]] as const).map(([label, value, setter]) => <label key={label}>{label}<select value={value} onChange={e => { setter(e.target.value); key.current = null; }}><option value="">请选择模型</option>{(label === '基线模型' ? baselines : supported).map(model => <option key={model.id} value={model.id}>{model.name}</option>)}</select></label>)}</fieldset><ErrorNotice message={error} /><Button primary busy={busy} disabled={!baseline || !candidate || baseline === candidate} onClick={create}>冻结题集并创建对照</Button></div></Dialog>;
+  async function create() { const isCurrent = capture(); setBusy(true); setError(''); key.current ||= crypto.randomUUID(); try { const task = await api<Task>('POST', '/evaluations/capability', { project_id: projectId, model_id: baseline, candidate_model_id: candidate, benchmark }, key.current); if (isCurrent()) onCreated(task); } catch (e) { if (isCurrent()) setError(errorMessage(e)); } finally { if (isCurrent()) setBusy(false); } }
+  return <Dialog title="新建普通能力对照" wide preventClose={busy} onClose={onClose}><div className="form-stack"><p>支持 Qwen2.5-0.5B、未量化 7B，以及现有 0.5B MLX 4-bit／64／affine 模型。两侧分别加载，可跨规模对照。</p><p className="muted">每题保存实际回答；停止后可继续。分数仅代表所选评测，不用于质量准入。其他架构、7B 量化及 FP8 尚未开放。</p>{models.some(model => model.modality === 'text' && comparisonUnsupported(model)) && <details><summary>查看未列出模型的原因</summary>{models.filter(model => model.modality === 'text' && comparisonUnsupported(model)).map(model => <p key={model.id}>{model.name}：{comparisonUnsupported(model)}</p>)}</details>}<fieldset className="task-fields" disabled={busy}><label>评测题集<select value={benchmark} onChange={e => { setBenchmark(e.target.value); key.current = null; }}><option value="ordinary8">普通能力固定 8 题</option><option value="gsm8k-smoke">GSM8K 试跑 · 固定 12 题</option><option value="gsm8k-full">GSM8K 全量 · 1,319 题</option></select></label>{([[ '基线模型', baseline, setBaseline], ['候选模型', candidate, setCandidate]] as const).map(([label, value, setter]) => <label key={label}>{label}<select value={value} onChange={e => { setter(e.target.value); key.current = null; }}><option value="">请选择模型</option>{(label === '基线模型' ? baselines : supported).map(model => <option key={model.id} value={model.id}>{model.name}</option>)}</select></label>)}</fieldset>{benchmark !== 'ordinary8' && <p>官方英文测试集，固定 8 个推理示例，原始文本提示，贪心生成，每题上限 1,024 词元。建议先试跑估算用时，再运行全量；全量双模型共生成 2,638 份回答。</p>}<ErrorNotice message={error} /><Button primary busy={busy} disabled={!baseline || !candidate || baseline === candidate} onClick={create}>冻结题集并创建对照</Button></div></Dialog>;
 }
 
 export type Reviews = { revision: number; items: { id: string; revision: number; sample_id: string; variant: 'baseline' | 'candidate'; verdict: string; note: string; created_at: string }[] };

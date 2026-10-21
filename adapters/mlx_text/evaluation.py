@@ -60,6 +60,13 @@ def load_plan(snapshot):
         rows = [strict_json(line) for line in paths["dataset"].read_text().splitlines() if line.strip()]
     except (ValueError, UnicodeError) as exc:
         raise EvaluationError("INVALID_EVALUATION_DATA", "评测集或规则不是严格 JSON") from exc
+    if isinstance(criteria, dict) and criteria.get("schema_version") == "gsm8k-cot-8shot-v1" and snapshot.get("evaluation_kind") == "capability_comparison":
+        from .benchmark import validate_plan
+        try:
+            validate_plan(rows, criteria)
+        except ValueError as error:
+            raise EvaluationError("BENCHMARK_CHANGED", str(error)) from error
+        return rows, criteria, plan_digest
     if not isinstance(criteria, dict) or set(criteria) != {"schema_version", "category_min_pass_rate", "regression_tolerance", "generation"} or criteria["schema_version"] != VERSION:
         raise EvaluationError("INVALID_EVALUATION_CRITERIA", "评测规则版本或字段不支持")
     thresholds = criteria["category_min_pass_rate"]
@@ -111,12 +118,23 @@ def model_plan_bound(snapshot):
         return False
 
 
-def model_evaluation_identity(snapshot, tokenization_recipe_digest):
+def model_evaluation_identity(snapshot, tokenization_recipe_digest, candidate_recipe_digest=None):
     root = Path(__file__).resolve().parents[2]
-    sources = ["adapters/mlx_text/evaluation.py", "adapters/mlx_text/recipe.py", "adapters/mlx_text/preflight.py", "workers/mlx_evaluate_worker.py", "workers/mlx_worker.py"]
+    sources = ["adapters/mlx_text/evaluation.py", "adapters/mlx_text/recipe.py", "adapters/mlx_text/preflight.py", "workers/mlx_evaluate_worker.py", "workers/mlx_worker.py", "adapters/mlx_text/benchmark.py", "adapters/mlx_text/evaluation_journal.py"]
     recipe = {"schema_version": "mlx-model-evaluation-v1", "evaluation_kind": snapshot.get("evaluation_kind"), "model_comparison_digest": snapshot["model_comparison_digest"], "evaluation_plan_digest": snapshot["evaluation_plan_digest"],
               "quality_plan_ref_digest": snapshot.get("quality_plan_ref", {}).get("digest"), "tokenization_recipe_digest": tokenization_recipe_digest,
               "source_sha256": {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in sources}}
+    if snapshot.get("evaluation_kind") == "capability_comparison":
+        recipe["candidate_tokenization_recipe_digest"] = candidate_recipe_digest or snapshot.get("effective_config", {}).get("candidate_tokenization_recipe_digest")
+        import importlib.metadata
+        import platform
+        versions = {}
+        for name in ("mlx", "mlx-lm", "transformers", "tokenizers", "numpy"):
+            try:
+                versions[name] = importlib.metadata.version(name)
+            except importlib.metadata.PackageNotFoundError:
+                versions[name] = None
+        recipe["runtime"] = {"python": platform.python_version(), "versions": versions}
     return recipe, canonical_digest(recipe)
 
 

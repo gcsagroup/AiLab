@@ -67,6 +67,37 @@ def test_generator_failure_is_not_reported_as_a_normal_stop():
         evaluator.collect_prediction(stream(), lambda: None)
 
 
+@pytest.mark.parametrize('cancel_requested', [True, False])
+def test_child_exit_racing_parent_cancel_preserves_requested_outcome(tmp_path, monkeypatch, cancel_requested):
+    """子进程先退出时仍读取父进程取消标记；真实失败不能伪装成取消。"""
+    snapshot, _, _ = fixture_plan(tmp_path)
+    output = tmp_path / 'output'
+    output.mkdir()
+    signal_received = False
+
+    class ExitedPass:
+        returncode = 130 if cancel_requested else 1
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def poll(self):
+            nonlocal signal_received
+            signal_received = cancel_requested
+            return self.returncode
+
+    def check_cancel():
+        if signal_received:
+            raise evaluator.worker.WorkerError('CANCELLED', '已收到用户取消')
+
+    monkeypatch.setattr(evaluator.subprocess, 'Popen', ExitedPass)
+    expected = evaluator.worker.WorkerError if cancel_requested else evaluator.EvaluationError
+    with pytest.raises(expected) as failure:
+        evaluator.run_evaluate(snapshot, {}, output, lambda *args, **kwargs: None, check_cancel)
+    assert failure.value.code == ('CANCELLED' if cancel_requested else 'EVALUATION_PASS_FAILED')
+    assert not (output / 'evaluation-report.json').exists()
+
+
 def test_lora_report_preserves_both_pass_observations_and_original_scoring(tmp_path, monkeypatch):
     snapshot, rows, criteria = fixture_plan(tmp_path)
     adapter = tmp_path / 'adapter'; adapter.mkdir()

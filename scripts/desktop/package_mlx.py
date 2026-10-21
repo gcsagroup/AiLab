@@ -27,6 +27,7 @@ def build(root, source):
     # 配方身份会读取自身源码；冻结模块同时保留对应源文件供摘要核对。
     datas.extend((str(path), str(path.parent.relative_to(source)))
                  for prefix in ["workers", "adapters"] for path in (source / prefix).rglob("*.py"))
+    datas.extend((str(path), "adapters/mlx_text/benchmark_data") for path in (source / "adapters/mlx_text/benchmark_data").iterdir() if path.is_file())
     binaries, hiddenimports = [], []
     for package in ["mlx", "mlx_lm", "transformers", "tokenizers", "safetensors", "sentencepiece"]:
         package_data, package_binaries, package_hidden = collect_all(package, filter_submodules=lambda name: ".tests" not in name)

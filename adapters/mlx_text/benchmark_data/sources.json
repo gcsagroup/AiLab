@@ -1,0 +1,31 @@
+{
+  "gsm8k-test.jsonl": {
+    "url": "https://raw.githubusercontent.com/openai/grade-school-math/3101c7d5072418e28b9008a6636bde82a006892c/grade_school_math/data/test.jsonl",
+    "revision": "3101c7d5072418e28b9008a6636bde82a006892c",
+    "sha256": "3730d312f6e3440559ace48831e51066acaca737f6eabec99bccb9e4b3c39d14",
+    "size": 749738
+  },
+  "GSM8K-LICENSE": {
+    "url": "https://raw.githubusercontent.com/openai/grade-school-math/3101c7d5072418e28b9008a6636bde82a006892c/LICENSE",
+    "revision": "3101c7d5072418e28b9008a6636bde82a006892c",
+    "sha256": "86bbb73e855821d7c401912fd4bf82e34313e6e3b6fd6f909f2b6cc9e209a53b",
+    "size": 1062
+  },
+  "gsm8k-cot.yaml": {
+    "url": "https://raw.githubusercontent.com/EleutherAI/lm-evaluation-harness/d6de81643928d653435c431bae19945d41d32520/lm_eval/tasks/gsm8k/gsm8k-cot.yaml",
+    "revision": "d6de81643928d653435c431bae19945d41d32520",
+    "sha256": "7c9dd2561fe334a55f62bdc6a876f045e6dc7f53714c7a9db506b89c6de6bc96",
+    "size": 3324
+  },
+  "HARNESS-LICENSE": {
+    "url": "https://raw.githubusercontent.com/EleutherAI/lm-evaluation-harness/d6de81643928d653435c431bae19945d41d32520/LICENSE.md",
+    "revision": "d6de81643928d653435c431bae19945d41d32520",
+    "sha256": "a806e42547620dffbc2ec0333322c8b3523b4af11e059be14ef81aa5b1ae021f",
+    "size": 1067
+  },
+  "protocol.json": {
+    "derived_from": "gsm8k-cot.yaml",
+    "sha256": "5c074073b67adcb143301c8a7d3ace816480bc401c5754e4bb10c9d78aba3c04",
+    "size": 3668
+  }
+}

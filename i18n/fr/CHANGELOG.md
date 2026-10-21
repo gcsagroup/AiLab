@@ -2,6 +2,16 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](CHANGELOG.md) · [Português](../pt/CHANGELOG.md)
 
+## Ver3.2 (075) · 2026-10-21
+
+Le laboratoire intègre le test anglais officiel GSM8K : 1 319 questions complètes et un essai distinct de 12 questions fixes. Le protocole figé utilise huit exemples CoT, des invites en texte brut, une génération gloutonne, au plus 1 024 jetons de sortie par question et un contexte limité à 8 192. Les extractions stricte et souple sont notées séparément. Les réponses non extraites ou tronquées restent au dénominateur ; la note souple ne remplace pas la stricte. Sources, manifestes, environnement et réponses originales sont conservés.
+
+Utilisation : créer une comparaison, choisir les huit tâches ordinaires, l’essai GSM8K ou le test complet et les deux modèles, figer les questions, vérifier puis démarrer explicitement. Les modèles sont chargés séparément avec compteur de réponses enregistrées. Après arrêt et confirmation de fin des processus, poursuivre les réponses sauvegardées crée une tâche liée à revérifier puis démarrer ; seules les réponses confirmées sont réutilisées et la tâche initiale est conservée. Filtrer erreurs, décisions différentes, extractions manquantes ou troncatures, parcourir les pages et exporter tous les enregistrements. La revue manuelle reste réservée aux huit tâches ordinaires ; GSM8K ne sert pas à l’admission des candidats.
+
+Chaque côté accepte Qwen2.5-0.5B non quantifié, les poids existants 0.5B MLX 4-bit/64/affine et Qwen2.5-7B non quantifié. La comparaison entre tailles fige chaque tokenizer séparément. Le contrôle préalable vérifie modèles, longueur des invites, stockage et environnement ; la reprise vérifie aussi la recette initiale et la chaîne de réponses. Autres architectures, 7B quantifié, suites générales et FP8 vers BF16 restent reportés sans entrée factice. Les règles strictes des tâches ordinaires sont maintenues : une explication ne valide pas automatiquement le format entier seul.
+
+L’app fixe signée par la même entreprise a réalisé dans une bibliothèque isolée 1 319 questions par modèle, arrêt en cours, fermeture et réouverture avant reprise, filtres, pagination et vérification complète des exports. L’environnement empaqueté a aussi exécuté l’essai avec un vrai modèle 0.5B 4-bit existant et vérifié la reprise après restauration de sauvegarde. Les réponses confirmées n’ont été ni régénérées ni modifiées, et la bibliothèque quotidienne a été préservée et restaurée. Ces scores décrivent ce protocole, sans certifier capacité générale, admission ou diffusion publique.
+
 ## Ver3.1 (072) · 2026-10-20
 
 Le laboratoire ajoute la vérification de provenance et d’environnement ainsi que la comparaison de capacités ordinaires. Il lit les rapports JSON Heretic reproduce v4 ou Abliterix schema 2, compare versions, provenance déclarée, empreintes réelles, manifeste importé et dépendances MLX actuelles. Les octets du rapport original sont conservés pour consultation et export. Aucun code, configuration ou recette de reproduction du rapport n’est exécuté. Des empreintes identiques n’authentifient pas l’auteur et ne prouvent pas une reproduction.

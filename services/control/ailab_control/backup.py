@@ -40,7 +40,7 @@ def remap_reference_paths(value, source_root: Path, target_root: Path, key=None)
         return [remap_reference_paths(item, source_root, target_root) for item in value]
     if isinstance(value, dict):
         return {name: remap_reference_paths(item, source_root, target_root,
-                                           "storage_path" if key in {"checkpoint_ref", "teacher"} and name == "path" else name)
+                                           "storage_path" if key in {"checkpoint_ref", "teacher", "evaluation_resume_ref"} and name == "path" else name)
                 for name, item in value.items()}
     if key in PATH_FIELDS and isinstance(value, str) and Path(value).is_absolute() and Path(value).is_relative_to(source_root):
         return str(target_root / Path(value).relative_to(source_root))
@@ -335,11 +335,27 @@ def referenced_files(resources, source_root, files_root=None):
                                                            or configuration['runtime'].get('max_seq_length') != reference['max_seq_length'])):
                     fail('训练配置与其来源组证明不是同一训练子集或检查身份。', 'BACKUP_REFERENCE_MISSING')
             reference = configuration.get("checkpoint_ref")
+            evaluation_resume = configuration.get("evaluation_resume_ref")
+            if evaluation_resume:
+                if evaluation_resume.get("source_attempt_id") not in attempts or digest(evaluation_resume["manifest"]) != evaluation_resume["manifest_digest"]:
+                    fail("评测继续记录缺少来源运行或文件摘要。")
+                for entry in evaluation_resume["manifest"]:
+                    add(Path(evaluation_resume["path"]) / relative_path(entry["path"]), entry["size"], entry["sha256"])
             checkpoint_id = configuration.get("checkpoint_id")
             if checkpoint_id and checkpoint_id not in checkpoints:
                 fail("数据库恢复任务缺少来源检查点。")
             if reference and not any(reference == {"path": item["storage_path"], "manifest_digest": item["manifest_digest"], "source_attempt_id": item["source_attempt_id"]} for item in checkpoints.values()):
                 fail("运行快照的检查点引用没有完整来源记录。")
+        if kind == "attempt" and body.get("evaluation_progress"):
+            for variant in body["evaluation_progress"]:
+                if variant not in {"baseline", "candidate"}:
+                    fail("评测保存记录包含无效对象。")
+                journal = source_root / "runs" / relative_path(body["id"]) / "output" / variant / "answers.jsonl"
+                physical = files_root / journal.relative_to(source_root)
+                if physical.is_file():
+                    add(journal, physical.stat().st_size, file_hash(physical))
+                else:
+                    fail("逐题评测记录缺失，无法备份恢复进度。")
         if kind in {"model", "dataset", "adapter", "material"}:
             for entry in body["manifest"]:
                 add(Path(body["storage_path"]) / relative_path(entry["path"]), entry["size"], entry["sha256"])

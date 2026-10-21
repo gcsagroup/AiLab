@@ -37,9 +37,6 @@ def test_ordinary_comparison_rejects_invalid_inputs(tmp_path, mutation):
     if mutation == 'same_model': snapshot['candidate_model_path'] = str(base)
     if mutation == 'tokenizer_changed':
         (candidate / 'tokenizer_config.json').write_text('{"changed":true}')
-        entries, identity = snapshot_manifest(candidate); snapshot.update(candidate_model_manifest=entries, candidate_model_manifest_digest=identity)
-        snapshot['model_comparison']['candidate_model_manifest_digest'] = identity
-        snapshot['model_comparison_digest'] = canonical_digest(snapshot['model_comparison'])
     if mutation == 'wrong_pair': snapshot['model_comparison']['baseline_model_id'] = 'other'
     if mutation == 'adapter': snapshot['adapter_path'] = str(base)
     if mutation == 'dataset': snapshot['dataset_path'] = str(base / 'data.jsonl')
@@ -49,3 +46,13 @@ def test_ordinary_comparison_rejects_invalid_inputs(tmp_path, mutation):
         (candidate / 'config.json').write_text(json.dumps(config))
         entries, identity = snapshot_manifest(candidate); snapshot.update(candidate_model_manifest=entries, candidate_model_manifest_digest=identity)
     with pytest.raises(WorkerError): validate_comparison_model(snapshot, output, base)
+
+
+def test_independently_frozen_tokenizers_are_allowed(tmp_path):
+    snapshot, base, candidate, output = ordinary(tmp_path)
+    (candidate / 'tokenizer_config.json').write_text('{"distinct_template":true}')
+    entries, identity = snapshot_manifest(candidate)
+    snapshot.update(candidate_model_manifest=entries, candidate_model_manifest_digest=identity)
+    snapshot['model_comparison']['candidate_model_manifest_digest'] = identity
+    snapshot['model_comparison_digest'] = canonical_digest(snapshot['model_comparison'])
+    assert validate_comparison_model(snapshot, output, base) == candidate

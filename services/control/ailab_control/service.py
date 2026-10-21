@@ -554,11 +554,11 @@ class Service:
                 blocking.append({"code": "MODEL_UNVERIFIED", "message": str(error), "field": "model_id"})
             if profile and draft["operation"] in {"train", "distill"} and draft["runtime"].get("num_layers", 2) > profile["num_hidden_layers"]:
                 blocking.append({"code": "INVALID_CONFIG", "message": "训练层数超过所选基座的总层数。", "field": "runtime.num_layers"})
-            if profile and profile["name"] == "qwen25-7b" and (quantization or draft["operation"] == "quantize" or model_evaluation):
+            if profile and profile["name"] == "qwen25-7b" and (quantization or draft["operation"] == "quantize" or (model_evaluation and draft.get("evaluation_kind") != "capability_comparison")):
                 blocking.append({"code": "MODEL_UNVERIFIED", "message": "7B 当前只接受未量化基座；权重量化尚未通过独立验证。", "field": "model_id"})
             elif profile and quantization:
                 expected_quantization = {"bits": 4, "group_size": 64, "mode": "affine"}
-                if quantization != expected_quantization or config.get("quantization") not in (None, expected_quantization) or config.get("quantization_config") not in (None, expected_quantization) or draft["operation"] != "generate" or draft.get("adapter_id"):
+                if quantization != expected_quantization or config.get("quantization") not in (None, expected_quantization) or config.get("quantization_config") not in (None, expected_quantization) or (draft["operation"] != "generate" and draft.get("evaluation_kind") != "capability_comparison") or draft.get("adapter_id"):
                     blocking.append({"code": "MODEL_UNVERIFIED", "message": "当前量化组合仅开放 MLX 4-bit／64／affine 独立生成；训练、适配器、评测和再次量化均未开放。", "field": "model_id"})
             try:
                 verify_manifest(Path(model["storage_path"]), model["manifest"])
@@ -703,6 +703,8 @@ class Service:
             result['workflow_digest'] = digest(result['workflow_ref']) if result['workflow_ref'] else None
             if inspected.get('dataset_split_fields'):
                 result.update(inspected['dataset_split_fields'])
+            if checked.get("check_report", {}).get("resource_summary"):
+                result["warnings"].append({"code": "EVALUATION_RESOURCES", "message": checked["check_report"]["resource_summary"]})
             if inspected["adapter"]:
                 result["warnings"].append({"code": "EXPERIMENTAL_ADAPTER", "message": "此适配器为实验产物，尚未通过独立质量评测。"})
             if inspected["model"] and inspected["model"].get("status") == "experimental":
@@ -1076,6 +1078,14 @@ class Service:
                         attempt["phase"] = str(event.get("phase", event.get("name", "unknown")))[:120]
                         self.store.event(attempt, "phase_changed", event)
                     elif event["type"] == "metric":
+                        if event.get("journal_head") and attempt["snapshot"].get("evaluation_kind") == "capability_comparison":
+                            variant, count = event.get("variant"), event.get("completed_samples")
+                            if variant not in {"baseline", "candidate"} or type(count) is not int or not 1 <= count <= 1319:
+                                raise Fault("INVALID_WORKER_EVENT", "评测逐题保存回执无效。")
+                            previous_count = attempt.get("evaluation_progress", {}).get(variant, {}).get("count", 0)
+                            if count < previous_count:
+                                raise Fault("INVALID_WORKER_EVENT", "评测保存进度不能后退。")
+                            attempt.setdefault("evaluation_progress", {})[variant] = {"count": count, "head": event["journal_head"]}
                         self.store.event(attempt, "metric", event)
                     elif event["type"] == "error":
                         self.store.event(attempt, "warning", {"code": str(event.get("code", "WORKER_FAILED"))[:100], "message": str(event.get("message", "执行失败。"))[:1000]})

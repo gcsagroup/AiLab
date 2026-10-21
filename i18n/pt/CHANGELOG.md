@@ -2,6 +2,16 @@
 
 [简体中文](../../CHANGELOG.md) · [繁體中文](../zh-TW/CHANGELOG.md) · [English](../en/CHANGELOG.md) · [日本語](../ja/CHANGELOG.md) · [한국어](../ko/CHANGELOG.md) · [Français](../fr/CHANGELOG.md) · [Português](CHANGELOG.md)
 
+## Ver3.2 (075) · 2026-10-21
+
+O laboratório integra o teste oficial em inglês GSM8K: todas as 1.319 questões e um ensaio separado de 12 questões fixas. O protocolo congelado usa oito exemplos CoT, prompts em texto bruto, geração gulosa, até 1.024 tokens de saída por questão e contexto limitado a 8.192. Extrações estrita e flexível recebem pontuações separadas. Falhas de extração e respostas truncadas continuam no denominador; a nota flexível não substitui a estrita. Fontes, manifestos, ambiente e respostas originais são preservados.
+
+Uso: crie uma comparação, escolha as oito tarefas comuns, o ensaio GSM8K ou o teste completo e ambos os modelos; fixe as questões, verifique e inicie explicitamente. Os modelos são carregados separadamente, com contagem de respostas salvas. Após parar e confirmar a saída dos processos, continuar a avaliação salva cria uma tarefa vinculada para nova verificação e início; só respostas confirmadas são reutilizadas, mantendo a tarefa original. Filtre erros, decisões diferentes, extrações ausentes ou truncamentos, consulte por páginas e exporte todos os registros. A revisão manual permanece nas oito tarefas comuns; GSM8K não usa essa revisão nem a admissão de candidatos.
+
+Ambos os lados aceitam Qwen2.5-0.5B não quantizado, pesos existentes 0.5B MLX 4-bit/64/affine e Qwen2.5-7B não quantizado. A comparação entre tamanhos congela cada tokenizer separadamente. A pré-verificação confere modelos, comprimento dos prompts, espaço e ambiente; a continuação também verifica a receita original e a cadeia de respostas. Outras arquiteturas, 7B quantizado, conjuntos gerais de benchmarks e FP8 para BF16 continuam adiados sem entradas provisórias. As regras estritas das tarefas comuns permanecem: explicações não passam automaticamente na regra de apenas um inteiro.
+
+O App fixo assinado pela mesma empresa concluiu em biblioteca isolada 1.319 questões por modelo, parada durante execução, saída e reabertura antes de continuar, filtros, paginação e verificação completa das exportações. O ambiente empacotado também executou o ensaio com um modelo real 0.5B 4-bit existente e verificou a continuação após restauração de backup. Respostas confirmadas não foram geradas novamente nem alteradas; a biblioteca diária foi preservada e restaurada. As notas descrevem este protocolo, não comprovam capacidade geral, admissão ou lançamento público.
+
 ## Ver3.1 (072) · 2026-10-20
 
 O laboratório adiciona verificação de origem e ambiente e comparação de capacidades comuns. Ele lê JSON Heretic reproduce v4 ou Abliterix schema 2, compara versões, origem declarada, hashes reais, manifesto importado e dependências MLX atuais. Os bytes originais do relatório são preservados para consulta e exportação. Nenhum código, configuração ou receita de reprodução do relatório é executado. Hashes iguais não autenticam o publicador nem comprovam reprodução.

@@ -28,6 +28,8 @@ def portable_recipe(snapshot):
     if 'dataset_split_ref' in snapshot:
         from .dataset_splits import portable_split_ref
         result['dataset_split_ref'] = portable_split_ref(snapshot['dataset_split_ref'])
+    if snapshot.get("evaluation_resume_ref"):
+        result["evaluation_resume_ref"] = {k: v for k, v in snapshot["evaluation_resume_ref"].items() if k != "path"}
     if snapshot.get("teacher"):
         result["teacher"] = {key: value for key, value in snapshot["teacher"].items() if key != "path"}
     if snapshot.get("format_provenance"):
@@ -220,7 +222,7 @@ class Delivery:
             if item["collection_state"] != "succeeded" or not item.get("output_manifest_ref"):
                 raise Fault("REPORT_NOT_READY", "本次执行尚无已完整保存的报告产物。", 409)
             for part in item["output_manifest_ref"]["artifacts"]:
-                if part.get("media_type") == "application/json" or item["snapshot"].get("operation") == "distill" and part["path"] == "teacher-data.jsonl":
+                if part.get("media_type") == "application/json" or item["snapshot"].get("operation") == "distill" and part["path"] == "teacher-data.jsonl" or item["snapshot"].get("evaluation_kind") == "capability_comparison" and part["path"] in {"baseline/answers.jsonl", "candidate/answers.jsonl"}:
                     artifact = self.artifact_for_path(item, part["path"])
                     add_file("report/" + part["path"], artifact["storage_path"], artifact["sha256"], artifact["size"])
             if not files:
