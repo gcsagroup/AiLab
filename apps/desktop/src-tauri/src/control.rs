@@ -231,6 +231,11 @@ impl ControlProcess {
         let log_dir = config.data_dir.join("logs");
         fs::create_dir_all(&log_dir).map_err(|_| "无法创建服务日志目录。")?;
         let mut command = Command::new(&config.executable);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x08000000);
+        }
         command
             .args(&config.args)
             .arg("--data-dir")

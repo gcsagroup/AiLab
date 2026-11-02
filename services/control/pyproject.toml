@@ -9,6 +9,12 @@ description = "GCSA AI Lab 本机控制服务"
 requires-python = ">=3.13"
 dependencies = ["fastapi==0.116.1", "uvicorn==0.35.0", "certifi==2026.7.22"]
 
+[project.optional-dependencies]
+studio = ["psutil>=7,<8", "tomlkit>=0.13,<1", "uv>=0.8,<1"]
+
+[tool.setuptools.package-data]
+ailab_studio = ["templates/*.toml", "workers/*.py"]
+
 [tool.setuptools.packages.find]
 where = ["."]
 
