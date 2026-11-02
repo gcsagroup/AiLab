@@ -37,7 +37,7 @@ AiLab 使用 React + Tauri 提供桌面界面，以轻量 Python 控制服务管
 以下截图来自当前 Windows 开发界面。配置页截图展示界面能力，不表示训练或消融任务已完成。
 
 ### 模型测试
-
+![模型测试：LLM对话](docs/images/model-test-llm.png)
 ![模型测试：ComfyUI 分离组件配置](docs/images/model-test.png)
 
 ### SFT 训练
@@ -152,7 +152,7 @@ npm test
 .venv\Scripts\python.exe scripts/desktop/verify_studio.py
 ```
 
-完整桌面构建需要 Rust、Tauri 对应系统构建依赖，再运行 `scripts/desktop/build_studio.py`。macOS 签名配置应替换为自己的签名身份；仓库内历史签名字段不是可直接使用的发布凭据。
+Windows 完整桌面构建需要 Rust MSVC 工具链、Microsoft C++ Build Tools 和 Windows SDK。安装完成后，可运行 `powershell -ExecutionPolicy Bypass -File scripts/desktop/build_windows.ps1`，生成的安装 EXE 和 SHA256 文件位于 `dist/windows/`；构建依赖与模型环境不会一并封装。其他系统需要 Rust、Tauri 对应系统构建依赖，再运行 `scripts/desktop/build_studio.py`。macOS 签名配置应替换为自己的签名身份；仓库内历史签名字段不是可直接使用的发布凭据。
 
 ## 代码与本地数据
 
