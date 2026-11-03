@@ -262,6 +262,7 @@ fn validate_request(request: &ApiRequest) -> Result<(), Value> {
     if !matches!(
         segments[0],
         "projects"
+            | "studio"
             | "ai"
             | "models"
             | "model-catalog"
@@ -304,6 +305,25 @@ fn validate_request(request: &ApiRequest) -> Result<(), Value> {
             | "health"
     ) {
         return Err(error("HOST_REQUEST_DENIED", "此应用接口未获授权。"));
+    }
+    if segments[0] == "studio" {
+        let allowed = matches!((request.method.as_str(), segments.as_slice()),
+            ("GET", ["studio", "status" | "assets" | "jobs" | "conversations" | "settings" | "materials"])
+            | ("POST", ["studio", "paths" | "environment" | "recommend" | "sft" | "inference" | "ablation" | "conversations" | "settings"])
+            | ("GET", ["studio", "ablation", "template"])
+            | ("POST", ["studio", "ablation", "validate" | "compatibility"])
+            | ("POST", ["studio", "runtimes", "training" | "llama" | "vllm" | "diffusers" | "ablation", "install"])
+            | ("GET", ["studio", "jobs", _])
+            | ("GET", ["studio", "conversations", _])
+            | ("GET", ["studio", "jobs", _, "events" | "preview"])
+            | ("POST", ["studio", "jobs", _, "cancel" | "pause" | "resume"])
+            | ("GET", ["studio", "materials", _, "content" | "thumbnail"])
+            | ("GET", ["studio", "llm", "status"])
+            | ("POST", ["studio", "llm", "load" | "unload" | "capabilities"])
+            | ("POST", ["studio", "materials", "import" | "uploads"])
+            | ("POST", ["studio", "materials", "uploads", _, "chunk" | "complete"])
+            | ("POST", ["studio", "conversations", _]));
+        if !allowed { return Err(error("HOST_REQUEST_DENIED", "此工作台操作未获授权。")); }
     }
     if segments[0] == "ui-context"
         && (!matches!(request.method.as_str(), "GET" | "PATCH")
@@ -1433,76 +1453,31 @@ async fn native_connection_request(
 }
 
 fn launch_config(app: &tauri::AppHandle) -> Result<LaunchConfig, Box<dyn std::error::Error>> {
-    let data_dir = if cfg!(debug_assertions) {
-        std::env::var_os("AILAB_DATA_DIR")
-            .map(PathBuf::from)
-            .unwrap_or(app.path().app_data_dir()?)
-    } else {
-        app.path().app_data_dir()?
-    };
-    let bundled = app
-        .path()
-        .resource_dir()?
-        .join("resources/control/ailab-control");
+    let data_dir = std::env::var_os("AILAB_DATA_DIR")
+        .map(PathBuf::from)
+        .unwrap_or(app.path().app_data_dir()?.join("studio"));
     if !cfg!(debug_assertions) {
+        let name = if cfg!(windows) { "ailab-control.exe" } else { "ailab-control" };
         return Ok(LaunchConfig {
-            executable: bundled,
-            args: vec![
-                "--bundled-worker".into(),
-                app.path()
-                    .resource_dir()?
-                    .join("resources/mlx/ailab-mlx")
-                    .to_string_lossy()
-                    .into(),
-                "--bundled-media-worker".into(),
-                app.path()
-                    .resource_dir()?
-                    .join("resources/diffusers/ailab-diffusers")
-                    .to_string_lossy()
-                    .into(),
-                "--bundled-audio-worker".into(),
-                app.path()
-                    .resource_dir()?
-                    .join("resources/kokoro/ailab-kokoro")
-                    .to_string_lossy()
-                    .into(),
-                "--worker-script".into(),
-                app.path()
-                    .resource_dir()?
-                    .join("resources/workers/mlx_worker.py")
-                    .to_string_lossy()
-                    .into(),
-                "--preflight-script".into(),
-                app.path()
-                    .resource_dir()?
-                    .join("resources/adapters/mlx_text/preflight.py")
-                    .to_string_lossy()
-                    .into(),
-            ],
-            cwd: None,
-            data_dir,
+            executable: app.path().resource_dir()?.join("resources/control").join(name),
+            args: vec!["--environment-dir".into(), std::env::current_exe()?.parent().ok_or("无法确定安装目录")?.join("environment").to_string_lossy().into_owned()], cwd: None, data_dir,
         });
     }
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .canonicalize()?;
-    let executable = std::env::var_os("AILAB_CONTROL_PYTHON")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| root.join("services/control/.venv/bin/python"));
-    let mut args = vec!["-m".into(), "ailab_control".into()];
-    if let Some(value) = std::env::var_os("AILAB_WORKER_PYTHON") {
-        args.extend(["--worker-python".into(), value.to_string_lossy().into()]);
-    }
-    args.extend([
-        "--worker-script".into(),
-        root.join("workers/mlx_worker.py").to_string_lossy().into(),
-    ]);
-    Ok(LaunchConfig {
-        executable,
-        args,
-        cwd: Some(root.join("services/control")),
-        data_dir,
-    })
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..").canonicalize()?;
+    let executable = std::env::var_os("AILAB_CONTROL_PYTHON").map(PathBuf::from)
+        .unwrap_or_else(|| root.join(if cfg!(windows) { ".venv/Scripts/python.exe" } else { ".venv/bin/python" }));
+    Ok(LaunchConfig { executable, args: vec!["-m".into(), "ailab_studio".into(), "--environment-dir".into(), root.join("environment").to_string_lossy().into_owned()],
+        cwd: Some(root.join("services/control")), data_dir })
+}
+
+#[tauri::command]
+async fn studio_pick_path(directory: bool, gguf: Option<bool>, connection_id: String, state: State<'_, HostState>) -> Result<Option<String>, Value> {
+    bridge_connection(&state, &connection_id)?;
+    let dialog = if gguf.unwrap_or(false) && !directory {
+        rfd::AsyncFileDialog::new().set_title("选择 GGUF 模型权重").add_filter("GGUF 模型", &["gguf"])
+    } else { rfd::AsyncFileDialog::new().set_title("选择本地资源") };
+    let selected = if directory { dialog.pick_folder().await } else { dialog.pick_file().await };
+    complete_bridge_request(&state, &connection_id, Ok(selected.map(|f| f.path().to_string_lossy().into_owned())))
 }
 
 #[tauri::command]
@@ -1678,11 +1653,28 @@ fn request_exit(app: &tauri::AppHandle) {
     });
 }
 
+#[tauri::command]
+async fn open_environment_console(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<(), String> {
+    if window.label() != "main" { return Err("仅允许从主窗口打开环境集".into()); }
+    if let Some(console) = app.get_webview_window("range-console") {
+        console.show().map_err(|e| e.to_string())?;
+        return console.set_focus().map_err(|e| e.to_string());
+    }
+    let url = "http://192.168.9.101:8090/".parse().map_err(|e| format!("无效的控制地址: {e}"))?;
+    tauri::WebviewWindowBuilder::new(&app, "range-console", tauri::WebviewUrl::External(url))
+        .title("环境集 · 强化学习环境")
+        .inner_size(1440.0, 960.0)
+        .build().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 pub fn run() {
     let started = Instant::now();
     let app = tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             api_request,
+            studio_pick_path,
+            open_environment_console,
             complete_exit_preparation,
             credentials::create_execution_target,
             credentials::connect_remote_target,
@@ -1828,6 +1820,7 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            if window.label() != "main" { return; }
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 let _ = window.hide();

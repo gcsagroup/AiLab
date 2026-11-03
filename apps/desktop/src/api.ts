@@ -3,6 +3,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 export type ApiFailure = { error: { code: string; message: string; details?: Record<string, unknown> } };
 export type NativeStatus = { state: string; connection_id?: string; message?: string; recovery_mode?: boolean };
 export const readHostStatus = () => isTauri() ? invoke<NativeStatus>('host_status') : Promise.resolve(null);
+export const openEnvironmentConsole = () => invoke<void>('open_environment_console');
 type NativeScope = { status: Promise<NativeStatus>; id?: string };
 let nativeScope: NativeScope | undefined;
 let nativeChanging = false;
@@ -85,6 +86,9 @@ export async function api<T>(method: string, path: string, body?: unknown, idemp
 
 export type ImportSelection = { path: string; grant_id?: string };
 export const canPickFile = () => isTauri();
+export const pickStudioPath = (directory: boolean, gguf = false) => isTauri()
+  ? invokeBound<string | null>('studio_pick_path', connectionId => ({ directory, gguf, connectionId }))
+  : api<string | null>('POST', '/studio/pick-path', { directory, gguf });
 export type ImportKind = 'model' | 'dataset' | 'image-dataset' | 'material';
 export const pickImport = (kind: ImportKind | 'backup' | 'source-report') => invokeBound<ImportSelection | null>('pick_import_path', connectionId => ({ kind, connectionId }));
 export const pickExportDirectory = () => invokeBound<ImportSelection | null>('pick_export_directory', connectionId => ({ connectionId }));

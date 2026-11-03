@@ -8,6 +8,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .artifacts/
+/environment/
 *.log
 .env
 .env.*
@@ -55,3 +56,12 @@ __pycache__/
 !/i18n/pt/CHANGELOG.md
 !/i18n/pt/docs/
 !/i18n/pt/docs/USER_GUIDE.md
+
+# Local cleanup archive and generated caches
+/backup/
+/cleanup-plan.json
+/pytest-of-*/
+/torchinductor_*/
+# Screenshots used by the current README
+!/docs/images/
+!/docs/images/*.png

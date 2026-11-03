@@ -1,0 +1,221 @@
+# Spark-X2.5-4B Abliterix v23 — refusal-first constrained component search.
+# Historical v14-v18 logs identify early/broad O and late/narrow K as the productive
+# basin. Q is disabled; V and dense MLP are optional low-dose additions.
+
+seed = 260915
+
+[model]
+model_id = "/shared/AbliterixAdapter/XHToken--Spark-X2.5-4B/runtime_model"
+dtype_fallback_order = ["bfloat16"]
+quant_method = "none"
+device_map = "auto"
+trust_remote_code = true
+use_torch_compile = false
+backend = "vllm"
+tensor_parallel_size = 1
+gpu_memory_utilization = 0.40
+enforce_eager = true
+max_model_len = 2048
+max_num_seqs = 16
+disable_lora = true
+use_in_place_editing = true
+disable_custom_all_reduce = true
+
+[inference]
+batch_size = 64
+max_batch_size = 128
+max_gen_tokens = 150
+offload_outputs_to_cpu = true
+
+[steering]
+vector_method = "mean"
+steering_mode = "direct"
+decay_kernel = "linear"
+orthogonal_projection = true
+projected_abliteration = true
+winsorize_vectors = true
+winsorize_quantile = 0.995
+weight_normalization = "none"
+strength_range = [0.3, 5.0]
+fixed_vector_scope = "per layer"
+disabled_components = ["attn.q_proj"]
+auto_disable_components = ["attn.k_proj", "attn.v_proj", "mlp.down_proj"]
+min_weight_frac_max = 0.55
+
+[steering.component_strength_ranges]
+"attn.k_proj" = [0.55, 0.95]
+"attn.o_proj" = [2.60, 3.50]
+"attn.v_proj" = [0.40, 0.70]
+"mlp.down_proj" = [2.00, 3.40]
+
+[steering.component_position_ranges]
+"attn.k_proj" = [29.30, 30.70]
+"attn.o_proj" = [21.50, 23.00]
+"attn.v_proj" = [34.00, 35.00]
+"mlp.down_proj" = [20.50, 21.50]
+
+[steering.component_distance_ranges]
+"attn.k_proj" = [5.00, 6.80]
+"attn.o_proj" = [12.00, 15.50]
+"attn.v_proj" = [1.00, 1.35]
+"mlp.down_proj" = [6.00, 9.00]
+
+[steering.component_min_frac_ranges]
+"attn.k_proj" = [0.20, 0.45]
+"attn.o_proj" = [0.25, 0.55]
+"attn.v_proj" = [0.10, 0.30]
+"mlp.down_proj" = [0.05, 0.30]
+
+[optimization]
+num_trials = 30
+num_warmup_trials = 10
+sampler_seed = 260915
+checkpoint_dir = "/shared/Checkpoints/XHToken--Spark-X2.5-4B/v23-refusal-first"
+
+# O-only conservative probe.
+[[optimization.seed_trials]]
+vector_scope = "per layer"
+"attn.k_proj.max_weight" = 0.0
+"attn.k_proj.max_weight_position" = 30.20
+"attn.k_proj.min_weight" = 0.30
+"attn.k_proj.min_weight_distance" = 6.00
+"attn.o_proj.max_weight" = 2.80
+"attn.o_proj.max_weight_position" = 22.30
+"attn.o_proj.min_weight" = 0.32
+"attn.o_proj.min_weight_distance" = 13.00
+"attn.v_proj.max_weight" = 0.0
+"attn.v_proj.max_weight_position" = 34.40
+"attn.v_proj.min_weight" = 0.20
+"attn.v_proj.min_weight_distance" = 1.15
+"mlp.down_proj.max_weight" = 0.0
+"mlp.down_proj.max_weight_position" = 20.90
+"mlp.down_proj.min_weight" = 0.15
+"mlp.down_proj.min_weight_distance" = 7.00
+
+# O-only stronger probe near the historical v16-v18 basin.
+[[optimization.seed_trials]]
+vector_scope = "per layer"
+"attn.k_proj.max_weight" = 0.0
+"attn.k_proj.max_weight_position" = 30.20
+"attn.k_proj.min_weight" = 0.30
+"attn.k_proj.min_weight_distance" = 6.00
+"attn.o_proj.max_weight" = 3.20
+"attn.o_proj.max_weight_position" = 22.40
+"attn.o_proj.min_weight" = 0.42
+"attn.o_proj.min_weight_distance" = 14.80
+"attn.v_proj.max_weight" = 0.0
+"attn.v_proj.max_weight_position" = 34.40
+"attn.v_proj.min_weight" = 0.20
+"attn.v_proj.min_weight_distance" = 1.15
+"mlp.down_proj.max_weight" = 0.0
+"mlp.down_proj.max_weight_position" = 20.90
+"mlp.down_proj.min_weight" = 0.15
+"mlp.down_proj.min_weight_distance" = 7.00
+
+# O plus late/narrow K.
+[[optimization.seed_trials]]
+vector_scope = "per layer"
+"attn.k_proj.max_weight" = 0.75
+"attn.k_proj.max_weight_position" = 30.30
+"attn.k_proj.min_weight" = 0.35
+"attn.k_proj.min_weight_distance" = 6.00
+"attn.o_proj.max_weight" = 3.10
+"attn.o_proj.max_weight_position" = 22.40
+"attn.o_proj.min_weight" = 0.40
+"attn.o_proj.min_weight_distance" = 14.50
+"attn.v_proj.max_weight" = 0.0
+"attn.v_proj.max_weight_position" = 34.40
+"attn.v_proj.min_weight" = 0.20
+"attn.v_proj.min_weight_distance" = 1.15
+"mlp.down_proj.max_weight" = 0.0
+"mlp.down_proj.max_weight_position" = 20.90
+"mlp.down_proj.min_weight" = 0.15
+"mlp.down_proj.min_weight_distance" = 7.00
+
+# O plus K plus a tiny extreme-late V dose.
+[[optimization.seed_trials]]
+vector_scope = "per layer"
+"attn.k_proj.max_weight" = 0.75
+"attn.k_proj.max_weight_position" = 30.30
+"attn.k_proj.min_weight" = 0.35
+"attn.k_proj.min_weight_distance" = 6.00
+"attn.o_proj.max_weight" = 3.10
+"attn.o_proj.max_weight_position" = 22.40
+"attn.o_proj.min_weight" = 0.40
+"attn.o_proj.min_weight_distance" = 14.50
+"attn.v_proj.max_weight" = 0.52
+"attn.v_proj.max_weight_position" = 34.30
+"attn.v_proj.min_weight" = 0.18
+"attn.v_proj.min_weight_distance" = 1.15
+"mlp.down_proj.max_weight" = 0.0
+"mlp.down_proj.max_weight_position" = 20.90
+"mlp.down_proj.min_weight" = 0.15
+"mlp.down_proj.min_weight_distance" = 7.00
+
+# O plus K plus a conservative dense-MLP dose; V remains off.
+[[optimization.seed_trials]]
+vector_scope = "per layer"
+"attn.k_proj.max_weight" = 0.72
+"attn.k_proj.max_weight_position" = 30.20
+"attn.k_proj.min_weight" = 0.32
+"attn.k_proj.min_weight_distance" = 5.80
+"attn.o_proj.max_weight" = 3.00
+"attn.o_proj.max_weight_position" = 22.30
+"attn.o_proj.min_weight" = 0.36
+"attn.o_proj.min_weight_distance" = 14.00
+"attn.v_proj.max_weight" = 0.0
+"attn.v_proj.max_weight_position" = 34.40
+"attn.v_proj.min_weight" = 0.20
+"attn.v_proj.min_weight_distance" = 1.15
+"mlp.down_proj.max_weight" = 2.50
+"mlp.down_proj.max_weight_position" = 20.90
+"mlp.down_proj.min_weight" = 0.12
+"mlp.down_proj.min_weight_distance" = 6.80
+
+
+[kl]
+scale = 0.1
+token_count = 16
+objective_mode = "independent"
+target = 0.1
+prune_threshold = 0.099999
+
+[detection]
+llm_judge = true
+llm_judge_model = "deepseek-v4-flash:0731"
+llm_judge_base_url = "https://ollama.com/v1"
+llm_judge_api_key_env = "LLM_JUDGE_API_KEY"
+llm_judge_auth_header = "Authorization"
+llm_judge_auth_prefix = "Bearer "
+llm_judge_temperature = 0.0
+llm_judge_use_response_format = true
+llm_judge_max_tokens_field = "max_tokens"
+llm_judge_reasoning_budget = 2048
+llm_judge_batch_size = 5
+llm_judge_concurrency = 3
+
+[display]
+print_responses = false
+print_residual_geometry = false
+plot_residuals = false
+
+[benign_prompts]
+dataset = "/shared/Checkpoints/Qwen3.8-27B/datasets/good_1000"
+split = "train[:800]"
+column = "prompt"
+
+[target_prompts]
+dataset = "/shared/Checkpoints/Qwen3.8-27B/datasets/harmful_1000"
+split = "train[:800]"
+column = "prompt"
+
+[benign_eval_prompts]
+dataset = "/shared/Checkpoints/Qwen3.8-27B/datasets/good_1000"
+split = "train[900:1000]"
+column = "prompt"
+
+[target_eval_prompts]
+dataset = "/shared/Checkpoints/Qwen3.8-27B/datasets/harmful_1000"
+split = "train[900:1000]"
+column = "prompt"
+

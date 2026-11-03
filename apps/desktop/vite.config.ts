@@ -3,9 +3,13 @@ import react from '@vitejs/plugin-react';
 import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
 const desktopRoot = dirname(fileURLToPath(import.meta.url));
 const connectionFile = resolve(desktopRoot, '../../.artifacts/dev/control-connection.json');
+const executeFile = promisify(execFile);
+let pickerOpen = false;
 
 class MediaResponseError extends Error {}
 export async function readMediaContent(response: Response, maximum = 64 * 1024 * 1024) {
@@ -64,6 +68,22 @@ export default defineConfig({
             if (size > 2 * 1024 * 1024) return error(413, '请求过大，请使用本机文件导入。');
             chunks.push(Buffer.from(chunk));
           }
+          if (route === '/studio/pick-path') {
+            if (req.method !== 'POST') return error(405, '请选择文件后重试。');
+            const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+            if (!body || typeof body.directory !== 'boolean' || (body.gguf !== undefined && typeof body.gguf !== 'boolean') || Object.keys(body).some(k => !['directory', 'gguf'].includes(k))) return error(400, '文件选择参数无效。');
+            if (pickerOpen) return error(409, '文件选择窗口已打开，请完成或取消当前选择。');
+            pickerOpen = true;
+            try {
+              const python = process.env.AILAB_CONTROL_PYTHON || resolve(desktopRoot, process.platform === 'win32' ? '../../.venv/Scripts/python.exe' : '../../.venv/bin/python');
+              const selected = await executeFile(python, [resolve(desktopRoot, '../../scripts/desktop/pick_studio_path.py'), body.directory ? 'directory' : body.gguf ? 'gguf' : 'file'], { windowsHide: true, timeout: 300000, maxBuffer: 16384 });
+              res.setHeader('Content-Type', 'application/json; charset=utf-8');
+              res.setHeader('Cache-Control', 'no-store');
+              res.end(JSON.stringify(JSON.parse(selected.stdout.trim())));
+            } catch { error(503, '无法打开系统文件窗口。请确认本机 Python 已安装 Tk，或使用桌面应用。'); }
+            finally { pickerOpen = false; }
+            return;
+          }
           const headers: Record<string, string> = {
             Authorization: `Bearer ${connection.token}`, 'Content-Type': 'application/json',
           };
@@ -93,7 +113,7 @@ export default defineConfig({
       });
     },
   }],
-  server: { host: '127.0.0.1', port: 1420, strictPort: true, cors: false, fs: { strict: true, allow: [desktopRoot, resolve(desktopRoot, '../../node_modules')], deny: ['**/.artifacts/**', '**/.git/**', '**/.env*', '**/*.private.*', '**/*.{crt,pem,key}'] } },
+  server: { watch: { ignored: ['**/src-tauri/**'] }, host: '127.0.0.1', port: 1420, strictPort: true, cors: false, fs: { strict: true, allow: [desktopRoot, resolve(desktopRoot, '../../node_modules')], deny: ['**/.artifacts/**', '**/.git/**', '**/.env*', '**/*.private.*', '**/*.{crt,pem,key}'] } },
   build: { outDir: 'dist', emptyOutDir: true },
   test: { environment: 'jsdom', include: ['../../tests/frontend/**/*.{test,spec}.{ts,tsx}'], globals: true },
 });
