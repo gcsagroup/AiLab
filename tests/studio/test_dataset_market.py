@@ -154,6 +154,9 @@ def test_credentials_stay_in_memory_and_provider_auth_is_not_redirected(client, 
     assert client.post('/api/v1/studio/datasets/credentials', json={'provider': 'huggingface', 'token': value}).status_code == 200
     assert client.market.sources.headers('huggingface')['Authorization'] == 'Bearer ' + value
     assert value.encode() not in (client.studio.root / 'studio.sqlite3').read_bytes()
+    monkeypatch.setenv('HF_TOKEN', value + '\ninvalid')
+    with pytest.raises(ValueError) as failure: Sources().headers('huggingface')
+    assert value not in str(failure.value)
     req = urllib.request.Request('https://huggingface.co/file', headers={'Authorization': 'Bearer ' + value, 'Range': 'bytes=7-'})
     redirected = Redirects().redirect_request(req, None, 302, '', {}, 'https://cdn-lfs.hf.co/file')
     assert not redirected.has_header('Authorization')

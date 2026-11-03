@@ -62,6 +62,8 @@ class Sources:
             if provider == 'kaggle' and not value:
                 value, username = os.environ.get('KAGGLE_KEY', ''), os.environ.get('KAGGLE_USERNAME', '')
         result = {'User-Agent': 'AiLab-Studio-Dataset-Market/1', 'Accept-Encoding': 'identity'}
+        if value and any(ord(c) < 33 or ord(c) > 126 for c in value):
+            raise ValueError('访问凭据格式无效，请重新配置 Token / Key')
         if value:
             result['Authorization'] = 'Basic ' + base64.b64encode(f'{username}:{value}'.encode()).decode() if username else 'Bearer ' + value
         return result
