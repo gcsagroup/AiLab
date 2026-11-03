@@ -1,0 +1,132 @@
+{
+  "version": "materials-v10",
+  "date": "2026-10-28",
+  "assets": [
+    {
+      "path": "datasets/qa_current/train.jsonl",
+      "family": "qa_current",
+      "split": "train",
+      "rows": 43376,
+      "bytes": 159421066,
+      "sha256": "2433f1c5b973b3d2ddc5d8ea29fbc35e860b7c463919749581c989ec8a65ec77",
+      "subset_of": null,
+      "quality_status": "candidate_not_expert_approved",
+      "platform_imported": false
+    },
+    {
+      "path": "datasets/qa_current/validation.jsonl",
+      "family": "qa_current",
+      "split": "validation",
+      "rows": 2392,
+      "bytes": 8737444,
+      "sha256": "20d090fd9794bdbfe3f627b3d0b3db40018b9f4ba39e1b3439b787d6956d8d7f",
+      "subset_of": null,
+      "quality_status": "candidate_not_expert_approved",
+      "platform_imported": false
+    },
+    {
+      "path": "datasets/qa_current/test.jsonl",
+      "family": "qa_current",
+      "split": "test",
+      "rows": 2371,
+      "bytes": 8728349,
+      "sha256": "e444c202a728d845ede5762b2387c16ccfbc43e1fd8ebc7498d773b50422f6fa",
+      "subset_of": null,
+      "quality_status": "candidate_not_expert_approved",
+      "platform_imported": false
+    },
+    {
+      "path": "datasets/vulnerability_focus/train.jsonl",
+      "family": "vulnerability_focus",
+      "split": "train",
+      "rows": 2150,
+      "bytes": 8028480,
+      "sha256": "e63387ea4e35ccc6552b6f37b5b43bcd882635114c087ba19b024fd3bc40d90e",
+      "subset_of": "datasets/qa_current/train.jsonl",
+      "quality_status": "candidate_not_expert_approved",
+      "platform_imported": false
+    },
+    {
+      "path": "datasets/vulnerability_focus/validation.jsonl",
+      "family": "vulnerability_focus",
+      "split": "validation",
+      "rows": 115,
+      "bytes": 427859,
+      "sha256": "d2f2adc227546861f6e9a9be1d7cb28b046c7e35f2ba422b6873954ffc6201cd",
+      "subset_of": "datasets/qa_current/validation.jsonl",
+      "quality_status": "candidate_not_expert_approved",
+      "platform_imported": false
+    },
+    {
+      "path": "datasets/vulnerability_focus/test.jsonl",
+      "family": "vulnerability_focus",
+      "split": "test",
+      "rows": 135,
+      "bytes": 493373,
+      "sha256": "f62d56948b1ceb5f657a957bd336e32e5e8cb0666e8442a75d6a246c301037ad",
+      "subset_of": "datasets/qa_current/test.jsonl",
+      "quality_status": "candidate_not_expert_approved",
+      "platform_imported": false
+    },
+    {
+      "path": "datasets/qa_current/smoke_32.jsonl",
+      "family": "qa_current",
+      "split": "train",
+      "rows": 32,
+      "bytes": 118684,
+      "sha256": "e07f0131c1c652ffa64c6cfd99edddea1c723cb9e050aae6b9709807850d9361",
+      "subset_of": "datasets/qa_current/train.jsonl",
+      "quality_status": "candidate_not_expert_approved",
+      "platform_imported": false
+    },
+    {
+      "path": "datasets/qa_current/pilot_train_1000.jsonl",
+      "family": "qa_current",
+      "split": "train",
+      "rows": 1000,
+      "bytes": 3672203,
+      "sha256": "04c73d0462a492ed51ccdee529674fe188ef3edc8324975a8eca9741c69b9817",
+      "subset_of": "datasets/qa_current/train.jsonl",
+      "quality_status": "candidate_not_expert_approved",
+      "platform_imported": false
+    },
+    {
+      "path": "datasets/vulnerability_focus/focus_smoke_32.jsonl",
+      "family": "vulnerability_focus",
+      "split": "train",
+      "rows": 32,
+      "bytes": 117450,
+      "sha256": "62be3a0065d798e8683379ea7c6a0d2e3015d2068826a351f6655078f2556943",
+      "subset_of": "datasets/vulnerability_focus/train.jsonl",
+      "quality_status": "candidate_not_expert_approved",
+      "platform_imported": false
+    },
+    {
+      "path": "datasets/vulnerability_focus/focus_pilot_200.jsonl",
+      "family": "vulnerability_focus",
+      "split": "train",
+      "rows": 200,
+      "bytes": 751891,
+      "sha256": "e14478db4f9bd125cdd3999346830bc8b44ce3d757a9ec0faa4e754056bf93e5",
+      "subset_of": "datasets/vulnerability_focus/train.jsonl",
+      "quality_status": "candidate_not_expert_approved",
+      "platform_imported": false
+    },
+    {
+      "asset_id": "sha256:7290107bcba0324698270a270e1c73fe7a3025f86e8efa25fd262a263cf17fdc",
+      "path": "datasets/verified_code/all_28_development_sft.jsonl",
+      "family": "scoped_code_review_and_repair",
+      "split": "development_only",
+      "rows": 28,
+      "bytes": 117900,
+      "sha256": "7290107bcba0324698270a270e1c73fe7a3025f86e8efa25fd262a263cf17fdc",
+      "subset_of": null,
+      "quality_status": "bounded_checks_passed_not_expert_approved",
+      "platform_imported": false
+    }
+  ],
+  "count_semantics": "Focus is a subset; pilot/smoke are views; code is development-only. Do not sum views.",
+  "human_expert_reviewer": null,
+  "expert_decision": null,
+  "commercial_approval": null
+}

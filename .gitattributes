@@ -1,0 +1,2 @@
+# Preserve the external handoff index bytes for SHA256 comparison across platforms.
+docs/materials/cyber-v10/assets_index.json -text whitespace=cr-at-eol

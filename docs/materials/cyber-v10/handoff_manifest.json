@@ -1,0 +1,93 @@
+{
+  "schema_version": "cyber-material-handoff-v1",
+  "material_version": "v10",
+  "material_date": "2026-10-28",
+  "documentation_date": "2026-11-03",
+  "scope": "documentation_and_metadata_only",
+  "external_package": {
+    "filename": "网安SFT与RL_负责人交接包_v10_全文初审版.zip",
+    "bytes": 166763672,
+    "sha256": "7beddd6bbaef1adedcaef3eaa775fa5cd6a2107810c646a21d6568ffa8f914d6",
+    "sidecars": [
+      "网安SFT与RL_负责人交接包_v10_全文初审版.zip.sha256",
+      "网安SFT与RL_负责人交接包_v10_全文初审版.receipt.json"
+    ],
+    "included_in_repository": false,
+    "download_url": null,
+    "transfer_contact": null,
+    "acquisition_status": "separate_handoff_required_no_download_location_published",
+    "sealed_verification": {
+      "status": "passed",
+      "archive_files": 781,
+      "internal_manifest_checked_files": 780,
+      "original_v9_unchanged": true,
+      "human_expert_approval_implied": false
+    }
+  },
+  "data_index": {
+    "repository_path": "assets_index.json",
+    "package_relative_path": "当前材料_v10/assets_index.json",
+    "asset_path_base_relative_to_package_root": "当前材料_v10/",
+    "bytes": 4864,
+    "sha256": "ee8e73e91610585761640521c5e263f485afe561a80cdcaa11599b98f003a87f",
+    "copy_mode": "byte_identical",
+    "asset_entries": 11
+  },
+  "counts": {
+    "qa_unique_candidates": 48139,
+    "qa_splits": {
+      "train": 43376,
+      "validation": 2392,
+      "test": 2371
+    },
+    "vulnerability_focus_subset": 2400,
+    "focus_splits": {
+      "train": 2150,
+      "validation": 115,
+      "test": 135
+    },
+    "code_development_only": 28,
+    "reviewed_groups": 658,
+    "reviewed_answers": 1332,
+    "new_held_qa_records": 1300,
+    "count_semantics": "Focus is a subset of QA; smoke and pilot are train views; do not sum views."
+  },
+  "status": {
+    "materials_prepared": true,
+    "all_qa_comprehensively_fact_checked": false,
+    "human_expert_reviewer": null,
+    "expert_decision": null,
+    "rights_reviewer": null,
+    "commercial_approval": null,
+    "intended_use": [
+      "internal_research_training",
+      "later_commercial_project_subject_to_rights_confirmation"
+    ],
+    "current_studio_import_or_training_accepted": false,
+    "docker_built_or_runtime_verified": false,
+    "agentic_rl_adapter_implemented": false,
+    "rl_training_loop_implemented": false
+  },
+  "excluded_from_this_submission": [
+    "full_v10_archive",
+    "dataset_payloads",
+    "original_answers",
+    "review_quotations",
+    "target_source",
+    "reference_exploits_or_patches",
+    "docker_build_files",
+    "credentials",
+    "platform_changes",
+    "deployment",
+    "training"
+  ],
+  "pending_owner_confirmation": [
+    "transfer_contact_and_acquisition_location",
+    "actual_domain_reviewers_and_quality_acceptance",
+    "original_rights_chain_and_actual_commercial_or_redistribution_scope",
+    "held_record_reuse_only_if_needed_and_supported",
+    "response_policy_and_task_coverage_standard",
+    "future_studio_version_model_template_length_and_loss_scope",
+    "future_environment_host_isolation_resources_network_budget_and_acceptance"
+  ]
+}

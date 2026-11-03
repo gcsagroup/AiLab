@@ -65,3 +65,12 @@ __pycache__/
 # Screenshots used by the current README
 !/docs/images/
 !/docs/images/*.png
+
+# 网安 SFT / AgenticRL 材料交接：只开放说明与索引，不包含数据或完整交付包。
+!/docs/materials/
+!/docs/materials/cyber-v10/
+!/docs/materials/cyber-v10/README.md
+!/docs/materials/cyber-v10/DATASET_INDEX.md
+!/docs/materials/cyber-v10/RL_ENVIRONMENT.md
+!/docs/materials/cyber-v10/assets_index.json
+!/docs/materials/cyber-v10/handoff_manifest.json
