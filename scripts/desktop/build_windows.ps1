@@ -8,6 +8,7 @@ $localRustup = Join-Path $taskRoot '.artifacts/toolchain/rustup'
 if (Test-Path -LiteralPath (Join-Path $localCargo 'bin/cargo.exe')) {
     $env:CARGO_HOME = $localCargo
     $env:RUSTUP_HOME = $localRustup
+    $env:RUSTUP_TOOLCHAIN = 'stable-x86_64-pc-windows-msvc'
     $env:PATH = (Join-Path $localCargo 'bin') + ';' + $env:PATH
 }
 if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) { throw 'Install Rust with the x86_64-pc-windows-msvc toolchain first.' }
