@@ -67,7 +67,10 @@ class Runtimes:
             raise ValueError('未知运行环境')
         active = self.root / key / 'active.json'
         if active.is_file(): value = json.loads(active.read_text(encoding='utf-8'))
-        else: value = self.studio.store.get('runtime', key)
+        else:
+            try: value = self.studio.store.get('runtime', key)
+            except ValueError:
+                raise ValueError(f"尚未安装 {PROFILES[key]['name']} 环境。请在“设置 → 环境管理”中安装；如已有环境，请将环境安装目录设为对应的 environment 文件夹。") from None
         if not interpreter(value['path']).is_file():
             raise ValueError('环境文件缺失，请重新安装环境')
         return value

@@ -32,6 +32,57 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('Studio UI', () => {
+  it('retains a separate last successful preview for each media tab during this session', async () => {
+    let completedWorkflow = 't2i';
+    mockApi.mockImplementation(async (_method: string, path: string) => {
+      if (path.includes('/materials/')) return new Promise(() => {});
+      if (path.includes('/events')) return { items:[] };
+      if (path.includes('/jobs/')) return { id:completedWorkflow, kind:'inference', state:'succeeded', config:{workflow:completedWorkflow}, result:{material_id:completedWorkflow + '-preview'} };
+      if (path.endsWith('/llm/status')) return { phase:'unloaded' };
+      return { items:[] };
+    });
+    const assets = { models:[], datasets:[] };
+    for (const workflow of ['t2i','t2v','r2v']) {
+      completedWorkflow = workflow;
+      localStorage.setItem('studio:inference', JSON.stringify({workflow, engine:'diffusers'}));
+      localStorage.setItem('studio:inference-job', JSON.stringify({id:workflow}));
+      const view = render(<Inference assets={assets} />);
+      await screen.findByText('已保存到素材库');
+      view.unmount();
+    }
+    localStorage.setItem('studio:inference-job', JSON.stringify({id:''}));
+    render(<Inference assets={assets} />);
+    for (const [tab, workflow] of [['文生图 T2I','t2i'],['文生视频 T2V','t2v'],['参考图生视频 R2V','r2v'],['文生图 T2I','t2i']]) {
+      fireEvent.click(screen.getByRole('tab', {name:'LLM 对话'}));
+      mockApi.mockClear();
+      fireEvent.click(screen.getByRole('tab', {name:tab}));
+      await waitFor(() => expect(mockApi).toHaveBeenCalledWith('GET', `/studio/materials/${workflow}-preview/content?offset=0&length=524288`, undefined));
+      expect(screen.getByText('已保存到素材库')).toBeInTheDocument();
+    }
+  });
+  it('loads and sends with a GGUF selected outside the model library', async () => {
+    const external = 'D:/external/model.gguf';
+    mockPicker.mockResolvedValue(external);
+    const job = { id:'external', kind:'inference', state:'succeeded', config:{ workflow:'chat', action:'load' }, result:null };
+    mockApi.mockImplementation(async (method: string, path: string, body: object) => {
+      if (path.endsWith('/llm/status')) return { phase:'unloaded' };
+      if (path.endsWith('/llm/capabilities')) return { vision:false };
+      if (path.endsWith('/conversations')) return method === 'GET' ? { items:[] } : { ...body, id:'conversation' };
+      if (path.endsWith('/recommend')) return { config:{}, notes:[] };
+      if (path.includes('/events')) return { items:[] };
+      return job;
+    });
+    render(<Inference assets={{ models:[], datasets:[] }} />);
+    expect(screen.queryByRole('button', { name:'选择模型', exact:true })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('本地模型'), { target:{ value:'__other__' } });
+    await waitFor(() => expect(screen.getByLabelText('本地模型')).toHaveValue(external));
+    fireEvent.click(screen.getByRole('button', { name:'加载模型', exact:true }));
+    await waitFor(() => expect(mockApi).toHaveBeenCalledWith('POST', '/studio/llm/load', expect.objectContaining({ model:external, action:'load', conversation_id:null })));
+    await waitFor(() => expect(screen.getByRole('button', { name:'发送', exact:true })).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('消息'), { target:{ value:'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name:'发送', exact:true }));
+    await waitFor(() => expect(mockApi).toHaveBeenCalledWith('POST', '/studio/inference', expect.objectContaining({ model:external, messages:[{role:'user',content:'Hello'}] })));
+  });
   it('places the environment collection after datasets and opens the specified console separately', async () => {
     render(<StudioApp />);
     await screen.findByText('Windows · 已连接');

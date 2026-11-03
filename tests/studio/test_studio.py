@@ -59,6 +59,32 @@ def test_api_auth_origin_and_validation(client):
     assert client.post('/api/v1/studio/sft', json={'model': 'x', 'dataset': 'y', 'shell': 'evil'}).status_code == 422
 
 
+@pytest.mark.parametrize('endpoint,action', [('llm/load', 'load'), ('inference', 'generate')])
+def test_external_gguf_runtime_guidance_and_existing_environment(client, tmp_path, monkeypatch, endpoint, action):
+    # An external model need not be registered in the asset catalog or database.
+    model_file = tmp_path / 'external.gguf'
+    model_file.write_bytes(b'GGUF')
+    payload = {'model': str(model_file), 'engine': 'llama', 'workflow': 'chat', 'action': action,
+               'messages': [] if action == 'load' else [{'role': 'user', 'content': 'Hello'}]}
+    url = '/api/v1/studio/' + endpoint
+    response = client.post(url, json=payload)
+    assert response.status_code == 400
+    assert '设置 → 环境管理' in response.json()['error']['message']
+    assert '记录不存在' not in response.text
+    studio = client.app.state.studio
+    runtime = tmp_path / 'existing-runtime'
+    python = interpreter(runtime); python.parent.mkdir(parents=True); python.touch()
+    active = studio.runtimes.root / 'llama' / 'active.json'
+    active.parent.mkdir(parents=True)
+    active.write_text(json.dumps({'path': str(runtime), 'version': 'existing', 'accelerator': 'cpu'}))
+    monkeypatch.setattr(studio, 'launch', lambda kind, config, runtime: {'kind': kind, 'config': config, 'runtime': runtime})
+    response = client.post(url, json=payload)
+    assert response.status_code == 200, response.text
+    assert response.json()['config']['model'] == str(model_file.resolve())
+    assert response.json()['config']['action'] == action
+    assert response.json()['config']['runtime_path'] == str(runtime)
+
+
 def test_paths_scan_and_recommendation(client, tmp_path):
     path = model(tmp_path)
     datasets = tmp_path / 'data'; datasets.mkdir(); (datasets / 'train.jsonl').write_text('{"text":"hello"}\n')
