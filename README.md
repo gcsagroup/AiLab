@@ -51,6 +51,30 @@ AiLab 使用 React + Tauri 提供桌面界面，以轻量 Python 控制服务管
 
 以下截图来自当前 Windows 开发界面。配置页截图展示界面能力，不表示训练或消融任务已完成。
 
+### 数据集市场
+
+搜索公开数据集，预览说明与许可，读取固定版本后选择需要的文件下载。
+
+![数据集市场：在线搜索、固定版本与文件选择](docs/images/dataset-market.png)
+
+### 数据集下载队列
+
+查看下载结果、进度及版本。下载后可进入本地管理，也可暂停、继续或清理任务。
+
+![数据集下载队列：真实公开数据文件下载完成](docs/images/dataset-downloads.png)
+
+### 本地数据集管理
+
+登记已有文件、预览内容、查看来源和校验值，并选择具体训练文件。本图同时展示下载的数据与人工编写的本地预览样例。
+
+![本地数据管理：文件索引、预览与用于 SFT 入口](docs/images/dataset-local.png)
+
+### 市场数据到 SFT 的实际结果
+
+以下为从界面点击“用于 SFT”和“开始训练”后的实测结果：100 条样本按 80／20 划分，3,120 参数随机测试模型，Windows CPU／FP32、assistant 监督、1 个训练步骤，完成验证和 Safetensors 导出。该结果用于验证数据链路，不能作为大模型、GPU 或训练效果的验收结论。
+
+![市场数据联动 SFT：真实一步训练、验证损失与导出结果](docs/images/dataset-sft-result.png)
+
 ### 模型测试
 ![模型测试：LLM对话](docs/images/model-test-llm.png)
 ![模型测试：ComfyUI 分离组件配置](docs/images/model-test.png)
