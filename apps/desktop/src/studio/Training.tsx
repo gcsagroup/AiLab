@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { HeaderJobAction } from './JobActions';
 import { errorMessage } from '../api';
 import { Error, Field, NumberField, PathField, request, useDraft } from './common';
@@ -6,8 +6,9 @@ import TaskPanel from './TaskPanel';
 import type { Assets, Job } from './types';
 
 const initial = { model: '', dataset: '', method: 'lora', device: 'auto', epochs: 1, max_steps: -1, learning_rate: 0.0002, batch_size: 1, gradient_accumulation: 8, max_length: 2048, lora_rank: 16, lora_alpha: 32, lora_dropout: 0.05, target_modules: 'all-linear', precision: 'auto', validation_fraction: 0.1, logging_steps: 1, save_steps: 100, seed: 42, gradient_checkpointing: true, text_column: 'text', loss_scope: 'assistant', trust_remote_code: false };
-export default function Training({ assets }: { assets: Assets }) {
+export default function Training({ assets, initialDataset = '' }: { assets: Assets; initialDataset?: string }) {
   const [form, set] = useDraft('training', initial); const [job, setJob] = useDraft('training-job', { id: '' }); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  useEffect(() => { if (initialDataset) set(current => ({ ...current, dataset: initialDataset })); }, [initialDataset, set]);
   function field<K extends keyof typeof form>(key: K, value: typeof form[K]) { set({ ...form, [key]: value }); }
   return <div className="st-workspace"><HeaderJobAction id={job.id} form="sft-form" label="开始训练" disabled={busy || !form.model || !form.dataset} /><section className="st-panel"><header><h2>SFT 监督微调</h2><span className="st-tag">独立 UV 环境</span></header><form id="sft-form" onSubmit={async e => { e.preventDefault(); setBusy(true); setError(''); try { const result = await request<Job>('POST', '/sft', form); setJob({ id: result.id }); } catch (e) { setError(errorMessage(e)); } finally { setBusy(false); } }}>
     <PathField title="Safetensors 模型目录" value={form.model} onChange={v => field('model', v)} items={assets.models.filter(m => m.format === 'safetensors')} />
