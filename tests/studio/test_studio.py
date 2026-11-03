@@ -223,10 +223,11 @@ def test_sft_supervision_masks_prompt_and_rejects_overflow():
     from sft import encode_row
     class Tokenizer:
         chat_template = 'fixture'
-        def apply_chat_template(self, messages, tokenize, add_generation_prompt):
+        def apply_chat_template(self, messages, tokenize, add_generation_prompt, return_dict=True):
             result = []
             for m in messages: result += [1 if m['role'] == 'user' else 2, *[ord(c) for c in m['content']], 3]
-            return result + ([2] if add_generation_prompt else [])
+            ids = result + ([2] if add_generation_prompt else [])
+            return {'input_ids': ids} if return_dict else ids
     c = {'max_length': 100, 'loss_scope': 'assistant', 'text_column': 'text'}
     row = {'messages': [{'role': 'user', 'content': 'hi'}, {'role': 'assistant', 'content': 'yes'}]}
     encoded = encode_row(row, Tokenizer(), c)

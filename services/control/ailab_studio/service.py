@@ -17,6 +17,7 @@ from .ablation import compose
 from .scheduler import Scheduler
 from .materials import Materials
 from .llm import ResidentLLM
+from .datasets import Datasets
 
 TERMINAL = {'succeeded', 'failed', 'cancelled', 'interrupted'}
 WORKERS = Path(__file__).resolve().parent / 'workers'
@@ -43,6 +44,7 @@ class Studio(Scheduler):
         self.runtimes = Runtimes(self)
         self.materials = Materials(self)
         self.llm = ResidentLLM(self)
+        self.datasets = Datasets(self)
         for job in self.store.list('job', 100000):
             if job['state'] not in TERMINAL and job['state'] != 'queued' and not (job['state'] == 'paused' and not job.get('pid')):
                 job.update(state='interrupted', error='控制服务曾中断；未自动重新执行。', finished_at=time.time())
@@ -88,9 +90,19 @@ class Studio(Scheduler):
         for kind in ('models', 'datasets'):
             try: result[kind] = scan(paths[kind], kind) if paths[kind] else []
             except (OSError, ValueError) as exc: result[kind] = []; result[kind + '_error'] = str(exc)
+        registered = self.datasets.assets()
+        by_path = {item['path']: item for item in result['datasets']}
+        by_path.update({item['path']: item for item in registered})
+        result['datasets'] = list(by_path.values())
         return result
 
     def submit(self, kind, payload):
+        if kind == 'sft':
+            # Serialize dataset cleanup with file verification and job creation.
+            with self.datasets.lock: return self._submit(kind, payload)
+        return self._submit(kind, payload)
+
+    def _submit(self, kind, payload):
         config = payload.model_dump()
         split_media = kind == 'inference' and config.get('media_format') == 'comfyui' and config['workflow'] != 'chat'
         if split_media:
@@ -116,6 +128,8 @@ class Studio(Scheduler):
                 config['weight_loading'] = 'dequantize' if quant_method == 'compressed-tensors' else 'quantized_lora'
             else: config['weight_loading'] = 'original'
             config['dataset'] = str(local_path(config['dataset']))
+            reference = self.datasets.training_reference(config['dataset'])
+            if reference: config['dataset_reference'] = reference
             runtime = 'training'
         elif kind == 'ablation':
             import tomllib
@@ -295,6 +309,7 @@ class Studio(Scheduler):
         return {'mime': mime, 'data': base64.b64encode(path.read_bytes()).decode()}
 
     def close(self):
+        self.datasets.close()
         with self.mutex: self.stopping = True
         self.wake.set(); self.scheduler.join(timeout=2)
         for job in self.store.list('job', 100000):

@@ -15,6 +15,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 import uvicorn
 from .api import router
+from .dataset_api import router as dataset_router
 from .service import Studio
 
 
@@ -56,6 +57,7 @@ def create_app(root, token, environment=None):
     def health(): return {'status': 'ok', 'version': '3.2.0'}
 
     app.include_router(router(studio))
+    app.include_router(dataset_router(studio))
     return app
 
 

@@ -323,6 +323,12 @@ fn validate_request(request: &ApiRequest) -> Result<(), Value> {
             | ("POST", ["studio", "materials", "import" | "uploads"])
             | ("POST", ["studio", "materials", "uploads", _, "chunk" | "complete"])
             | ("POST", ["studio", "conversations", _]));
+        let allowed = allowed || matches!((request.method.as_str(), segments.as_slice()),
+            ("GET", ["studio", "datasets", "sources" | "downloads" | "local"])
+            | ("POST", ["studio", "datasets", "credentials" | "search" | "detail" | "preview" | "downloads"])
+            | ("POST", ["studio", "datasets", "local", "import"])
+            | ("POST", ["studio", "datasets", "downloads", _, "pause" | "resume" | "cancel" | "cleanup"])
+            | ("POST", ["studio", "datasets", "local", _, "preview" | "use" | "remove"]));
         if !allowed { return Err(error("HOST_REQUEST_DENIED", "此工作台操作未获授权。")); }
     }
     if segments[0] == "ui-context"
@@ -2242,6 +2248,34 @@ mod tests {
             validate_request(&value).unwrap_err()["error"]["code"],
             "HOST_REQUEST_DENIED"
         );
+    }
+    #[test]
+    fn studio_dataset_market_routes_are_explicit() {
+        for (method, path) in [
+            ("GET", "/api/v1/studio/datasets/sources"),
+            ("POST", "/api/v1/studio/datasets/credentials"),
+            ("POST", "/api/v1/studio/datasets/search"),
+            ("POST", "/api/v1/studio/datasets/detail"),
+            ("POST", "/api/v1/studio/datasets/preview"),
+            ("GET", "/api/v1/studio/datasets/downloads"),
+            ("POST", "/api/v1/studio/datasets/downloads"),
+            ("POST", "/api/v1/studio/datasets/downloads/task/pause"),
+            ("POST", "/api/v1/studio/datasets/downloads/task/resume"),
+            ("POST", "/api/v1/studio/datasets/downloads/task/cancel"),
+            ("POST", "/api/v1/studio/datasets/downloads/task/cleanup"),
+            ("GET", "/api/v1/studio/datasets/local"),
+            ("POST", "/api/v1/studio/datasets/local/import"),
+            ("POST", "/api/v1/studio/datasets/local/data/preview"),
+            ("POST", "/api/v1/studio/datasets/local/data/use"),
+            ("POST", "/api/v1/studio/datasets/local/data/remove"),
+        ] {
+            let mut value = request(path); value.method = method.into();
+            assert!(validate_request(&value).is_ok(), "{method} {path}");
+        }
+        for path in ["/api/v1/studio/datasets/sources/arbitrary", "/api/v1/studio/datasets/downloads/task/execute", "/api/v1/studio/datasets/local/data/overwrite"] {
+            let mut value = request(path); value.method = "POST".into();
+            assert!(validate_request(&value).is_err(), "{path}");
+        }
     }
     #[test]
     fn market_proxy_only_accepts_declared_source_actions() {

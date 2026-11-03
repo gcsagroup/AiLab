@@ -1,9 +1,21 @@
 """Real Transformers/PEFT SFT, local files only; assistant spans are explicit."""
 import json
+import hashlib
 import math
 import re
 from pathlib import Path
 from common import device, emit, finish
+
+
+def verify_dataset_reference(config):
+    reference = config.get('dataset_reference')
+    if not reference: return
+    path = Path(config['dataset'])
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        while chunk := stream.read(1024 * 1024): digest.update(chunk)
+    if path.stat().st_size != reference['bytes'] or digest.hexdigest() != reference['sha256']:
+        raise ValueError('排队后数据文件发生变化，请重新登记并提交训练')
 
 
 def dataset_files(path):
@@ -23,8 +35,11 @@ def dataset_files(path):
     return training, validation
 
 
-def dataset_from_path(raw):
-    from datasets import DatasetDict, load_dataset, load_from_disk, concatenate_datasets
+def dataset_from_path(raw, cache_dir=None):
+    from datasets import Dataset, DatasetDict, load_from_disk, concatenate_datasets
+    import pyarrow as pa
+    import pyarrow.json as paj
+    import pyarrow.parquet as pq
     path = Path(raw)
     if path.is_dir() and ((path / 'dataset_dict.json').exists() or (path / 'state.json').exists()):
         data = load_from_disk(str(path))
@@ -34,11 +49,34 @@ def dataset_from_path(raw):
         return data, None
     training, validation = dataset_files(path)
     if not training: raise ValueError('数据目录没有训练用 JSON、JSONL 或 Parquet 文件')
+    cache = Path(cache_dir or 'data-cache'); cache.mkdir(parents=True, exist_ok=True)
+    sequence = 0
     def read(files):
+        nonlocal sequence
         parts = []
         for file in files:
-            loader = 'parquet' if file.suffix.lower() == '.parquet' else 'json'
-            parts.append(load_dataset(loader, data_files=str(file), split='train'))
+            if file.suffix.lower() == '.json':
+                with file.open('r', encoding='utf-8-sig') as stream:
+                    first = next((c for c in iter(lambda: stream.read(1), '') if not c.isspace()), '')
+                if first == '[':
+                    rows = json.loads(file.read_text(encoding='utf-8-sig'))
+                    if not all(isinstance(row, dict) for row in rows): raise ValueError('JSON 数据应为对象数组')
+                    parts.append(Dataset.from_list(rows)); continue
+            # Stream local files into short per-job Arrow paths. The HF generic
+            # builder duplicates absolute paths and long hashes in Windows locks.
+            batches = pq.ParquetFile(file).iter_batches(batch_size=10000) if file.suffix.lower() == '.parquet' else paj.open_json(str(file))
+            arrow = cache / f'{sequence}.arrow'; sequence += 1
+            writer = None
+            try:
+                with arrow.open('wb') as output:
+                    for batch in batches:
+                        if writer is None: writer = pa.ipc.new_stream(output, batch.schema)
+                        writer.write_batch(batch)
+                    if writer is not None: writer.close()
+            finally:
+                if hasattr(batches, 'close'): batches.close()
+            if writer is None: raise ValueError('数据文件为空：' + file.name)
+            parts.append(Dataset.from_file(str(arrow)))
         return concatenate_datasets(parts)
     return read(training), read(validation) if validation else None
 
@@ -65,15 +103,15 @@ def encode_row(row, tokenizer, config):
         return {'input_ids': ids, 'attention_mask': [1] * len(ids), 'labels': list(ids)}
     else: raise ValueError('支持 messages、instruction/output、prompt/completion 或所选 text 列')
     if not tokenizer.chat_template: raise ValueError('对话数据要求分词器提供 chat_template')
-    ids = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=False)
+    ids = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=False, return_dict=False)
     if len(ids) > maximum: raise ValueError('对话超过最大序列长度，请清洗数据或提高长度')
     labels = list(ids) if config['loss_scope'] == 'all' else [-100] * len(ids)
     if config['loss_scope'] == 'assistant':
         for index, message in enumerate(messages):
             if message['role'] != 'assistant': continue
             if index == 0: raise ValueError('对话不能以 assistant 开始')
-            prefix = tokenizer.apply_chat_template(messages[:index], tokenize=True, add_generation_prompt=True)
-            upto = tokenizer.apply_chat_template(messages[:index + 1], tokenize=True, add_generation_prompt=False)
+            prefix = tokenizer.apply_chat_template(messages[:index], tokenize=True, add_generation_prompt=True, return_dict=False)
+            upto = tokenizer.apply_chat_template(messages[:index + 1], tokenize=True, add_generation_prompt=False, return_dict=False)
             if ids[:len(prefix)] != prefix or ids[:len(upto)] != upto:
                 raise ValueError('此聊天模板的前缀不稳定，无法安全生成 assistant 损失掩码；请改用全文损失或适配模板')
             labels[len(prefix):len(upto)] = ids[len(prefix):len(upto)]
@@ -82,6 +120,7 @@ def encode_row(row, tokenizer, config):
 
 
 def run(config):
+    verify_dataset_reference(config)
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainerCallback, TrainingArguments, DataCollatorForSeq2Seq, set_seed
     from peft import LoraConfig, get_peft_model
@@ -101,7 +140,8 @@ def run(config):
         if tokenizer.eos_token_id is None: raise ValueError('分词器需要 pad 或 eos token')
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = 'right'
-    train, validation = dataset_from_path(config['dataset'])
+    # Workers run in their own job directory; original market files stay intact.
+    train, validation = dataset_from_path(config['dataset'], cache_dir='data-cache')
     if not len(train): raise ValueError('训练集为空')
     if validation is not None and not len(validation): raise ValueError('验证集为空')
     if validation is None and config['validation_fraction']:
