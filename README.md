@@ -2,15 +2,104 @@
 
 [简体中文](README.md) · [繁體中文](i18n/zh-TW/README.md) · [English](i18n/en/README.md) · [日本語](i18n/ja/README.md) · [한국어](i18n/ko/README.md) · [Français](i18n/fr/README.md) · [Português](i18n/pt/README.md)
 
-GCSA AI Lab 是用于本地模型试用、LoRA 微调、评测和作品管理的桌面工作台。项目把模型、数据、任务与输出保存在一起，便于继续任务和追溯结果。
+GCSA AI Lab 是面向本地模型试用和作品管理的桌面工作台。本分支提供 **Windows x64 技术预览版**：在图形界面中准备模型和素材，检查配置，在本机进行文字、多模态理解、图片生成、视频生成和中文语音合成，并保存运行记录及作品。
 
-本分支提供 **Windows x64 技术预览版**：支持模型下载、登记，以及指定组合的本机文字、多模态理解、图片、视频和中文配音试用。文字试用调用 llama.cpp / GGML，图片和视频调用 stable-diffusion.cpp，配音调用 audio.cpp；可用模型与设备以运行前检查和实际结果为准。Windows 版训练执行器尚未接入，界面中其他功能不代表已完成 Windows 验收。
+> 本页首先介绍本分支的 Windows 实现。模型名称出现在下载搜索结果中，不代表其已经接入或验证；模型架构、组件、格式和运行设备仍须通过检查。Windows 训练执行器尚未接入。页面末尾保留的原项目历史记录描述的是相应版本和环境，不等同于 Windows 功能验收。
 
-模型库中的准备记录可重开，登记后显示本机保存目录。仓库许可和固定版本权重地址见 [语言模型目录](downloads/hf-language-model-urls.jsonl.gz)，采集范围和数量见 [目录摘要](downloads/hf-language-urls-summary.json)。较大的跨任务文件地址目录不随源码分发，可用 Python 3.10+ 执行 `python scripts/windows/collect_hf_urls.py --cache .artifacts/hf-refresh --declared-licenses` 重新采集；具体标签和计数见 [许可目录摘要](downloads/hf-declared-license-urls-summary.json)。需要包含自定义许可和未标许可的仓库时，可使用 `--all-public`。
+## 快速开始
 
-Windows 便携版请从 [预览版下载页面](https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261122) 获取。解压后双击 `AiLab-UI.exe`，请保留整个程序文件夹；运行无需安装 Node.js、Python 或 Rust。模型权重需要另行下载或导入。旧版附件和来源记录保留在 [历史下载清单](downloads/windows-ui-preview.json)。
+1. 从 [Windows 预览版发布页面](https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261122) 下载 `GCSA-AiLab-Windows-20261122-x64.zip`。仓库和发布页为私有时，需要有对应访问权限。
+2. 解压并保留完整程序目录，双击 `AiLab-UI.exe`。使用便携版不需要另外安装 Node.js、Python 或 Rust。
+3. 创建或打开项目，在模型准备入口下载、登记模型，或导入符合要求的本地模型。模型权重不包含在程序包中，需自行准备；下载需要网络和足够的磁盘空间。
+4. 在工作台选择模型及试用类型，填写提示词，按需要导入 PNG 图片或 WAV 音频；先点“检查配置”，再开始运行。完成后可在项目中查看运行记录和作品。
 
-源码不包含预编译推理运行库。需要重新编译时，先在 Windows x64 上用 Node.js 24 执行 `npm ci`，再按 [Windows 使用说明](scripts/windows/README-Windows.txt) 准备 Python、WSL 和编译器，运行 `python scripts/windows/prepare-gguf.py`，最后执行 `npm run build:windows-ui`。下载便携版无需构建。
+操作细节和组件要求见 [Windows 使用说明](scripts/windows/README-Windows.txt)。发布包对应代码快照 `dd482e7`；后续 README 更新不会自动改变已经发布的压缩包。
+
+## Windows 已接入的模型与试用
+
+下表说明代码中接入的指定架构和模型组合。**接入不等于每个量化版本、设备和参数都已通过实际运行验证**；具体还要看 GGUF 元数据、模型组件是否匹配以及运行时检查结果。
+
+| 试用 | 接入的架构、模型或组合 | 输入与输出 | 推理执行 |
+| --- | --- | --- | --- |
+| 语言文字 | GGUF 架构 `qwen2`、`qwen3`、`qwen3moe`、`qwen35`、`gemma4`，并检查对应聊天模板；例如 Qwen2.5-0.5B、Qwen3.5-4B、Gemma 4 E2B IT 的适配组合 | 文字提示词 → 文字回答 | 本项目文字执行器调用 llama.cpp / GGML |
+| 图片与音频理解 | Qwen3.5-4B、Gemma 4 E2B IT 等满足检查的主 GGUF，外加同版本匹配的 `mmproj` 投影模型 | 文字 + PNG → 文字回答；Gemma 适配组合还支持文字 + WAV → 文字回答 | llama.cpp 的多模态接口（mtmd）；当前输入受界面和模型组合限制 |
+| 图片生成 | 完整 Tiny-SD GGUF；MiniMax-H3-Image GGUF 组合 | 文字提示词 → PNG 图片 | stable-diffusion.cpp |
+| 视频生成 | SD 1.5 完整 GGUF + AnimateDiff SD 1.5 运动模块 GGUF；MiniMax-H3 FL2VA GGUF 组合 | AnimateDiff：PNG + 提示词 → MP4；MiniMax：提示词及可选首帧 PNG → MP4 | stable-diffusion.cpp 生成帧，FFmpeg 编码视频 |
+| 中文语音合成 | 多语种 Kokoro-82M GGUF，当前使用 `zf_xiaobei` 中文音色 | 中文文字 → 24 kHz 单声道 WAV | audio.cpp，CPU 执行 |
+
+### 图片与视频的模型组件
+
+- **Tiny-SD**：需要完整的 Tiny-SD GGUF，包含运行所需的相关组件。文件名为 GGUF 并不自动意味着任意图片模型都包含完整组件。
+- **MiniMax-H3-Image**：图片生成主体之外，还需要匹配的 4B 文本编码器和图片 VAE。单独下载 Q2 等量化的主体文件，并不代表这套图片流水线已经准备齐全。应用对接了相应组件的准备、转换与登记；默认配置为 Euler、6 步、引导强度 1。
+- **AnimateDiff**：需要包含 CLIP 和 VAE 的完整 SD 1.5 GGUF，以及匹配的 AnimateDiff SD 1.5 运动模块 GGUF。当前流程以项目中的 PNG 为输入，生成 14 帧、7 FPS 的短片；生成时将 512×288 输入补边至 512×320，随后裁去补边、放大并编码为 1024×576 MP4。
+- **MiniMax-H3 FL2VA**：需要视频生成主体、匹配的 4B 文本编码器和视频 VAE；还可使用音频 VAE 生成声音。默认生成 22 帧、24 FPS，约 0.92 秒，内部尺寸 512×320，输出放大至 1024×576。默认 4 步，可调整生成步数。
+
+这些组件共同构成一次推理的流水线。其准备情况会影响能否运行，生成步数、分辨率、设备和模型量化方式也会影响耗时与效果。
+
+## 图形界面与使用流程
+
+Windows 桌面界面基于 Electron，围绕项目组织模型、任务、素材与作品：
+
+- **工作台和模型试用**：选择已登记模型，输入提示词、设置运行参数，检查配置并启动；显示运行状态、错误信息、取消操作和结果。文字试用支持流式显示。
+- **模型库和模型准备**：搜索 Hugging Face 模型，查看下载文件及格式，下载或导入本地模型，登记到模型库；准备记录可重新打开，并显示本机保存目录。部分下载支持断点续传和文件摘要校验，MiniMax 指定配方会准备配套组件。
+- **数据与素材**：在项目内管理和引用素材；支持在对应试用中使用 PNG 图片或 WAV 音频。具体可用输入由模型与试用类型决定。
+- **作品与运行记录**：保存运行参数、状态以及生成的文字、图片、视频或音频，便于在项目内回看。
+- **模型实验室与其他页面**：界面保留原项目相关入口；Windows 预览版不因此表示训练等历史功能均已实现或验收。
+
+语言模型和多模态理解主要输出文字；图片、视频和音频生成分别输出图片、MP4 和 WAV。输入位置和可选素材取决于所选模型和试用类型，并非每个模型都提供全部模态。
+
+## 推理架构与底层加速
+
+AiLab 负责界面、模型与素材管理、组件检查、任务调度、参数组装、执行器调用和结果保存；底层神经网络计算由接入的推理库完成。主要调用关系如下：
+
+```text
+Windows 界面 → 模型/组件检查 → 任务调度与运行参数
+  ├─ 文字与多模态理解 → AiLab GGUF 执行器 → llama.cpp / GGML → 文字
+  ├─ 图片生成           → AiLab 图片执行器 → stable-diffusion.cpp → PNG
+  ├─ 视频生成           → AiLab 视频流程 → stable-diffusion.cpp → FFmpeg → MP4
+  └─ 中文语音合成       → AiLab 音频流程 → audio.cpp → WAV
+```
+
+| 底层组件 | 接入情况 | 设备与优化 |
+| --- | --- | --- |
+| llama.cpp `b11669` / GGML | 文字生成及 mtmd 多模态输入；支持聊天模板、温度、top-p、种子、停止序列、流式显示和预填充分块等参数 | 支持 CPU 与 Vulkan 运行设置；CPU 根据指令集选择 Haswell 优化后端或 x64 后端，文字执行器启用 Flash Attention 配置，CPU 线程数按硬件限制在 1—8。当前多模态投影部分使用 CPU |
+| stable-diffusion.cpp `532d2c1` | 通过本项目执行器接入 Tiny-SD、MiniMax 图片及上述视频组合 | 支持 CPU 与 Vulkan 运行设置；图片执行器使用 6 个 CPU 线程。MiniMax 配方使用映射权重、VAE 分块和 Flash Attention 等设置；可用显存少于 6 GiB 时回退 CPU |
+| audio.cpp `v0.9.5` | Kokoro 中文语音生成 | 使用 CPU 版运行库，按短文本分段处理 |
+| FFmpeg | 将生成帧编码为视频；有配套音频时处理音视频输出 | 负责媒体处理和封装 |
+
+Vulkan 需要设备及驱动支持，选择相关设置并不保证所有模型或所有组件都在 GPU 上运行，也不保证一定比 CPU 快。GGUF 权重量化与推理时的 KV 缓存精度是不同设置；具体可用选项以界面和执行检查为准。
+
+当前试用任务通过队列执行，同一进程并不提供多个任务同时生成的通用能力；文字试用每次重新启动执行器，没有实现跨任务共享的前缀缓存。停止序列用于控制当前文字生成在指定内容处结束，不是任务之间的分隔符。
+
+## 检查配置会检查什么
+
+开始运行前，应用会根据试用类型检查所选模型是否已登记、GGUF 架构与模板是否匹配、需要的投影模型或生成组件是否齐全、素材类型和参数是否符合当前流程，以及运行库和目标设备等条件。检查通过表示满足已实现的运行前条件，并不保证权重正确适配所有情况、显存一定足够或生成质量达到预期；实际执行仍可能失败并返回错误。
+
+项目对可识别架构及其条件有明确判断，底层仍须由相应推理库实现并支持该架构；仅在列表里添加名称不能让模型自动获得推理能力。可参考 [GGUF 元数据识别](apps/windows-ui/hf/gguf-metadata.cjs)、[组件匹配](apps/windows-ui/hf/gguf-bundle.cjs)、[试用调度](apps/windows-ui/hf/trial-worker.cjs)、[文字执行器](workers/gguf-trial.cpp) 和 [图片执行器](workers/gguf-image.cpp)。
+
+## 已有验证与当前边界
+
+2026-11-22 的本地验证包括 Windows 发布包界面冒烟检查及 Qwen3 0.6B CPU 文字生成；前端测试和 Windows 相关测试也进行了运行。已有本机运行记录覆盖 Tiny-SD、MiniMax-H3-Image、AnimateDiff、MiniMax-H3 FL2VA 和 Kokoro 的指定组合。上述结果只说明对应环境、权重与参数下的流程曾完成，不能推断所有量化版本、GPU 或输出质量都已验证；视频的少步数试运行也不代表正式作品质量。
+
+Windows 版目前仍是技术预览：训练执行器尚未接入，模型兼容范围和输入类型有限，推理速度依赖硬件与配置，未完成面向所有设备的全新安装和广泛兼容性验收。模型下载目录包含可检索的仓库，不等同于可运行模型白名单。
+
+## 从源码准备和构建
+
+源码仓库不包含预编译推理运行库，也不包含模型权重。Windows x64 开发环境需要 Node.js 24、Python 及 WSL/编译工具；准备脚本需要网络。具体依赖和操作见 [Windows 使用说明](scripts/windows/README-Windows.txt)：
+
+```powershell
+npm ci
+python scripts/windows/prepare-gguf.py
+npm run build:windows-ui
+```
+
+准备脚本获取固定版本的推理库并构建本项目的执行器。下载已发布便携包的使用者无需执行这些构建命令。
+
+模型仓库许可与固定版本地址可查看 [语言模型目录](downloads/hf-language-model-urls.jsonl.gz) 和 [目录摘要](downloads/hf-language-urls-summary.json)。较大的跨任务文件地址目录不随源码分发，可使用 Python 3.10+ 执行 `python scripts/windows/collect_hf_urls.py --cache .artifacts/hf-refresh --declared-licenses` 重新采集；另见 [许可目录摘要](downloads/hf-declared-license-urls-summary.json) 和 [历史下载清单](downloads/windows-ui-preview.json)。
+
+## 原项目历史记录
+
+以下保留原 README 对其他版本和平台的历史说明。版本号、验证结果与功能范围均对应各自记录的环境，并不代表 Windows 预览版已经实现或验证。
 
 当前版本为 **Ver3.0（070），技术预览**。Ver2.7（054）已在原生 App 中通过 SSH 隧道验证 Qwen2.5-0.5B-Instruct 的 Jetson Orin 生成、两步 LoRA 训练、产物回收，以及同份适配器在 Apple GPU 上运行。此验证限于指定模型和环境，不代表质量提升；直接 HTTPS 部署、干净安装、首次用户测试及正式发行验收仍未完成。当前没有已验收的正式安装包或自动更新渠道。 055 修复上传断线后的原因提示与终态说明，并在原生 App 中验证中断、核实和重新传输；未重跑 054 的完整跨设备模型流程。
 
