@@ -31,6 +31,11 @@ function draft(kind: Draft['kind'], operation: Draft['operation']): Draft {
     ...(train ? { training_type: 'sft', update_method: 'lora', recipe_id: 'qwen25-assistant-only-v1', steps: 4, learning_rate: 0.0001, max_seq_length: 512, lora_rank: 4, lora_alpha: 8, num_layers: 2, batch_size: 1, gradient_accumulation: 1, optimizer: 'adamw', weight_decay: 0, lora_dropout: 0 }
       : { max_tokens: 128, temperature: 0, top_p: 1 }),
   } : { engine: kind === 'audio' ? 'kokoro' : 'diffusers', device_id: 'cpu', seed: 0 };
+  if (window.ailabHF) {
+    runtime.device_id = 'cpu';
+    runtime.engine = 'ailab-gguf';
+    if (kind !== 'text') Object.assign(runtime,kind==='image' ? {size:512,steps:20,cfg:7.5} : kind==='video' ? {steps:25,frames:14,fps:7} : {voice:'zf_xiaobei',speed:1,sample_rate:24000});
+  }
   return { kind, operation, model_id: null, dataset_id: null, adapter_id: null, execution_target_id: null, input: { prompt: '' }, runtime };
 }
 

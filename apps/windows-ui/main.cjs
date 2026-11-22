@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, protocol, net, session } = require('electron');
+const { app, BrowserWindow, Menu, protocol, net, session, ipcMain } = require('electron');
 const { dirname, join, resolve, sep } = require('node:path');
 const { pathToFileURL } = require('node:url');
 const fs = require('node:fs');
@@ -9,12 +9,26 @@ const smokePath = process.argv.find(arg => arg.startsWith('--smoke-result='))?.s
 app.setPath('userData', smokePath ? join(dirname(smokePath), 'smoke-profile') : join(app.getPath('appData'), 'GCSA-AiLab-UI-Preview'));
 app.setAppUserModelId('org.gcsa.ailab.ui-preview');
 let window;
+let models;
+let closing = false;
 if (!app.requestSingleInstanceLock()) app.exit(0);
 app.on('second-instance', () => {
   if (window) { if (window.isMinimized()) window.restore(); window.show(); window.focus(); }
 });
 const failures = [];
 app.whenReady().then(async () => {
+  const { OfficialModels } = require('./hf/official.cjs');
+  models = new OfficialModels({
+    dataDir: join(app.getPath('userData'), 'official-models'),
+    catalogPath: join(__dirname, 'hf-language-repos.txt.gz'),
+  });
+  ipcMain.handle('ailab:official-models', async (event, action, request) => {
+    if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== 'ailab://ui/' || action !== 'workbench') throw new Error('无效的工作台请求。');
+    try {
+      if (!request || !['GET', 'POST', 'PATCH'].includes(request.method) || typeof request.path !== 'string' || !request.path.startsWith('/') || JSON.stringify(request).length > 256000) throw new Error('工作台请求格式无效。');
+      return {ok: true, data: await models.request(request)};
+    } catch (error) { return {ok: false, error: {code: error.code || 'MODEL_SERVICE', message: error.message || String(error)}}; }
+  });
   const content = resolve(__dirname, 'dist');
   protocol.handle('ailab', request => {
     const url = new URL(request.url);
@@ -40,7 +54,7 @@ app.whenReady().then(async () => {
     width: 1440, height: 960, minWidth: 480, minHeight: 640,
     title: 'GCSA AI Lab · Windows UI 预览版', icon: join(__dirname, 'icon.png'),
     backgroundColor: '#f7f8fa', show: false,
-    webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, spellcheck: false },
+    webPreferences: { preload: join(__dirname, 'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true, spellcheck: false },
   });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event, url) => { if (!url.startsWith('ailab://ui/')) event.preventDefault(); });
@@ -52,7 +66,13 @@ app.whenReady().then(async () => {
   if (!smokePath) { window.show(); window.focus(); }
   if (smokePath) {
     try {
-      const result = await window.webContents.executeJavaScript(fs.readFileSync(join(__dirname, 'smoke.cjs'), 'utf8'));
+      const modelSmoke = process.argv.includes('--smoke-model-download');
+      const trialKind = process.argv.find(arg=>/^--smoke-gguf-trial=(text|image|video|audio)$/.test(arg))?.split('=')[1];
+      const family=process.argv.find(a=>/^--smoke-family=(Qwen3\.5|Gemma 4|MiniMax-H3-Image|MiniMax-H3)$/i.test(a))?.slice('--smoke-family='.length);
+      const stepCount = Number(process.argv.find(arg => /^--smoke-steps=(?:[1-9]\d?|100)$/.test(arg))?.split('=')[1]) || null;
+      const script = fs.readFileSync(join(__dirname, trialKind ? 'smoke-gguf-trial.cjs' : modelSmoke ? 'smoke-model-download.cjs' : 'smoke.cjs'), 'utf8').trim();
+      const result = await window.webContents.executeJavaScript(trialKind ? '(' + script.replace(/;$/, '') + ')(' + JSON.stringify(trialKind) + ','+JSON.stringify(family||null)+','+JSON.stringify(stepCount)+')' : modelSmoke ? script + '(' + process.argv.includes('--smoke-small-gguf') + ')' : script);
+      if (trialKind && (result?.passed !== true || result.kind !== trialKind)) throw Error('试用验收未返回该类别的完整结果。');
       fs.writeFileSync(smokePath, JSON.stringify({ ...result, failures }, null, 2));
       app.exit(failures.length ? 1 : 0);
     } catch (error) {
@@ -63,5 +83,11 @@ app.whenReady().then(async () => {
   console.error(error);
   if (smokePath) fs.writeFileSync(smokePath, JSON.stringify({ error: String(error), failures }, null, 2));
   app.exit(1);
+});
+app.on('before-quit', event => {
+  if (!models || closing) return;
+  event.preventDefault();
+  closing = true;
+  models.close().finally(() => app.quit());
 });
 app.on('window-all-closed', () => app.quit());

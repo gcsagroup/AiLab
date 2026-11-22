@@ -6,18 +6,20 @@ import App from '../../apps/desktop/src/App';
 import Workbench, { defaultRuntime, defaultTrainingRuntime } from '../../apps/desktop/src/Workbench';
 import { DatasetMarket } from '../../apps/desktop/src/DatasetMarket';
 import type { LibraryViews } from '../../apps/desktop/src/ProjectContext';
-import type { Task } from '../../apps/desktop/src/types';
+import type { Task, Work } from '../../apps/desktop/src/types';
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => false, invoke: vi.fn() }));
 const model = { id: 'model-one', name: '固定模型', format: 'safetensors', modality: 'text' as const };
 const dataset = { id: 'dataset-market', name: '市场导入数据', schema: 'sft', status: 'ready', sample_count: 2 };
 const time = '2026-09-10T00:00:00Z';
 let selection: LibraryViews;
+let savedWorks: Work[];
 let task: Task; let calls: { path: string; method: string; body: any; key?: string }[]; let conflict: boolean; let saveFailure: boolean; let hasModel: boolean; let modelRegistered: boolean;
 const response = (data: unknown, ok = true) => ({ ok, json: async () => structuredClone(data) }) as Response;
 beforeEach(() => {
  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); }; HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
  selection = { project_id: null, projects: {} };
+ savedWorks = [];
  conflict = false; saveFailure = false; hasModel = true; modelRegistered = false; calls = [];
  task = { id: 'task-one', project_id: 'project-one', name: '原训练任务', kind: 'text', operation: 'train', draft_revision: 7, draft: { kind: 'text', operation: 'train', model_id: model.id, dataset_id: 'dataset-old', input: { prompt: '保留的原输入' }, runtime: { ...defaultTrainingRuntime, seed: 919 } } };
  vi.stubGlobal('fetch', vi.fn(async (input: string, options?: RequestInit) => {
@@ -33,6 +35,7 @@ beforeEach(() => {
    return response(selection);
   }
   if (method === 'GET') {
+   if (path.startsWith('/works?')) return response({ items: savedWorks });
    if (path === '/training-contracts') return response(trainingContracts);
    if (path === '/projects') return response({ items: [{ id: 'project-one', name: '独立项目', revision: 1 }] });
    if (path.startsWith('/models?')) return response({ items: hasModel || modelRegistered ? [model] : [] });
@@ -96,6 +99,15 @@ it('已有模型的首次示例只创建与保存普通草稿，不自动检查�
  render(<App />); await screen.findByText('从第一个真实结果开始'); await waitFor(() => expect(calls.some(value => value.path.startsWith('/models?'))).toBe(true));
  fireEvent.click(screen.getByRole('button', { name: '3 · 建立示例草稿' })); await screen.findByLabelText('输入内容');
  expect((screen.getByLabelText('输入内容') as HTMLTextAreaElement).value).toBe('请用三条简短建议说明如何安排一天的学习。'); expect(calls.filter(value => value.method !== 'GET' && value.path !== '/ui-context').map(value => value.path)).toEqual(['/tasks', '/tasks/task-one/draft']); expect(task.draft.model_id).toBe(model.id);
+});
+it('已有作品的项目仍可从工作台打开准备官方语言模型', async () => {
+ savedWorks = [{ id: 'work-one', attempt_id: 'attempt-one', kind: 'text', name: '已保存的测试作品' }];
+ render(<App />);
+ fireEvent.click(await screen.findByRole('button', { name: '作品与素材' }));
+ await screen.findByText('已保存的测试作品');
+ fireEvent.click(screen.getByRole('button', { name: '工作台' }));
+ fireEvent.click(await screen.findByRole('button', { name: '1 · 准备官方语言模型' }));
+ await screen.findByRole('dialog', { name: '准备第一个语言模型' });
 });
 it('无模型的首次示例打开准备页，明确下载登记再使用才建立草稿', async () => {
  hasModel = false; render(<App />); await screen.findByText('从第一个真实结果开始'); fireEvent.click(screen.getByRole('button', { name: '3 · 建立示例草稿' }));

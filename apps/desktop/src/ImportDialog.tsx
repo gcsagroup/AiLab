@@ -6,6 +6,7 @@ import type { ImportPlan } from './types';
 import { hasKnownModelBoundary, ModelExecutionNotice } from './ModelExecutionNotice';
 
 function modelLoadingLabel(plan: ImportPlan): string | null {
+  if (plan.trust_class === 'restricted_weights' && plan.loader === 'ailab.gguf') return 'GGUF · 本机固定加载器';
   if (plan.trust_class === 'restricted_weights' && plan.loader === 'mlx_lm.local_restricted') return '受限权重 · 本机 MLX 加载器';
   if (plan.trust_class === 'restricted_weights' && plan.loader === 'diffusers.fixed_local_safetensors') return '受限权重 · 固定媒体 safetensors 加载器';
   if (plan.trust_class === 'restricted_official_torch' && plan.loader === 'kokoro.fixed_official_weights_only_cpu') return '固定官方权重 · Kokoro 受限加载器';
@@ -71,7 +72,7 @@ export default function ImportDialog({ kind, projectId, onClose, onImported }: {
   const fileInvalid = Boolean(plan && (plan.can_import !== true || issues.length > 0 || !modelBoundaryKnown));
   const fileErrors = fileInvalid ? `${id}-file-errors` : undefined;
   return <Dialog title={`导入本机${label}`} onClose={onClose} preventClose={busy}>
-    <p className="muted">{kind === 'model' ? '选择完整模型文件夹。语言模型需有权重、配置和分词器；媒体模型需为已准备的固定组合，先检查格式与完整性。' : kind === 'material' ? '选择 PNG 静态图片，支持非隔行的 8-bit RGB/RGBA，最多 32 MiB。检查后作为视频的独立输入素材保存。' : kind === 'image-dataset' ? '选择同时包含 dataset.json 和 1—8 张 512×512 RGB PNG 的目录。每张图需有描述、来源说明和摘要；只复制清单引用的文件。' : '选择 JSONL 数据文件，检查样本结构后保存为独立数据版本。'}原文件会保留。</p>
+    <p className="muted">{kind === 'model' ? '选择完整模型文件夹。语言模型需有权重、配置和分词器；媒体模型需为已准备的固定组合，先检查格式与完整性。' : kind === 'material' ? (window.ailabHF ? '选择非隔行的 8-bit RGB/RGBA PNG 或 PCM WAV，最多 32 MiB。素材可用于对应模型的本机试用。' : '选择 PNG 静态图片，支持非隔行的 8-bit RGB/RGBA，最多 32 MiB。检查后作为视频的独立输入素材保存。') : kind === 'image-dataset' ? '选择同时包含 dataset.json 和 1—8 张 512×512 RGB PNG 的目录。每张图需有描述、来源说明和摘要；只复制清单引用的文件。' : '选择 JSONL 数据文件，检查样本结构后保存为独立数据版本。'}原文件会保留。</p>
     <div className="form-stack">
       <label>名称（可选）<input disabled={busy} value={name} onChange={e => { setName(e.target.value); setPlan(null); }} placeholder={`沿用${label}文件名`} /></label>
       <div className="field"><label htmlFor={`${id}-path`}>{label}位置</label><div className="input-action"><input id={`${id}-path`} aria-label={`${label}文件路径`} aria-invalid={fileInvalid} aria-describedby={fileErrors} disabled={busy} readOnly={canPickFile()} value={selection.path} onChange={e => { setSelection({ path: e.target.value }); setPlan(null); }} placeholder={canPickFile() ? '点击选择本机文件' : '输入开发环境已授权目录内的绝对路径'} />{canPickFile() && <Button aria-label={`选择${label}文件`} aria-describedby={fileErrors} onClick={choose} disabled={busy}><FolderOpen size={16} />选择</Button>}</div></div>

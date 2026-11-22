@@ -1,0 +1,34 @@
+{
+  "encoder": {
+    "repo": "PrunaAI/P-H3-Image-Comfy",
+    "revision": "44a0fb73f299da1bb715bdb5ff59ce3fd3c6f543",
+    "file": "text_encoders/p-h3-image_text_encoder_bf16.safetensors",
+    "size": 9138027824,
+    "sha256": "ae0c83cb35207dcc0a81361768094a5d1e3f92d1a95b8ff75a0328dfefbbc3d8",
+    "quant": "bf16"
+  },
+  "image_vae": {
+    "repo": "Comfy-Org/MiniMax-H3-Image",
+    "revision": "89c635085f539d03ad35485ed542c5a286e3c6d6",
+    "file": "vae/minimax_h3_image_vae_fp16.safetensors",
+    "size": 1168505312,
+    "sha256": "d80e9c2e5cfc9844869961ff5a58c9a9e52182df6bfb30b26018dd7f348721af",
+    "quant": "f16"
+  },
+  "video_vae": {
+    "repo": "Comfy-Org/MiniMax-H3",
+    "revision": "4b53a35191437de05370da548e59aeabe2a5a09a",
+    "file": "vae/minimax_h3_video_vae_fp16.safetensors",
+    "size": 5207808496,
+    "sha256": "7c1f131492e7eddacaac9069a61b81bdd39de5cc96561e677c5eab1cdce5e522",
+    "quant": "f16"
+  },
+  "audio_vae": {
+    "repo": "Comfy-Org/MiniMax-H3",
+    "revision": "4b53a35191437de05370da548e59aeabe2a5a09a",
+    "file": "vae/minimax_h3_audio_vae_fp32.safetensors",
+    "size": 605254808,
+    "sha256": "8e505d95dd1561d47abd43d4238fd40d9bb1ae9e147ed0a4cba778d76ae4db48",
+    "quant": "f32"
+  }
+}

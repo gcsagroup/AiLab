@@ -20,7 +20,7 @@ export function ExecutionLocation({ projectId, value, disabled, onChange, refres
   useEffect(() => { const current = ++epoch.current; setTargets([]); setNext(null); void load(current); return () => { ++epoch.current; }; }, [projectId, refreshKey]);
   const selected = targets.find(target => target.id === value);
   return <div className="form-stack" aria-label="本次执行位置">
-    <label>执行位置<select value={value || ''} disabled={disabled} onChange={e => onChange(e.target.value || null)}><option value="">本机 Apple GPU</option>{value && !selected && <option value={value}>已保存的执行目标 · 待核实</option>}{targets.map(target => <option key={target.id} value={target.id}>{target.name} · {target.nvidia_ready ? 'NVIDIA 待任务检查' : 'NVIDIA 尚未就绪'}</option>)}</select></label>
+    <label>执行位置<select value={value || ''} disabled={disabled} onChange={e => onChange(e.target.value || null)}><option value="">{window.ailabHF ? '本机 Windows' : '本机 Apple GPU'}</option>{value && !selected && <option value={value}>已保存的执行目标 · 待核实</option>}{targets.map(target => <option key={target.id} value={target.id}>{target.name} · {target.nvidia_ready ? 'NVIDIA 待任务检查' : 'NVIDIA 尚未就绪'}</option>)}</select></label>
     {value ? <p className="muted">{selected ? `${selected.name} · ${selected.origin} · ${selected.executor_id}` : `目标编号：${value}`}<br />本次使用 NVIDIA 文本组合。检查只核对环境与发送范围，明确开始后才发送模型和输入。</p> : <small className="muted">本次使用本机设备。更改项目默认位置不会覆盖此草稿。</small>}
     {next && <Button disabled={disabled || loading} onClick={() => void load(epoch.current, next)}>加载更多执行位置</Button>}
     {error && <><ErrorNotice message={error} /><Button disabled={disabled || loading} onClick={() => void load(epoch.current)}>重新读取执行位置</Button></>}

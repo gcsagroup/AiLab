@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Runtime } from './types';
 
-export function GenerationFields({ runtime, disabled, onChange }: { runtime: Runtime; disabled?: boolean; onChange: (runtime: Runtime) => void }) {
+export function GenerationFields({ runtime, disabled, onChange, supportsThinking = false }: { supportsThinking?: boolean; runtime: Runtime; disabled?: boolean; onChange: (runtime: Runtime) => void }) {
   const id = useId();
   const stopValue = JSON.stringify(runtime.stop ?? []);
   const synchronizedStop = useRef(stopValue);
@@ -35,8 +35,8 @@ export function GenerationFields({ runtime, disabled, onChange }: { runtime: Run
     {stopError && <p className="error" role="alert" id={`${id}-stop-error`}>{stopError}</p>}
     <label style={{ display: 'flex', alignItems: 'center' }}><input type="checkbox" style={{ width: 'auto' }} checked={runtime.stream ?? true} disabled={disabled} onChange={event => onChange({ ...runtime, stream: event.target.checked })} />流式显示输出</label>
     <small className="muted">关闭后在本次生成完成时显示结果；运行状态、停止操作和最终结果保存仍然可用。</small>
-    <label>思考模式<select value="default" disabled aria-describedby={`${id}-thinking-help`}><option value="default">模型默认</option></select></label>
-    <small className="muted" id={`${id}-thinking-help`}>当前 Qwen2.5 模型与模板没有思考开关。</small>
+    <label>思考模式<select value={runtime.thinking || 'default'} disabled={disabled || !supportsThinking} onChange={e => onChange({...runtime, thinking:e.target.value as Runtime['thinking']})} aria-describedby={`${id}-thinking-help`}><option value="default">模型默认</option>{supportsThinking && <><option value="enabled">开启</option><option value="disabled">关闭</option></>}</select></label>
+    <small className="muted" id={`${id}-thinking-help`}>{supportsThinking ? '按所选模型的聊天模板配置思考模式。' : (window.ailabHF ? '当前模型与模板没有思考开关。' : '当前 Qwen2.5 模型与模板没有思考开关。')}</small>
   </div>;
 }
 

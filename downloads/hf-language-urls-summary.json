@@ -1,0 +1,12 @@
+{
+  "completed_at": "2026-11-18T03:18:24.584499+00:00",
+  "source": "https://huggingface.co/api/models",
+  "scope": "Public text-generation pipeline or text2text-generation tag. Overlapping repositories counted once. Licenses as declared by publisher.",
+  "repositories": 490630,
+  "unique_by_query": {
+    "text-generation": 439689,
+    "text2text-generation": 50941
+  },
+  "weight_urls": 2867950,
+  "file_url_scope": "Common weight extensions; manifest_url returns the complete pinned file list for other formats."
+}

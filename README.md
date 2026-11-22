@@ -4,11 +4,13 @@
 
 GCSA AI Lab 是用于本地模型试用、LoRA 微调、评测和作品管理的桌面工作台。项目把模型、数据、任务与输出保存在一起，便于继续任务和追溯结果。
 
-本分支提供 **Windows x64 UI 预览版**：复用现有界面，支持离线浏览页面、打开弹窗、创建项目与保存任务草稿。模型执行、训练、下载及远程连接尚未接入；界面保留的 Apple GPU／MLX 配置仅供预览。
+本分支提供 **Windows x64 技术预览版**：支持模型下载、登记，以及指定组合的本机文字、多模态理解、图片、视频和中文配音试用。文字试用调用 llama.cpp / GGML，图片和视频调用 stable-diffusion.cpp，配音调用 audio.cpp；可用模型与设备以运行前检查和实际结果为准。Windows 版训练执行器尚未接入，界面中其他功能不代表已完成 Windows 验收。
 
-**[下载已在本地打包并验证的 Windows 便携版 ZIP（约 156 MB）](https://github.com/gcsagroup/AiLab/releases/download/windows-ui-preview-20261020/GCSA-AiLab-Windows-UI-3.0-x64.zip)**。解压后双击 `AiLab-UI.exe`，请保留整个程序文件夹；运行无需安装 Node.js、Python、Rust 或模型。该附件对应本分支的 Windows UI 源码，保存在 [预览版 Release](https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261020)，文件大小、来源提交及 SHA-256 记录在 [下载清单](downloads/windows-ui-preview.json)。
+模型库中的准备记录可重开，登记后显示本机保存目录。仓库许可和固定版本权重地址见 [语言模型目录](downloads/hf-language-model-urls.jsonl.gz)，采集范围和数量见 [目录摘要](downloads/hf-language-urls-summary.json)。较大的跨任务文件地址目录不随源码分发，可用 Python 3.10+ 执行 `python scripts/windows/collect_hf_urls.py --cache .artifacts/hf-refresh --declared-licenses` 重新采集；具体标签和计数见 [许可目录摘要](downloads/hf-declared-license-urls-summary.json)。需要包含自定义许可和未标许可的仓库时，可使用 `--all-public`。
 
-本分支采用本地编译、验证和上传，已移除自动云端打包流程。需要重新编译时，在 Windows x64 上使用 Node.js 24 执行 `npm ci` 和 `npm run build:windows-ui`，输出为上一级 `release/GCSA-AiLab-Windows-UI/AiLab-UI.exe`。详见 [Windows 使用说明](scripts/windows/README-Windows.txt)。
+Windows 便携版请从 [预览版下载页面](https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261122) 获取。解压后双击 `AiLab-UI.exe`，请保留整个程序文件夹；运行无需安装 Node.js、Python 或 Rust。模型权重需要另行下载或导入。旧版附件和来源记录保留在 [历史下载清单](downloads/windows-ui-preview.json)。
+
+源码不包含预编译推理运行库。需要重新编译时，先在 Windows x64 上用 Node.js 24 执行 `npm ci`，再按 [Windows 使用说明](scripts/windows/README-Windows.txt) 准备 Python、WSL 和编译器，运行 `python scripts/windows/prepare-gguf.py`，最后执行 `npm run build:windows-ui`。下载便携版无需构建。
 
 当前版本为 **Ver3.0（070），技术预览**。Ver2.7（054）已在原生 App 中通过 SSH 隧道验证 Qwen2.5-0.5B-Instruct 的 Jetson Orin 生成、两步 LoRA 训练、产物回收，以及同份适配器在 Apple GPU 上运行。此验证限于指定模型和环境，不代表质量提升；直接 HTTPS 部署、干净安装、首次用户测试及正式发行验收仍未完成。当前没有已验收的正式安装包或自动更新渠道。 055 修复上传断线后的原因提示与终态说明，并在原生 App 中验证中断、核实和重新传输；未重跑 054 的完整跨设备模型流程。
 

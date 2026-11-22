@@ -72,6 +72,10 @@ export function errorMessage(error: unknown): string {
 
 export async function api<T>(method: string, path: string, body?: unknown, idempotencyKey?: string): Promise<T> {
   if (import.meta.env.VITE_UI_PREVIEW === 'true') {
+    if (window.ailabHF) {
+      const { windowsWorkbenchApi } = await import('./windowsWorkbenchApi');
+      return windowsWorkbenchApi<T>(method, path, body, idempotencyKey);
+    }
     const { previewApi } = await import('./previewApi');
     return previewApi<T>(method, path, body);
   }
@@ -122,8 +126,8 @@ export async function mediaBlob(artifactId: string): Promise<Blob> {
   if (!/^artifact-[a-f0-9]{32}$/.test(artifactId)) throw new Error('媒体文件编号无效。');
   const allowed = new Set(['image/png', 'video/mp4', 'audio/wav']);
   const limit = 64 * 1024 * 1024;
-  if (isTauri()) {
-    const result = await invokeBound<{ media_type: string; base64: string }>('api_media', connectionId => ({ artifactId, connectionId }));
+  if (isTauri() || window.ailabHF) {
+    const result = window.ailabHF ? await api<{media_type:string; base64:string}>('GET', '/artifacts/' + artifactId + '/content') : await invokeBound<{ media_type: string; base64: string }>('api_media', connectionId => ({ artifactId, connectionId }));
     if (!allowed.has(result.media_type) || result.base64.length > Math.ceil(limit / 3) * 4) throw new Error('媒体格式或大小超出预览范围。');
     const bytes = Uint8Array.from(atob(result.base64), character => character.charCodeAt(0));
     if (bytes.length > limit) throw new Error('媒体大小超出预览范围。');

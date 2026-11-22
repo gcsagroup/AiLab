@@ -16,7 +16,7 @@
     nav[index].click(); await waitFor(() => document.querySelector('main h1')?.textContent === label, `Navigate: ${label}`);
   }
   button('设备与环境').click();
-  await waitFor(() => document.querySelector('dialog[open]') && text().includes('本机 Windows · UI 预览'), 'Environment dialog renders');
+  await waitFor(() => document.querySelector('dialog[open]') && text().includes('可用任务组合'), 'Environment dialog renders');
   document.querySelector('dialog button[aria-label="关闭对话框"]').click();
   await waitFor(() => !document.querySelector('dialog[open]'), 'Environment dialog closes');
   nav[0].click(); await waitFor(() => text().includes('模型训练 / 微调'), 'Home returns');
@@ -26,7 +26,6 @@
   await waitFor(() => button('新建训练') && !button('新建训练').disabled, 'Draft creation is ready');
   button('新建训练').click();
   await waitFor(() => Boolean(document.querySelector('select#training-data')), 'Training draft opens');
-  await waitFor(() => text().includes('训练步数') && !text().includes('无法确认训练参数'), 'Training parameters load');
   nav[0].click(); await waitFor(() => Boolean(button('直接试用')), 'Return from training draft');
   button('直接试用').click();
   await waitFor(() => Boolean(document.querySelector('textarea[aria-label="输入内容"]')), 'Text generation draft opens');

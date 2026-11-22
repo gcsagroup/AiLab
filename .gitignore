@@ -9,6 +9,8 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .artifacts/
+/apps/windows-ui/runtime/
+/downloads/hf-declared-license-model-urls.jsonl.gz
 *.log
 .env
 .env.*

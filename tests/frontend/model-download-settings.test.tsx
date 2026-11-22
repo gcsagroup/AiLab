@@ -105,3 +105,38 @@ it.each([undefined, { ...boundary, os_sandbox: true }, { ...boundary, network: '
  await screen.findByRole('button', { name: '继续下载并核对' });
  expect(requests.filter(value => value.method === 'POST').map(value => value.path)).toEqual(['/model-downloads/download-one/cancel']);
 });
+
+it('Windows 更改下载格式后只提交新清单，登记只保存文件', async () => {
+ const calls: Array<{method: string; path: string; body?: Record<string, unknown>}> = [];
+ let finishReview!: () => void;
+ const waiting = new Promise<void>(resolve => { finishReview = resolve; });
+ vi.stubEnv('VITE_UI_PREVIEW', 'true');
+ vi.stubGlobal('ailabHF', { request: vi.fn(async (_action, req) => {
+   calls.push(req);
+   const url = new URL(req.path, 'https://app.invalid');
+   let data;
+   if (url.pathname === '/model-catalog/search') data = {items: ['Qwen/Qwen2.5-0.5B-Instruct-GGUF'], next_cursor: null};
+   else if (url.pathname === '/model-catalog') {
+     const format = url.searchParams.get('format') || 'gguf';
+     if (format === 'snapshot') await waiting;
+     data = {items: [{...catalog, id: format, manifest_digest: format, format, formats: ['gguf', 'snapshot'], name: format + ' 清单'}]};
+   } else if (url.pathname === '/model-downloads' || url.pathname === '/model-downloads/download-one') data = record;
+   else if (url.pathname.endsWith('/models')) data = {...model, path: 'C:/models/test'};
+   else throw new Error(req.path);
+   return {ok: true, data: {handled: true, data}};
+ })});
+ try {
+   const callbacks = view();
+   await screen.findByText('gguf 清单');
+   fireEvent.change(screen.getByLabelText('下载格式'), {target: {value: 'snapshot'}});
+   expect(screen.getByRole('button', {name: '下载并核对所选文件'}).hasAttribute('disabled')).toBe(true);
+   await act(async () => finishReview());
+   await screen.findByText('snapshot 清单');
+   fireEvent.click(screen.getByRole('button', {name: '下载并核对所选文件'}));
+   fireEvent.click(await screen.findByRole('button', {name: '加入当前项目模型库'}));
+   await screen.findByText(/C:\/models\/test/);
+   expect(calls.filter(call => call.method === 'POST').map(call => call.path)).toEqual(['/model-downloads', '/model-downloads/download-one/models']);
+   expect(calls.find(call => call.path === '/model-downloads')?.body).toMatchObject({catalog_id:'snapshot', manifest_digest:'snapshot'});
+   expect(callbacks.onUse).not.toHaveBeenCalled();
+ } finally { vi.unstubAllEnvs(); }
+});
