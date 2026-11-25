@@ -1,0 +1,16 @@
+{
+  "ggml/include/ggml-alloc.h": "d114067f9099c4a0e2bbc0625c676d4894d9cf0ea27168ee072c7de0e71bb51d",
+  "ggml/include/ggml-backend.h": "34464da4b46314c710cd634626578c6f2a6811431d41eddaf5e8aa77082fea2a",
+  "ggml/include/ggml-cpp.h": "bc15ba002c68685df23faae42df0d2b3d58032011f88b649021ab92485862c72",
+  "ggml/include/ggml-cpu.h": "316279e004cdeb8e6ef78599acb602bf79a8abdf897fed9fd1914808c1518c6e",
+  "ggml/include/ggml-opt.h": "3586de1bc8a934b5c72339e2b6937b0641e8f149b512231e666f67de0736eea2",
+  "ggml/include/ggml.h": "9ba0f37a0484427e7c211d07f37adaa031598814b973a36a313d201fe260f3f4",
+  "ggml/include/gguf.h": "e56714aab702e5ce62ee587a409643c08f7e93e8fbb77f48ef7cc85075f96fa4",
+  "include/llama.h": "81de282d3c3a6e74f876c5954749efc9aabd3dd3fd3014479d5194cb4381298b",
+  "LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+  "tools/mtmd/mtmd-helper.h": "be910287889be06749c4b836acdac369473661421a15c0120d3cb018197c3d10",
+  "tools/mtmd/mtmd.h": "1dc938cd32f21e38c7c3f0b51ab7a70e5c6e0054590c814eb508bad4c5cc6da8",
+  "vendor/nlohmann/json.hpp": "08f19bbcc66ff3082f5caf58867b1232987dba98d82e2b29d870722fce42776b",
+  "src/llama-arch.cpp": "e80d4a07f2c1cf6cf7a8d2640de6af72583187852e8bea5182fd4d042de649bf",
+  "src/llama-model.cpp": "8a3ed4ec50fd06350dccf511c4bc9876845a8546deac7d947a0baaacdcd97617"
+}

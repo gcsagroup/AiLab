@@ -3,7 +3,13 @@ const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
-const { fail, safeFile, repoId, resolveUrl } = require('./hub.cjs');
+const { fail, safeFile, repoId, resolveUrl, mainlineMember } = require('./hub.cjs');
+function sourceMember(repo,file) {
+  return file.sourcePath && file.sourcePath===mainlineMember(repo,file.path) ? file.sourcePath : file.path;
+}
+function downloadKey(project,repo,revision,format,files) {
+  return createHash('sha256').update(JSON.stringify([project,repo,revision,format,files.map(f=>sourceMember(repo,f))])).digest('hex').slice(0,24);
+}
 const { parallelDownload, clearChunks } = require('./parallel-download.cjs');
 function atomicJson(filename, value) { fs.mkdirSync(path.dirname(filename), { recursive: true }); fs.writeFileSync(filename + '.tmp', JSON.stringify(value, null, 2)); fs.renameSync(filename + '.tmp', filename); }
 function contained(root, relative) { const target = path.resolve(root, safeFile(relative)); if (!target.startsWith(path.resolve(root) + path.sep)) throw fail('文件路径越界。'); return target; }
@@ -34,8 +40,18 @@ class Downloads {
       try { const job = JSON.parse(fs.readFileSync(path.join(this.jobDir, file), 'utf8'));
         if (file !== `${job.id}.json` || !/^hf-[0-9a-f]{24}$/.test(job.modelId || '') || job.modelId !== job.id.replace('download-', 'hf-') || !/^[0-9a-f]{40,64}$/.test(job.revision || '') || !Array.isArray(job.files)) continue;
         repoId(job.repoId);
-        for (const item of job.files) { safeFile(item.path); if (!Number.isSafeInteger(item.size) || item.size < 0 || (item.sha256 && !/^[0-9a-f]{64}$/.test(item.sha256))) throw fail('下载记录文件元数据无效。'); const source=require('./h3-weights.cjs').sources(job.repoId,job.filename).find(f=>f.path===item.path && f.sha256===item.sha256); item.url = source ? source.url : resolveUrl(job.repoId, job.revision, item.path); }
-        const identity = createHash('sha256').update(JSON.stringify([job.projectId, job.repoId, job.revision, job.format, job.files.map(f=>f.path)])).digest('hex').slice(0,24);
+        const main = job.files.find(f => f.path === job.filename);
+        const sources = [...require('./h3-weights.cjs').sources(job.repoId, job.filename),
+          ...(require('./generation-packages.cjs').planFiles(job.repoId, main, job.revision, job.files) || [])];
+        for (const item of job.files) {
+          safeFile(item.path);
+          if (!Number.isSafeInteger(item.size) || item.size < 0 || (item.sha256 && !/^[0-9a-f]{64}$/.test(item.sha256)))
+            throw fail('下载记录文件元数据无效。');
+          const source = sources.find(f => f.path === item.path && f.size === item.size &&
+            (item.sha256 ? f.sha256 === item.sha256 : item.gitOid && f.gitOid === item.gitOid));
+          item.url = source ? source.url : resolveUrl(job.repoId, job.revision, sourceMember(job.repoId,item));
+        }
+        const identity = downloadKey(job.projectId,job.repoId,job.revision,job.format,job.files);
         if (job.id !== `download-${identity}`) continue;
         if (['queued', 'downloading'].includes(job.status)) job.status = 'paused';
         this.jobs.set(job.id, job);
@@ -80,7 +96,7 @@ class Downloads {
   }
   get(id) { const job = this.jobs.get(id); if (!job) throw fail('下载任务不存在。'); return job; }
   async create(plan, projectId, manifestDigest) {
-    const key = createHash('sha256').update(JSON.stringify([projectId, plan.repoId, plan.revision, plan.format, plan.files.map(f=>f.path)])).digest('hex').slice(0,24);
+    const key = downloadKey(projectId,plan.repoId,plan.revision,plan.format,plan.files);
     const id = `download-${key}`; if (this.jobs.has(id)) return this.get(id);
     const disk = await fsp.statfs(this.modelDir); if (disk.bavail * disk.bsize < plan.totalBytes + 64 * 1024 * 1024) throw fail('磁盘空间不足，无法保存所选模型。', 'DISK_SPACE');
     if (this.jobs.has(id)) return this.get(id); // statfs yielded: another request may have claimed this snapshot.

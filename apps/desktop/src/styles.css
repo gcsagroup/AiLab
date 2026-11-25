@@ -31,6 +31,13 @@
 .backup-content { margin: 20px 0; }
 .data-management { display: grid; gap: 12px; margin-top: 20px; padding: 16px; border: 1px solid var(--line); border-radius: 9px; }
 .data-management .dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.inference-performance { margin: 12px 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+.inference-performance h4 { margin: 0; }
+.performance-highlights { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 10px 0; }
+.performance-highlights dt, .inference-performance summary { color: var(--muted); font-size: 12px; }
+.performance-highlights dd { margin: 3px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.inference-performance summary { cursor: pointer; }
+.inference-performance .facts { margin-bottom: 0; }
 .cleanup-assets { list-style: none; padding: 0; max-height: 310px; overflow: auto; }
 .cleanup-assets li { padding: 14px 0; border-top: 1px solid var(--line); font-size: 12px; }
 .cleanup-assets p { margin-top: 7px; }

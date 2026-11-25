@@ -7,6 +7,11 @@ const { metadata } = require('./gguf-metadata.cjs');
 const pending = new Map();
 
 function roles(repo, filename = '') {
+  if (repo.toLowerCase() === 'justeleo/anima2-gguf' && /^anima-preview2_[\w-]+\.gguf$/i.test(filename)) return ['anima_encoder','anima_vae'];
+  if (repo.toLowerCase() === 'realrebelai/iris-3b_ggufs' && /^Iris-3B-[\w-]+\.gguf$/i.test(filename)) return ['iris_encoder'];
+  if (repo.toLowerCase() === 'samuelchristlie/wan2.1-t2v-1.3b-gguf' &&
+      /^Wan2\.1-T2V-1\.3B-[\w-]+\.gguf$/i.test(filename))
+    return ['umt5', 'wan_vae'];
   if (
     repo.toLowerCase() === 'unsloth/minimax-h3-image-gguf' &&
     /^minimax_h3_image_pruned[-_].*\.gguf$/i.test(filename)
@@ -24,7 +29,7 @@ function sources(repo, filename) {
     const c = catalog[role];
     return {
       role,
-      path: 'components/' + role + '.safetensors',
+      path: 'components/' + role + path.extname(c.file),
       sha256: c.sha256,
       size: c.size,
       url: 'https://huggingface.co/' + c.repo + '/resolve/' + c.revision + '/' + c.file + '?download=true',
@@ -38,7 +43,7 @@ async function sha(file) {
 }
 // Keep derived weights outside the immutable downloaded snapshot. Shared encoders are converted once.
 function conversionTypes(repo, filename) {
-  return Object.fromEntries(roles(repo, filename).map(role => [role, catalog[role].quant]));
+  return Object.fromEntries(roles(repo, filename).filter(role => catalog[role].quant).map(role => [role, catalog[role].quant]));
 }
 function derivedFile(dataDir, role, type) {
   const c = catalog[role];
@@ -53,7 +58,7 @@ async function convert(source, dest, role) {
   await fs.promises.mkdir(path.dirname(dir), { recursive: true });
   const existing = async () => {
     const record = JSON.parse(await fs.promises.readFile(path.join(dir, 'manifest.json'), 'utf8'));
-    if (record.sha256 !== (await sha(dest)) || metadata(dest).component !== role)
+    if (record.sha256 !== (await sha(dest)) || metadata(dest).component !== (catalog[role].component || role))
       throw Error('已有 GGUF 组件校验失败。');
     return record.sha256;
   };
@@ -70,10 +75,11 @@ async function convert(source, dest, role) {
     const out = path.join(tmp, role + '.gguf');
     await invoke(
       path.join(path.dirname(bins.image), 'sd-cli.exe'),
-      ['-M', 'convert', '-m', 'source.safetensors', '--type', catalog[role].quant, '-o', role + '.gguf'],
+      ['-M', 'convert', ...(['wan_vae','anima_vae'].includes(role) ? ['--backend','cpu','--params-backend','cpu'] : []),
+        '-m', 'source.safetensors', '--type', catalog[role].quant, '-o', role + '.gguf'],
       { cwd: tmp },
     );
-    if (metadata(out).component !== role) throw Error('转换后的 GGUF 组件不匹配：' + role);
+    if (metadata(out).component !== (catalog[role].component || role)) throw Error('转换后的 GGUF 组件不匹配：' + role);
     const hash = await sha(out);
     await fs.promises.writeFile(path.join(tmp, 'manifest.json'), JSON.stringify({ sha256: hash }));
     await fs.promises.unlink(input);
@@ -100,6 +106,7 @@ async function prepare(job, modelDir, dataDir) {
   if (!members.length || members.some(member => !job.files.some(f => f.path === member.path && f.sha256 === member.sha256))) return undefined;
   const hashes = {};
   for (const member of members) {
+    if (!catalog[member.role].quant) continue;
     hashes[member.role] = await prepareComponent(path.join(modelDir, job.modelId, member.path), member.role, dataDir);
   }
   return hashes;

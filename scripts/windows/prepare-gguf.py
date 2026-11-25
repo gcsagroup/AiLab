@@ -3,7 +3,9 @@
 import argparse
 import concurrent.futures
 import hashlib
+import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -15,9 +17,11 @@ import zlib
 ROOT = Path(__file__).resolve().parents[2]
 CACHE = ROOT / ".artifacts" / "ggml-sdk"
 DEST = ROOT / "apps" / "windows-ui" / "runtime"
-LLAMA = "https://github.com/ggml-org/llama.cpp/releases/download/b11669/llama-b11669-bin-win-vulkan-x64.zip"
+LLAMA = "https://github.com/ggml-org/llama.cpp/releases/download/b12648/llama-b12648-bin-win-vulkan-x64.zip"
 SD = "https://github.com/leejet/stable-diffusion.cpp/releases/download/master-1106-532d2c1/sd-master-532d2c1-bin-win-vulkan-x64.zip"
 AUDIO = "https://github.com/0xShug0/audio.cpp/releases/download/v0.9.5/audio-v0.9.5-bin-windows-x64-cpu-portable.zip"
+AUDIO_096 = "https://github.com/0xShug0/audio.cpp/releases/download/v0.9.6/audio-v0.9.6-bin-windows-x64-cpu-portable.zip"
+SD_CONTROL = "https://github.com/leejet/stable-diffusion.cpp/releases/download/master-1117-0d71f96/sd-master-0d71f96-bin-win-cpu-x64.zip"
 SOURCE = "https://codeload.github.com/ggml-org/llama.cpp/tar.gz/refs/tags/b11669"
 
 
@@ -53,6 +57,8 @@ def backend(kind, url, sha):
                     "ggml-base.dll",
                     "ggml-vulkan.dll",
                     "llama.dll",
+                    "llama-server.exe",
+                    "llama-server-impl.dll",
                     "mtmd.dll",
                     "llama-common.dll",
                     "libomp.dll",
@@ -66,8 +72,13 @@ def backend(kind, url, sha):
             else:
                 take = name.endswith(".dll") or name in (
                     "audiocpp_cli.exe",
+                    "audiocpp_gguf.exe",
                     "LICENSE",
                     "kokoro_tts.json",
+                    "mira_tts.json",
+                    "zonos2.json",
+                    "zonos3.json",
+                    "minimax_h3.json",
                 )
             if take:
                 # Audio ships phonemizer dictionaries alongside the executable.
@@ -86,6 +97,61 @@ def backend(kind, url, sha):
     return kind
 
 
+def prepare_recipe_runtime(url, digest, folder, executable):
+    archive = fetch(url, url.rsplit("/", 1)[1], digest)
+    target = DEST / folder
+    target.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(archive) as bundle:
+        for member in bundle.infolist():
+            name = Path(member.filename)
+            if name.parent != Path(".") or not (name.name in (executable, "LICENSE") or name.suffix in (".dll", ".txt")):
+                continue
+            with bundle.open(member) as src, (target / name).open("wb") as dst:
+                shutil.copyfileobj(src, dst)
+
+
+def prepare_phonemizer():
+    wheel = fetch(
+        "https://files.pythonhosted.org/packages/9d/ed/a3d872fbad4f3a3f3db0e8c31768ab14e77cd77306de16b8b20b1e1df7ea/espeakng_loader-0.2.4-py3-none-win_amd64.whl",
+        "espeakng_loader-0.2.4-win_amd64.whl",
+        "41f1e08ac9deda2efd1ea9de0b81dab9f5ae3c4b24284f76533d0a7b1dd7abd7",
+    )
+    dest = DEST / "audio" / "espeak"
+    dest.mkdir(parents=True, exist_ok=True)
+    license_file = fetch(
+        "https://raw.githubusercontent.com/espeak-ng/espeak-ng/1.52.0/COPYING",
+        "espeak-ng-COPYING.txt",
+        "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+    )
+    shutil.copyfile(license_file, dest / "COPYING.txt")
+    with zipfile.ZipFile(wheel) as archive:
+        for member in archive.infolist():
+            name = member.filename.removeprefix("espeakng_loader/")
+            if member.is_dir():
+                continue
+            if name != "espeak-ng.dll" and not name.startswith("espeak-ng-data/"):
+                if ".dist-info/licenses/" not in name and not name.lower().endswith("/license"):
+                    continue
+                name = "licenses/" + Path(name).name
+            target = dest / name
+            if not target.resolve().is_relative_to(dest.resolve()):
+                raise ValueError(name)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with archive.open(member) as src, target.open("wb") as out:
+                shutil.copyfileobj(src, out)
+
+
+def prepare_sea_g2p():
+    release = "https://github.com/pnnbao97/sea-g2p/releases/download/v0.10.0/"
+    assets = [
+        ("sea_g2p.bin", release + "sea_g2p.bin", "4346e690d0711ebc5231e7a42c5c88aaf6e40377e894b4617c018fd81c6f4096"),
+        ("sea_g2p_rs.dll", release + "sea_g2p_rs-windows-x86_64.dll", "1daff10cf65304daa56d90814f4f6a54cf6269bf22a684b940a3d7c0bbea25c3"),
+        ("LICENSE.sea-g2p.txt", "https://raw.githubusercontent.com/pnnbao97/sea-g2p/v0.10.0/LICENSE", "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"),
+    ]
+    for filename, url, checksum in assets:
+        shutil.copyfile(fetch(url, filename, checksum), DEST / "audio" / filename)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--only", choices=["text", "diffusion", "audio"])
@@ -95,7 +161,7 @@ def main():
         (
             "text",
             LLAMA,
-            "2c07574e7bde71321cb785282b20cc821e951132149eeceeea32ddebdbf0598e",
+            "35670c463d67d33b26058d2ac867346007a44ef19eaf0c0bfd6de08faa535b47",
         ),
         (
             "diffusion",
@@ -115,7 +181,12 @@ def main():
                 [x for x in entries if args.only in (None, x[0])],
             )
         )
+    if args.only in (None, "audio"):
+        prepare_recipe_runtime(AUDIO_096, "5d2e7fe24dbec0f8267db00ab2c6ccdd24799d916cb7beef3168eb66a53a4077",
+                               "audio/v0.9.6", "audiocpp_cli.exe")
     if args.only in (None, "diffusion"):
+        prepare_recipe_runtime(SD_CONTROL, "ba3e524523297902c9db1ec0e43e0bcbaf4067b4e053bd899b30c138ff1edda2",
+                               "diffusion/0d71f96", "sd-cli.exe")
         for url, name, digest in [
             (
                 "https://raw.githubusercontent.com/leejet/stable-diffusion.cpp/532d2c1/LICENSE",
@@ -142,30 +213,19 @@ def main():
                     (DEST / "diffusion" / ("ffmpeg-" + Path(name).name)).write_bytes(
                         z.read(name)
                     )
+    if args.only in (None, "audio"):
+        prepare_phonemizer()
+        prepare_sea_g2p()
+        for script in ("build-f5.py", "build-soxr.py"):
+            command = ["python3", "scripts/windows/" + script]
+            subprocess.run(["wsl.exe", "-d", "Ubuntu-24.04", "--", *command] if os.name == "nt" else command,
+                           cwd=ROOT, check=True)
     if args.only == "audio":
         return
-    archive = fetch(
-        SOURCE,
-        "llama.tar.gz",
-        "e06ba4fa263e30fdb9f0e65f00a8965202ddaa0c51f548a67e1f9b2164d04efc",
-    )
-    with tarfile.open(archive) as tar:
-        for member in tar:
-            if member.name == "llama.cpp-b11669/LICENSE":
-                if args.only in (None, "text"):
-                    (DEST / "text" / "LICENSE.llama.cpp.txt").write_bytes(
-                        tar.extractfile(member).read()
-                    )
-            if member.isfile() and member.name.startswith(
-                (
-                    "llama.cpp-b11669/include/",
-                    "llama.cpp-b11669/ggml/include/",
-                    "llama.cpp-b11669/vendor/nlohmann/",
-                    "llama.cpp-b11669/tools/mtmd/mtmd.h",
-                    "llama.cpp-b11669/tools/mtmd/mtmd-helper.h",
-                )
-            ):
-                tar.extract(member, CACHE, filter="data")
+    if args.only in (None, "diffusion"):
+        prepare_image_sdk()
+    if args.only in (None, "text"):
+        prepare_text_sdk()
     if args.only in (None, "diffusion"):
         base = "https://raw.githubusercontent.com/leejet/stable-diffusion.cpp/532d2c1/"
         fetch(
@@ -210,10 +270,10 @@ def main():
         "-O2",
         "-static",
         "-s",
-        "-I.artifacts/ggml-sdk/llama.cpp-b11669/include",
-        "-I.artifacts/ggml-sdk/llama.cpp-b11669/tools/mtmd",
-        "-I.artifacts/ggml-sdk/llama.cpp-b11669/ggml/include",
-        "-I.artifacts/ggml-sdk/llama.cpp-b11669/vendor",
+        "-I.artifacts/ggml-sdk/llama.cpp-b12648/include",
+        "-I.artifacts/ggml-sdk/llama.cpp-b12648/tools/mtmd",
+        "-I.artifacts/ggml-sdk/llama.cpp-b12648/ggml/include",
+        "-I.artifacts/ggml-sdk/llama.cpp-b12648/vendor",
         "workers/gguf-trial.cpp",
         "apps/windows-ui/runtime/text/mtmd.dll",
         "apps/windows-ui/runtime/text/llama.dll",
@@ -227,6 +287,79 @@ def main():
         cwd=ROOT,
         check=True,
     )
+    build_plm = ["python3", "scripts/windows/build-plm.py"]
+    subprocess.run(["wsl.exe", "-d", "Ubuntu-24.04", "--", *build_plm] if os.name == "nt" else build_plm,
+                   cwd=ROOT, check=True)
+
+
+def prepare_text_sdk():
+    revision = "44d50873b56b568c28ef2ad8d6445069feaa9fbd"
+    files = json.loads(Path(__file__).with_name("llama-sdk.json").read_text())
+    for name, checksum in files.items():
+        relative = "llama.cpp-b12648/" + name
+        (CACHE / relative).parent.mkdir(parents=True, exist_ok=True)
+        source = fetch(
+            f"https://raw.githubusercontent.com/ggml-org/llama.cpp/{revision}/{name}",
+            relative,
+            checksum,
+        )
+        if name == "LICENSE":
+            shutil.copyfile(source, DEST / "text" / "LICENSE.llama.cpp.txt")
+
+    # Every name must have exactly the role provided by the matching native source.
+    src = CACHE / "llama.cpp-b12648" / "src"
+    table = (
+        (src / "llama-arch.cpp")
+        .read_text(encoding="utf-8")
+        .split("LLM_ARCH_NAMES = {", 1)[1]
+        .split("};", 1)[0]
+    )
+    mapping = (
+        (src / "llama-model.cpp")
+        .read_text(encoding="utf-8")
+        .split("static llama_model * llama_model_mapping", 1)[1]
+        .split("default:", 1)[0]
+    )
+    names = dict(re.findall(r'\{\s*(LLM_ARCH_\w+),\s*"([^"]+)"', table))
+    constructors = set(re.findall(r"case (LLM_ARCH_\w+):", mapping))
+    catalog = json.loads(
+        (ROOT / "apps/windows-ui/hf/llama-architectures.json").read_text()
+    )
+    expected = {
+        name for enum, name in names.items() if enum in constructors and name != "clip"
+    }
+    missing = {
+        name
+        for enum, name in names.items()
+        if enum not in constructors and name != "(unknown)"
+    }
+    if (
+        catalog["revision"] != revision
+        or set(catalog["models"]) != expected
+        or catalog["projectors"] != ["clip"]
+        or set(catalog["no_constructor"]) != missing
+    ):
+        raise ValueError("llama.cpp architecture registry and packaged routes disagree")
+
+
+def prepare_image_sdk():
+    archive = fetch(
+        SOURCE,
+        "llama.tar.gz",
+        "e06ba4fa263e30fdb9f0e65f00a8965202ddaa0c51f548a67e1f9b2164d04efc",
+    )
+    with tarfile.open(archive) as tar:
+        for member in tar:
+            if member.isfile() and member.name.startswith(
+                (
+                    "llama.cpp-b11669/include/",
+                    "llama.cpp-b11669/ggml/include/",
+                    "llama.cpp-b11669/vendor/nlohmann/",
+                    "llama.cpp-b11669/tools/mtmd/mtmd.h",
+                    "llama.cpp-b11669/tools/mtmd/mtmd-helper.h",
+                )
+            ):
+                tar.extract(member, CACHE, filter="data")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,562 @@
+{
+  "aleph-alpha/kolibri-1-bf16": {
+    "repo": "mradermacher/Kolibri-1-BF16-i1-GGUF",
+    "revision": "1623f8587a8b48169929cf329e26b75d5097a391",
+    "filename": "Kolibri-1-BF16.i1-IQ1_S.gguf",
+    "sha256": "010841c73b3e3ac89650bedc39e15a2675756d8f30c58d90f9d0662a16718357"
+  },
+  "allenai/olmoe-1b-7b-0924-instruct": {
+    "repo": "mradermacher/OLMoE-1B-7B-0924-Instruct-i1-GGUF",
+    "revision": "e50478769fe9f71f1563898fd935f49a6ba13085",
+    "filename": "OLMoE-1B-7B-0924-Instruct.i1-Q4_0_4_4.gguf",
+    "sha256": "21dc944b28c7639d25193435e3f5b9bdbfbce2b5305bdb7a721dbc2e0b2d564d"
+  },
+  "amanpriyanshu/gpt-oss-6.0b-specialized-all-pruned-moe-only-7-experts": {
+    "repo": "mradermacher/gpt-oss-6.0b-specialized-all-pruned-moe-only-7-experts-GGUF",
+    "revision": "a681f3c885f33b491b9ca44b002ff76fc7718ff7",
+    "filename": "gpt-oss-6.0b-specialized-all-pruned-moe-only-7-experts.Q3_K_S.gguf",
+    "sha256": "39d0ddb1df405a8ea76ef93f71484f0faf1b59c3d7e4522ef80d059ce5543852"
+  },
+  "arcee-ai/afm-4.5b": {
+    "repo": "mradermacher/AFM-4.5B-i1-GGUF",
+    "revision": "fb106f5c9f8e3e7c9b61d1ef66aa31a3c3dd205e",
+    "filename": "AFM-4.5B.i1-Q4_0.gguf",
+    "sha256": "67378c2683cce25ad89ee3d2f6ed1bf6f1e4a1c35f203735e55c7044d8a482fa"
+  },
+  "arcee-ai/trinity-nano-preview": {
+    "repo": "mradermacher/Trinity-Nano-Preview-i1-GGUF",
+    "revision": "aec511434434fc3a21c612e2337b8aa6a818ab45",
+    "filename": "Trinity-Nano-Preview.i1-Q4_0.gguf",
+    "sha256": "cc6cdfc5fd6d633fd191728d55e71c20f95c9575382d4ab06f15d56daf9ce9fe"
+  },
+  "baichuan-inc/baichuan2-7b-chat": {
+    "repo": "CHE-72/Baichuan2-7B-Chat-Q2_K-GGUF",
+    "revision": "3b3cbb1905f8c28dc1b9a4a7f32f62bbfe4b4ba5",
+    "filename": "baichuan2-7b-chat-q2_k.gguf",
+    "sha256": "656aa72886616f6770390d9699d0bbfababfcd102b3ab31a2a98738f52e8cc33"
+  },
+  "baidu/ernie-4.5-21b-a3b-thinking": {
+    "repo": "mradermacher/ERNIE-4.5-21B-A3B-Thinking-i1-GGUF",
+    "revision": "c9901475a93c03aeff985750153c93ac9a325e1a",
+    "filename": "ERNIE-4.5-21B-A3B-Thinking.i1-IQ1_S.gguf",
+    "sha256": "eccafe7b09e0cf42fc6eda50ec7ebaf28bb6c47e63b1a4b09a5a27e60cd425ae"
+  },
+  "bigcode/starcoder2-3b": {
+    "repo": "mradermacher/starcoder2-3b-i1-GGUF",
+    "revision": "a43ff9f1771107944b02a3cb50d1341d5d2d2ed8",
+    "filename": "starcoder2-3b.i1-Q4_0.gguf",
+    "sha256": "490ba1b51f0171600667fe47dfe3cb5234928ce2e8cff74683eb98418d6190ae"
+  },
+  "bigscience/bloom-560m": {
+    "repo": "tensorblock/bloom-560m-GGUF",
+    "revision": "94bc25402b1d0a2c291f4a8a3196eec1113e14fa",
+    "filename": "bloom-560m-Q2_K.gguf",
+    "sha256": "da9e57971f78f3eac10571bef1e976fb4326918cdcd2aeac6f5eab8634a4481c"
+  },
+  "bytedance-seed/seed-oss-36b-base": {
+    "repo": "mradermacher/Seed-OSS-36B-Base-i1-GGUF",
+    "revision": "efc91557ffaa0f779278214f41cd0b18a208c9bb",
+    "filename": "Seed-OSS-36B-Base.i1-IQ2_S.gguf",
+    "sha256": "a431ecd2e1c4afa1b452e132817a89280545b6b1e69f2a38c9b03f4c92c79b30"
+  },
+  "coherelabs/aya-expanse-8b": {
+    "repo": "lmstudio-community/aya-expanse-8b-GGUF",
+    "revision": "6bf08537b77d7173976591117800a49fe95d9e1d",
+    "filename": "aya-expanse-8b-Q3_K_L.gguf",
+    "sha256": "25e335262180b320b886fe7d34de34033421ca0db209b0b5316e5e1dc8c59792"
+  },
+  "coherelabs/north-mini-code-1.0": {
+    "repo": "mradermacher/North-Mini-Code-1.0-i1-GGUF",
+    "revision": "94d8eb17eaeb728f907639ee0eff457e3e274667",
+    "filename": "North-Mini-Code-1.0.i1-IQ1_S.gguf",
+    "sha256": "660792f0dd77ef2e39e92549bd88bbb0f91734371a3763816648fe77f23fb4dc"
+  },
+  "danish-foundation-models/dfm-mimir": {
+    "repo": "danish-foundation-models/DFM-Mimir-GGUF",
+    "revision": "4364aaa61279c187b7cd202375915ea962b79afb",
+    "filename": "dfm-mimir-q4_k_m.gguf",
+    "sha256": "8c811ca72589112f00306e8b3a23f83944751d13d3fce6dfdb39df8b31726e49"
+  },
+  "deci/decilm-6b-instruct": {
+    "repo": "mradermacher/DeciLM-6b-instruct-i1-GGUF",
+    "revision": "47ec508523d1a04de0f93f434be5bd9abc1436a1",
+    "filename": "DeciLM-6b-instruct.i1-Q4_0.gguf",
+    "sha256": "9306d835651aa08d13eb7de776ab82bcc2da65b0cb4e89d3697e61d3f8635739"
+  },
+  "deepseek-ai/deepseek-moe-16b-chat": {
+    "repo": "mradermacher/deepseek-moe-16b-chat-i1-GGUF",
+    "revision": "4e82ce5d25b2b99e3c9db6aa4075d4c24d82c453",
+    "filename": "deepseek-moe-16b-chat.i1-IQ1_S.gguf",
+    "sha256": "664b3461ecc67978ea67a8b3c45319d6278cea48d43ed88a61990b0bbc42474a"
+  },
+  "domyn/domyn-edge-sft": {
+    "repo": "prithivMLmods/Domyn-Edge-SFT-GGUF",
+    "revision": "85f795a5501b1c30e82dbccd4a59c4a4eb8bfdc2",
+    "filename": "Domyn-Edge-SFT.Q3_K_M.gguf",
+    "sha256": "2adead2bc85544b730329b1eee3553c07e85c5594dc7f7d5d4dd84bf1250d1e8"
+  },
+  "dream-org/dream-coder-v0-instruct-7b": {
+    "repo": "mradermacher/Dream-Coder-v0-Instruct-7B-i1-GGUF",
+    "revision": "edb6a371ea037f344b4aef2ee23cb1f5abde481c",
+    "filename": "Dream-Coder-v0-Instruct-7B.i1-IQ1_S.gguf",
+    "sha256": "74df6814b1f6b2fb2105e647a0a095913c700d178b31abda2d355f9e3b7c2712"
+  },
+  "eleutherai/pythia-14m": {
+    "repo": "tensorblock/pythia-14m-GGUF",
+    "revision": "af376adc5b0aa6e6eb42fe47ef1395dc7f8da2e3",
+    "filename": "pythia-14m-Q2_K.gguf",
+    "sha256": "d4ea539992f5bdbc63a7369653b11e8ea1740ea6db2f158ef86c0e723bedf949"
+  },
+  "fla-hub/rwkv7-0.1b-g1": {
+    "repo": "mradermacher/rwkv7-0.1B-g1-i1-GGUF",
+    "revision": "9b35adfbc7f76ae3f7159f606571492ca7d2ca15",
+    "filename": "rwkv7-0.1B-g1.i1-IQ1_S.gguf",
+    "sha256": "c1d8a761dad6d52afcd993a8e14b9dbe3e3bc8f6279bc1aa7ec76a350edc4e8a"
+  },
+  "freedomintelligence/openpangu-embedded-7b-v1.1": {
+    "repo": "mradermacher/openPangu-Embedded-7B-V1.1-i1-GGUF",
+    "revision": "f6f4298e1be4c4d1fb6133fd85c32e3bc154d4fc",
+    "filename": "openPangu-Embedded-7B-V1.1.i1-IQ1_S.gguf",
+    "sha256": "58a6fa083afb8c17faba7abbbd988c3f508bec55b217667ec2f4d12c1ad2facc"
+  },
+  "google/gemma-2-2b-it": {
+    "repo": "bartowski/gemma-2-2b-it-GGUF",
+    "revision": "855f67caed130e1befc571b52bd181be2e858883",
+    "filename": "gemma-2-2b-it-Q4_K_M.gguf",
+    "sha256": "e0aee85060f168f0f2d8473d7ea41ce2f3230c1bc1374847505ea599288a7787"
+  },
+  "google/gemma-3-270m-it": {
+    "repo": "unsloth/gemma-3-270m-it-GGUF",
+    "revision": "c90975dbd40c0c7b275fefaae758c3415c906238",
+    "filename": "gemma-3-270m-it-Q4_0.gguf",
+    "sha256": "e479ea2962bdcdc7e6321b91148b9ac2f516f649e0921412561d4936aadef158"
+  },
+  "gsai-ml/llada-1.5": {
+    "repo": "mradermacher/LLaDA-1.5-i1-GGUF",
+    "revision": "a31146b91ab8a593f8d14cb1d3e1c945a13d1976",
+    "filename": "LLaDA-1.5.i1-Q4_0.gguf",
+    "sha256": "582e1f5160d538270eb053f417fbdcf8aec3c0f21ff723545c2bb3f5a24b2ef9"
+  },
+  "huggingfacetb/smollm3-3b": {
+    "repo": "lmstudio-community/SmolLM3-3B-GGUF",
+    "revision": "58d9d6cf8a03c5a725a4c07679e25ac0e27d65ce",
+    "filename": "SmolLM3-3B-Q4_K_M.gguf",
+    "sha256": "b39b54f6bf41efb4f60baaf1b1f67657203dd22b60254104290addb48657b8df"
+  },
+  "ibm-granite/granite-3.0-1b-a400m-instruct": {
+    "repo": "mradermacher/granite-3.0-1b-a400m-instruct-i1-GGUF",
+    "revision": "ae052dc6632f092beb44247631ba08c6ed140f51",
+    "filename": "granite-3.0-1b-a400m-instruct.i1-Q4_0_4_4.gguf",
+    "sha256": "b8e493d21baefbe539be2cb908e4d87e93d028d21afd849c9385fb406bc36dec"
+  },
+  "ibm-granite/granite-3.3-2b-instruct": {
+    "repo": "mradermacher/granite-3.3-2b-instruct-i1-GGUF",
+    "revision": "095a82fa1d1928893256b45e5610254fa23247d7",
+    "filename": "granite-3.3-2b-instruct.i1-Q4_0.gguf",
+    "sha256": "e575e5cdd3fa094153cb97c02f00269785471bc1d6f4473790a7347106a52348"
+  },
+  "ibm-granite/granite-4.0-h-tiny": {
+    "repo": "mradermacher/granite-4.0-h-tiny-i1-GGUF",
+    "revision": "4a7953840f6dfb0d0f6ff3a2fe6528c414328e3f",
+    "filename": "granite-4.0-h-tiny.i1-IQ1_S.gguf",
+    "sha256": "ecf5433adb34a592562adb40e7606af1105a10458045b50baae460475e96c88a"
+  },
+  "ibm-granite/granite-swash-3b-a600m": {
+    "repo": "emredeveloper/granite-swash-3b-a600m-GGUF",
+    "revision": "d20c88f11ef8622464f9678e6437ed9e72a07dcd",
+    "filename": "granite-swash-3b-a600m-BF16.gguf",
+    "sha256": "1961c3d8eb4e97536a2b95ebe0bd6830d508031443e81124516c05505af8c615"
+  },
+  "ibm-granite/granite-switch-4.1-3b-preview": {
+    "repo": "Pauliehedron/granite-switch-4.1-3b-preview-GGUF",
+    "revision": "626dbb46c8bf80c9e0f9b6996d3553bc566e708d",
+    "filename": "granite-switch-4.1-3b-preview-Q4_K_M.gguf",
+    "sha256": "cc1c2c56f9c552980fd89766e2126a5b2dd67f9851c9fa0f33f79ac8e488ba41"
+  },
+  "ifm/k2-horizon-0.9b": {
+    "repo": "ngquocvinh/K2-Horizon-0.9B-GGUF",
+    "revision": "832a4ffcd998cb0178dcd9845d032e99e086f7ca",
+    "filename": "K2-Horizon-0.9B-Q1_0.gguf",
+    "sha256": "adffe20465b90179328f4e80d4dc8c72bc4406dd2028bc1dee68b8fd10e27488"
+  },
+  "inception42/jais-family-590m": {
+    "repo": "mradermacher/jais-family-590m-i1-GGUF",
+    "revision": "5455b1a384b30fbc9c2b727bbf4216ebead901b2",
+    "filename": "jais-family-590m.i1-IQ2_XXS.gguf",
+    "sha256": "2f8e4f2f684637d30ef194104ce279d697d063661b4f08c80e3d3217ae061f7b"
+  },
+  "inclusionai/grovemoe-inst": {
+    "repo": "mradermacher/GroveMoE-Inst-i1-GGUF",
+    "revision": "4e342287d10e5b616e087509fe2a979293bc7b0d",
+    "filename": "GroveMoE-Inst.i1-IQ1_S.gguf",
+    "sha256": "3342cfab326cd4f3569a989151f944bbe1c4031739e4b1f86f9dce4dd533fa05"
+  },
+  "inclusionai/ling-coder-lite-base": {
+    "repo": "mradermacher/Ling-Coder-lite-base-i1-GGUF",
+    "revision": "037af7203cc65fc5a2bda8ce0e79acd4b25f6016",
+    "filename": "Ling-Coder-lite-base.i1-IQ1_S.gguf",
+    "sha256": "9c51b8c8b76ced9ba75c34fe8ffd1a4fb4b2d1f785251c84ae32df460b450b21"
+  },
+  "inclusionai/ling-mini-2.0": {
+    "repo": "mradermacher/Ling-mini-2.0-i1-GGUF",
+    "revision": "2b715ba73b9a8c79ea346227ffec4c3bf161deab",
+    "filename": "Ling-mini-2.0.i1-IQ1_S.gguf",
+    "sha256": "7d70b52f553d43309acca62d1bec9e2e956a3c1496716dafed92af5fbcc68f0c"
+  },
+  "inclusionai/llada-moe-7b-a1b-base": {
+    "repo": "mradermacher/LLaDA-MoE-7B-A1B-Base-i1-GGUF",
+    "revision": "689fd0ca63b5640ad8990a7a6518ddcffa0be166",
+    "filename": "LLaDA-MoE-7B-A1B-Base.i1-IQ1_S.gguf",
+    "sha256": "2b035c272f3efe3316a5f55233aa0c33b1d3a0faed3939a3bed608710d96af6a"
+  },
+  "jannalu/talkie-1930-13b-base-hf": {
+    "repo": "mradermacher/talkie-1930-13b-base-hf-i1-GGUF",
+    "revision": "ad5bb99fdf947d1781fc54d9dbca33a24f8b58dd",
+    "filename": "talkie-1930-13b-base-hf.i1-IQ1_S.gguf",
+    "sha256": "61a5c0349f01a86d0d705a7cc930ac1e8d4207e0b351d673ab6e5c1a65637607"
+  },
+  "jetbrains/mellum2-12b-a2.5b-base": {
+    "repo": "mradermacher/Mellum2-12B-A2.5B-Base-i1-GGUF",
+    "revision": "e010890a6c795b2448f8176a7f8d13fef747b001",
+    "filename": "Mellum2-12B-A2.5B-Base.i1-IQ1_S.gguf",
+    "sha256": "277d7117b5afbbd0e4e561f2834170fe28f79496e07d988e0771f1dee5d646ca"
+  },
+  "koshkasa/arliai_glm-4.5-air-derestricted_reap50_creative": {
+    "repo": "mradermacher/ArliAI_GLM-4.5-Air-Derestricted_REAP50_Creative-i1-GGUF",
+    "revision": "7eb568326e730054705ad00257c973d1b43662f3",
+    "filename": "ArliAI_GLM-4.5-Air-Derestricted_REAP50_Creative.i1-IQ1_S.gguf",
+    "sha256": "0777f5827c2c5b74039002e42264fc24d340a0c1a37cbb09eeb69a10c6f39d92"
+  },
+  "lernex/metis-1.6-praxis": {
+    "repo": "Lernex/Metis-1.6-Praxis-GGUF",
+    "revision": "5b44a4ac85b9f825bd9d5d3d4cf69130f9736a95",
+    "filename": "Metis-1.6-Praxis-IQ4_XS.gguf",
+    "sha256": "6366f9cf67a57611818f8ca8e50544cb4743d20f0576eb6112297a26ca618fb5"
+  },
+  "lgai-exaone/exaone-3.5-2.4b-instruct": {
+    "repo": "lmstudio-community/EXAONE-3.5-2.4B-Instruct-GGUF",
+    "revision": "347ad15365d7e4c4fb0d206e07b87bdefe9e67d9",
+    "filename": "EXAONE-3.5-2.4B-Instruct-Q4_K_M.gguf",
+    "sha256": "e737325eba90f4c1cccab3085ef8eab5fb8429cf304ec1e6c9c9b2bf891cb058"
+  },
+  "lgai-exaone/exaone-4.0-1.2b": {
+    "repo": "lmstudio-community/EXAONE-4.0-1.2B-GGUF",
+    "revision": "1059ad0c090a43c6ac44e18a381999445ade5d0c",
+    "filename": "EXAONE-4.0-1.2B-GGUF-Q4_K_M.gguf",
+    "sha256": "6fdeabd782c03474819f33147799fe3d0687f0e6713d67c489f45c4efea5e218"
+  },
+  "liquidai/lfm2.5-350m": {
+    "repo": "LiquidAI/LFM2.5-350M-GGUF",
+    "revision": "657e078c94084481950a2d555a941481f715536b",
+    "filename": "LFM2.5-350M-Q4_0.gguf",
+    "sha256": "85e32858daafad55b7bcd6b97a1343ee0661188e8036f9862d14d6b563142f50"
+  },
+  "liquidai/lfm3-1.7b": {
+    "repo": "LiquidAI/LFM3-1.7B-GGUF",
+    "revision": "cd0c74c575b5c416f3011b5b4c298077f26ca8c2",
+    "filename": "LFM3-1.7B-QAD-Q4_0.gguf",
+    "sha256": "43a7d09a0e9cba91b63eb7052488b9564569bddfd65754d2e426465e572a7452"
+  },
+  "maincode/maincoder-1b": {
+    "repo": "sthaps/Maincoder-1B",
+    "revision": "1806319bd9180621e357c7279f2cb975650d703a",
+    "filename": "Maincoder-1B-q2_k.gguf",
+    "sha256": "f5540415ab7c2ae51278af63e5e55b307058572be2f7e2b7541e898242f4a0a9"
+  },
+  "meta-models/muse-glimmer-30b": {
+    "repo": "bartowski/Muse-Glimmer-30B-GGUF",
+    "revision": "01e1b7c30e19e1823ee9a73dec51d12f59ec4857",
+    "filename": "Muse-Glimmer-30B-IQ2_S.gguf",
+    "sha256": "0b90658c21b28cecc6ae636e605e63f0128c0d9767d8f6fc6a38e30263d8b50b",
+    "projector": {
+      "path": "mmproj-Muse-Glimmer-30B-f16.gguf",
+      "sha256": "b94be96afc13120bf0636728b75ad568bb4eba5b2096438b009ed032d8cef4ea"
+    }
+  },
+  "microsoft/phi-3.5-moe-instruct": {
+    "repo": "bartowski/Phi-3.5-MoE-instruct-GGUF",
+    "revision": "4b580329100cf44d7d041b6f63967b26869a6937",
+    "filename": "Phi-3.5-MoE-instruct-IQ2_S.gguf",
+    "sha256": "1f71713cfe7c9e5dfb1f8d771a46723be6ec7d9a27cb4fd351ac91c1c92a6ebd"
+  },
+  "mistralai/ministral-3-3b-reasoning-2512": {
+    "repo": "ggml-org/Ministral-3-3B-Reasoning-2512-GGUF",
+    "revision": "6373de865cde31bb48488a22684512a1997867be",
+    "filename": "Ministral-3-3B-Reasoning-2512-Q8_0.gguf",
+    "sha256": "8bb60ece89db5969890c282613d7bfd93f3d1c0a72a37fc579be1ae99eb2eca2",
+    "projector": {
+      "path": "mmproj-Ministral-3-3B-Reasoning-2512-Q8_0.gguf",
+      "sha256": "f0e34ffcc888dfe1d05d6615426d6a5674b27d2e55a4043a1ec3964febaae0f7"
+    }
+  },
+  "morriszjm/minimax-m2.5-tiny-24e": {
+    "repo": "PJRM/MiniMax-M2.5-tiny-24e-IQ4_NL-GGUF",
+    "revision": "c48d6dc8dc7eb7bf597f376f228f674b8a38c96d",
+    "filename": "minimax-m2.5-tiny-24e-iq4_nl-imat.gguf",
+    "sha256": "67932356b9b3fd1e3f948f56b33fcf056986f798121cf47079d15a7bece69048"
+  },
+  "nanbeige/nanbeige4.2-3b": {
+    "repo": "bartowski/Nanbeige_Nanbeige4.2-3B-GGUF",
+    "revision": "17562eefe9752007209148d5f7a6e275fc8d8077",
+    "filename": "Nanbeige_Nanbeige4.2-3B-Q2_K.gguf",
+    "sha256": "e62f53bb05046f1795fb51ef87f0504a9e145fe846582854f88f63412cb76aff"
+  },
+  "openai/gpt-oss-20b": {
+    "repo": "unsloth/gpt-oss-20b-GGUF",
+    "revision": "d449b42d93e1c2c7bda5312f5c25c8fb91dfa9b4",
+    "filename": "gpt-oss-20b-Q3_K_S.gguf",
+    "sha256": "8deacd2c5ed46d1a62368c52e44abdb55e32a2aa0e5acea86d18d8258339f17d"
+  },
+  "orionstarai/orion-14b-base": {
+    "repo": "mradermacher/Orion-14B-Base-i1-GGUF",
+    "revision": "417faabfb038d25e6ba1e18cbbd3307154ee2398",
+    "filename": "Orion-14B-Base.i1-IQ2_S.gguf",
+    "sha256": "608e7ab78917f857249ec3ea207eb27eb662a2d31dc4c37e1540f70ba6c25ed4"
+  },
+  "paradigma-inc/limite-1b-violetto": {
+    "repo": "mradermacher/limite-1b-violetto-GGUF",
+    "revision": "aadad2620806b669ea81ac50f67749aacaed6d04",
+    "filename": "limite-1b-violetto.Q2_K.gguf",
+    "sha256": "2ea2442eb02b5d5f791aad07788927fdfb677626cf928fbd948a8ceaeca1682a"
+  },
+  "pfnet/plamo-13b": {
+    "repo": "mradermacher/plamo-13b-i1-GGUF",
+    "revision": "df4b7058411d6312e2ee9cbaebec6220d88f7f4a",
+    "filename": "plamo-13b.i1-IQ1_S.gguf",
+    "sha256": "701aad90f647ca8ad9ba05cc0ba3df4b559e2219bea4859f940851909e3e4ff3"
+  },
+  "pfnet/plamo-2-1b": {
+    "repo": "mmnga/plamo-2-1b-gguf",
+    "revision": "aaaa8e55117b528f5633822bab0c5c41e5f09757",
+    "filename": "plamo-2-1b-Q3_K_M.gguf",
+    "sha256": "9b8c48bfb15b88602a2443a80e059420c4335f98628f31580daa2bf5557d9937"
+  },
+  "pku-alignment/aa-chameleon-7b-plus": {
+    "repo": "mradermacher/AA-chameleon-7b-plus-i1-GGUF",
+    "revision": "5e13750981e775965061feefb701f4b6e1e1f7d9",
+    "filename": "AA-chameleon-7b-plus.i1-Q4_0_4_4.gguf",
+    "sha256": "3f9a8aa26ba9dc8dd6126cf36ca1fb55b0558a84fad906e5a781e2ab6b78524c"
+  },
+  "poolside/laguna-xs-2.1": {
+    "repo": "bartowski/Laguna-XS-2.1-GGUF",
+    "revision": "8f7579d6ab7d3122716100116cf1a62f490ab6f3",
+    "filename": "Laguna-XS-2.1-IQ2_S.gguf",
+    "sha256": "37f9b10236cd356768741cbafc9016bb5d5a0242ac9d453406c6858d31a4e675"
+  },
+  "pszemraj/jamba-900m-v0.13-kix2": {
+    "repo": "bartowski/pszemraj_jamba-900M-v0.13-KIx2-GGUF",
+    "revision": "0c54c91241fea654a630133b4aab35e8df51f68d",
+    "filename": "pszemraj_jamba-900M-v0.13-KIx2-Q4_0.gguf",
+    "sha256": "ab963eb0bcec4f454c1692bddc2e70dd0fa7e25541288721aa2e6a6f5d49c4b1"
+  },
+  "qwen/qwen-1_8b-chat": {
+    "repo": "mradermacher/Qwen-1_8B-Chat-GGUF",
+    "revision": "8b01cad4a2561cf056e3946999a51b319c4a307f",
+    "filename": "Qwen-1_8B-Chat.Q4_K_M.gguf",
+    "sha256": "f8c85314089d89796c5c3840804d3b0b0939c984056456860c4640b6c2afc0a0"
+  },
+  "qwen/qwen1.5-moe-a2.7b": {
+    "repo": "tensorblock/Qwen1.5-MoE-A2.7B-GGUF",
+    "revision": "49229e6b796ac0bbc53f034ad3cd9354a48ea403",
+    "filename": "Qwen1.5-MoE-A2.7B-Q2_K.gguf",
+    "sha256": "b24874870bc13c79b6656fd3b921d5480d9c019ff137eb36d5801a75f006bcf4"
+  },
+  "qwen/qwen2-vl-2b-instruct": {
+    "repo": "mradermacher/Qwen2-VL-2B-Instruct-i1-GGUF",
+    "revision": "61042335ec38e3ef8f820bf10c6c67f89b1b597c",
+    "filename": "Qwen2-VL-2B-Instruct.i1-Q4_0.gguf",
+    "sha256": "5651ce4701eaabf8305e00cf10b7f9612dfad50cfb3e973aed4a1e5c789ff03a"
+  },
+  "qwen/qwen3-next-80b-a3b-instruct": {
+    "repo": "mradermacher/Qwen3-Next-80B-A3B-Instruct-i1-GGUF",
+    "revision": "896f5e4ecc717f10a220446c1aaf50801fb9863f",
+    "filename": "Qwen3-Next-80B-A3B-Instruct.i1-IQ1_S.gguf",
+    "sha256": "645ea24448fdfd2d691956bdc8f73ac5cd9c5196890b03c8ab15c6203662da3b"
+  },
+  "qwen/qwen3-vl-2b-instruct": {
+    "repo": "lmstudio-community/Qwen3-VL-2B-Instruct-GGUF",
+    "revision": "638b17f2fb5077ba9bf55aec35261b6371c0587d",
+    "filename": "Qwen3-VL-2B-Instruct-Q4_K_M.gguf",
+    "sha256": "c58d0e9dabbd77b4e78f3b5e8bf761ed2e2dd5a491bd68558c426ea57a306c33",
+    "projector": {
+      "path": "mmproj-Qwen3-VL-2B-Instruct-F16.gguf",
+      "sha256": "2a57153fe566cca74616c71494b8e950549cc0a93fb6114ff8864dc20ed36d87"
+    }
+  },
+  "qwen/qwen3-vl-30b-a3b-instruct": {
+    "repo": "bartowski/Qwen_Qwen3-VL-30B-A3B-Instruct-GGUF",
+    "revision": "796dd938fd4a809d4dc372602cfde3e985f31e72",
+    "filename": "Qwen_Qwen3-VL-30B-A3B-Instruct-IQ2_S.gguf",
+    "sha256": "ec06250572e6243d10eeb77c3d1f39c34397de8977c76d1fd225a9ab86e2b7e3",
+    "projector": {
+      "path": "mmproj-Qwen_Qwen3-VL-30B-A3B-Instruct-f16.gguf",
+      "sha256": "b69fc46e80d07aafa6c9e9af7904e793a99cf6c961b3731163f91ed3f78acdc3"
+    }
+  },
+  "qwen/qwen3.5-35b-a3b": {
+    "repo": "bartowski/Qwen_Qwen3.5-35B-A3B-GGUF",
+    "revision": "3d2a22d4eb631b9c8fd2be94599dc2fd84b4a595",
+    "filename": "Qwen_Qwen3.5-35B-A3B-IQ2_S.gguf",
+    "sha256": "b9202358bc0d9d56fd51077484c0c97fd000f6c99900e61527793abce01d9619",
+    "projector": {
+      "path": "mmproj-Qwen_Qwen3.5-35B-A3B-f16.gguf",
+      "sha256": "10cf13cb1f8434f30df8fa7e5bde98d542fbf397550cb489dfa9eb8ac7069035"
+    }
+  },
+  "qwen/qwen3.8-27b": {
+    "repo": "unsloth/Qwen3.8-27B-GGUF",
+    "revision": "4af51b3542f775b0a8e4b310bfb3f17e01c306c9",
+    "filename": "Qwen3.8-27B-UD-IQ2_XXS.gguf",
+    "sha256": "f51f7340110329e897623338c9458544a88a76bfbc360808c847b8d8d0277a6c",
+    "projector": {
+      "path": "mmproj-F16.gguf",
+      "sha256": "cbb841a9ee0636b2ec172f5bb8df2ea8dfeb01e90fe7c6126581d662a0b4e43e"
+    }
+  },
+  "radicalnumerics/rnd1-base-0910": {
+    "repo": "vikramkr/RND1-Base-0910-Q8_0-GGUF",
+    "revision": "93d8d35e3aac7b39311e48fc778777ac21529057",
+    "filename": "rnd1-base-0910-q8_0.gguf",
+    "sha256": "689949d9661c88930045c3511f893cacb41068c5133c43dcd388570abd1af28b"
+  },
+  "recursal/qrwkv6-32b-instruct-preview-v0.1": {
+    "repo": "mradermacher/QRWKV6-32B-Instruct-Preview-v0.1-i1-GGUF",
+    "revision": "0013a55a439965bc6e2b256e24a8b3c2815cfd0a",
+    "filename": "QRWKV6-32B-Instruct-Preview-v0.1.i1-IQ1_S.gguf",
+    "sha256": "772a0262f26c5cd6a50d2df2736749c727ba7e1f5c684d09393dd4d4458b8785"
+  },
+  "recursivesi/flint": {
+    "repo": "bartowski/RecursiveSI_flint-GGUF",
+    "revision": "a04b26fbb0f68a0ab21ff6dc062f9119700267c7",
+    "filename": "RecursiveSI_flint-IQ2_S.gguf",
+    "sha256": "adf57124462dd1e02ab9e320a47d4eaa3c64e2158d4016c6829cb20332fd606f"
+  },
+  "refactai/refact-1_6b-fim": {
+    "repo": "mradermacher/Refact-1_6B-fim-i1-GGUF",
+    "revision": "7d3c34966c91100c7c1600ae64456ea65c0d57ef",
+    "filename": "Refact-1_6B-fim.i1-IQ1_S.gguf",
+    "sha256": "7d21210c338bae49ad5e71a8e4d759cdb6e3bcabb3ad4ebe579de3931b430c9c"
+  },
+  "rwkv/rwkv-6-world-1b6": {
+    "repo": "mradermacher/rwkv-6-world-1b6-i1-GGUF",
+    "revision": "890a125877ef8c84c24ac36cfceb239afea6fd25",
+    "filename": "rwkv-6-world-1b6.i1-IQ1_S.gguf",
+    "sha256": "e19bde70f5c89683e42e96940fd586b14fa36ff71245599eef2b054337b3ae8c"
+  },
+  "schonsense/caboose-sft-ripple-65b-t5-v1-bf16": {
+    "repo": "mradermacher/Caboose-SFT-Ripple-65B-T5-v1-BF16-i1-GGUF",
+    "revision": "8a242883380115d1367b976691673216a26ed89a",
+    "filename": "Caboose-SFT-Ripple-65B-T5-v1-BF16.i1-IQ1_S.gguf",
+    "sha256": "1a604c86ed4ef9a6932e1ec4c80d421a0aab136773874f1940a56799d455b5d0"
+  },
+  "sensenova/sensenova-u1.5-8b-mot": {
+    "repo": "mradermacher/SenseNova-U1.5-8B-MoT-i1-GGUF",
+    "revision": "60ffb4d6c2fd8c1b8d3ad01585c288b29218e5d8",
+    "filename": "SenseNova-U1.5-8B-MoT.i1-IQ1_S.gguf",
+    "sha256": "b55dfbde9fe166de01ef13a14f928173ae5e9109d908d57071617f28a7a4bfb3"
+  },
+  "shadowlilac/llama-4-scout-17b-6e-instruct": {
+    "repo": "mradermacher/Llama-4-Scout-17B-6E-Instruct-i1-GGUF",
+    "revision": "e46e02d4eab9d046343ba20e0e23f02af18acf68",
+    "filename": "Llama-4-Scout-17B-6E-Instruct.i1-IQ2_S.gguf",
+    "sha256": "02ed98120a877a9493d853642f336172d7d8d95b6a99c9cc0aaa525666812b63"
+  },
+  "tencent/hunyuan-0.5b-instruct": {
+    "repo": "bartowski/tencent_Hunyuan-0.5B-Instruct-GGUF",
+    "revision": "13f644b4c489c577f186b77f268e5e598a3ad4c7",
+    "filename": "tencent_Hunyuan-0.5B-Instruct-Q4_0.gguf",
+    "sha256": "c60e1323d67f82c6d65e79454dc4ecd0f5891da38d7becd3146648ac01550234"
+  },
+  "tencent/hunyuan-a13b-instruct": {
+    "repo": "mradermacher/Hunyuan-A13B-Instruct-i1-GGUF",
+    "revision": "ff43e5072cbded20f67c0e5911b4a6b376c354ef",
+    "filename": "Hunyuan-A13B-Instruct.i1-IQ1_S.gguf",
+    "sha256": "9109d9967fa03d70b4ba16ba7eb2aaa7f56459d709bc94112a7356386c22f41b"
+  },
+  "thinkingmachines/inkling-2-mini": {
+    "repo": "unsloth/Inkling-2-Mini-GGUF",
+    "revision": "45fd08764f2b0bf16b03a5483a80e5c7aaec8772",
+    "filename": "Inkling-2-Mini-UD-IQ1_S.gguf",
+    "sha256": "17a7ff34acb0e1fe878309962458e0633172c7f93ffe3b1c4f5f6b317dc317db",
+    "projector": {
+      "path": "mmproj-F16.gguf",
+      "sha256": "3bff75ffeb2d6e0371ba7bd42e30d26a7d98aea681fa44b03b5a20891cfa2c5f"
+    }
+  },
+  "tiiny/smallthinker-4ba0.6b-instruct": {
+    "repo": "mradermacher/SmallThinker-4BA0.6B-Instruct-i1-GGUF",
+    "revision": "97241d8a6c38c65ba153080215055da2affa356a",
+    "filename": "SmallThinker-4BA0.6B-Instruct.i1-IQ1_S.gguf",
+    "sha256": "1254ef840b93cb473eb2a732eeec8eccb82f86195341f57ed14bfdddce286782"
+  },
+  "tiiuae/falcon-h1-tiny-multilingual-100m-instruct": {
+    "repo": "mradermacher/Falcon-H1-Tiny-Multilingual-100M-Instruct-GGUF",
+    "revision": "a4c3d3fac72547274a37247536d55b37a59647f0",
+    "filename": "Falcon-H1-Tiny-Multilingual-100M-Instruct.Q2_K.gguf",
+    "sha256": "6e52d9091bd453df7ecd7399603ea27a2c633d383bf6f201fab7d2c9a631f438"
+  },
+  "walterjin/chatglm3-6b-chat-chatmed": {
+    "repo": "mradermacher/ChatGLM3-6B-Chat-ChatMed-i1-GGUF",
+    "revision": "6adaa14929f4210ba71443a574364d13c2d387b0",
+    "filename": "ChatGLM3-6B-Chat-ChatMed.i1-IQ1_S.gguf",
+    "sha256": "8dfd49c1c1cf7d2e06fda79ee3ddc59d5671b44ef6870232f8b8e7c8a9a27651"
+  },
+  "wisdomshell/codeshell-7b": {
+    "repo": "mradermacher/CodeShell-7B-i1-GGUF",
+    "revision": "3ebad8f32c2fb59c7a67cb1be0fdd524bcf250c4",
+    "filename": "CodeShell-7B.i1-IQ1_S.gguf",
+    "sha256": "aa99033867c2f892f9fe8b598bd021e1837db194bbcfad8b188d8d6848f3adf6"
+  },
+  "wtang06/mpt-125m-c4": {
+    "repo": "tensorblock/wtang06_mpt-125m-c4-GGUF",
+    "revision": "87d0e4b66dc15e417dda861ae34b371cc9f2cb96",
+    "filename": "mpt-125m-c4-Q2_K.gguf",
+    "sha256": "f8f71550f0760ae6bf8b62f05ef97ce5e02fbcdfa1298d71c19683efeaaad8da"
+  },
+  "xhtoken/spark-x2.5-1.7b": {
+    "repo": "ngquocvinh/Spark-X2.5-1.7B-GGUF",
+    "revision": "1cc70b9e6452cd60d417f7cc667da9758a7be816",
+    "filename": "Spark-X2.5-1.7B-Q4_K_M.gguf",
+    "sha256": "bddd0ac6f86f67280dc6a9c79eb3bb739bb3d63b050dffc908fcc3d6728b2d0d"
+  },
+  "xingchen-agi/xing4.0-29b-a4b": {
+    "repo": "bartowski/XingChen-AGI_Xing4.0-29B-A4B-GGUF",
+    "revision": "d324547035a19a4254afa224913a4287fb0dc0ee",
+    "filename": "XingChen-AGI_Xing4.0-29B-A4B-IQ2_XXS.gguf",
+    "sha256": "80bdd2719e26abc45695c5f77212ef62ef3b4d5fdd279fa0a739b030d4e3f14b"
+  },
+  "yoriis/jais2-it-0.3": {
+    "repo": "mradermacher/JAIS2-IT-0.3-GGUF",
+    "revision": "45c2c47c230552f75b59581c33363e973c52ced5",
+    "filename": "JAIS2-IT-0.3.Q2_K.gguf",
+    "sha256": "9807e86f970349a28847ea712b77ea610003a68ad17a0e527591ec3e9efd0bd2"
+  },
+  "yueyulin/arwkv-qwen-r1-1b5": {
+    "repo": "mradermacher/arwkv-qwen-r1-1b5-i1-GGUF",
+    "revision": "6ea21b2c65fcee1f4fc96216b22c6f43743a5e27",
+    "filename": "arwkv-qwen-r1-1b5.i1-IQ1_S.gguf",
+    "sha256": "ea819d0d5d6bee63909a25ac7a8cefce741265c4a91543b4555ae484b2393a85"
+  },
+  "zai-org/cogvlm-chat-hf": {
+    "repo": "PandaExpressPatron/cogvlm-chat-gguf",
+    "revision": "8076a26b5563f170569805cf17e22401f5c790e8",
+    "filename": "cogvlm-13B-chat-v1.1-F16.gguf",
+    "sha256": "d3f5db973166dbfc39355c85480c9413fa5b67122f87de9f1c08421640acee38",
+    "projector": {
+      "path": "mmproj-cogvlm-chat-hf",
+      "sha256": "aa2e53f40d8248738fc79f790227fde7f564bce870e496db89b5e90425fa1a4b"
+    }
+  },
+  "zai-org/glm-4-9b-0414": {
+    "repo": "lmstudio-community/GLM-4-9B-0414-GGUF",
+    "revision": "43a318e75eaa2186c13593ad7de78458731b0e6e",
+    "filename": "GLM-4-9B-0414-Q3_K_L.gguf",
+    "sha256": "a645bcd0b72594bda81774425eca440792d5ad709389b421087f7a1945dcef88"
+  },
+  "zyphra/zaya1-8b": {
+    "repo": "Abiray/ZAYA1-8B-GGUF",
+    "revision": "e16067cfd1f73cc688ec4004573f33de76aa88bf",
+    "filename": "ZAYA1-8B-Q3_K_M.gguf",
+    "sha256": "3e4457a9721da7e099bc4380d293def88a4c569895b7478800dab2bfd301c60d"
+  }
+}

@@ -26,6 +26,8 @@ function windowsTask(task:Task) {
 export async function windowsWorkbenchApi<T>(method:string,path:string,body?:unknown,idempotencyKey?:string):Promise<T>{
   if(!window.ailabHF)return previewApi<T>(method,path,body);
   const route=path.split('?')[0];
+  if (route.startsWith('/workflow-runs') || route.startsWith('/tasks/task-wf-'))
+    return native<T>(method,path,body,idempotencyKey);
   if(method==='POST'&&route==='/tasks'){
     let task=windowsTask(await previewApi<Task>(method,path,body));
     if(task.operation==='generate'&&(task.kind==='image'||task.kind==='video')){
@@ -47,9 +49,12 @@ export async function windowsWorkbenchApi<T>(method:string,path:string,body?:unk
     const filter='items' in reply?path.split('?')[1]||'':'task_id='+encodeURIComponent(reply.id);
     const {items}=await native<{items:Attempt[]}>('GET','/attempts?'+filter);
     const attach=(task:Task)=>{windowsTask(task);task.attempts=items.filter(a=>a.task_id===task.id);task.latest_attempt=task.attempts[0];return task;};
-    if('items' in reply)reply.items=reply.items.map(attach);else attach(reply);
+    if('items' in reply) {
+      const workflowTasks = await native<{items:Task[]}>('GET', '/workflow-tasks?' + filter);
+      reply.items = [...reply.items, ...workflowTasks.items].map(attach).sort((a,b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    } else attach(reply);
     return reply as T;
   }
-  if(/^\/(?:models|model-catalog|model-downloads|capabilities|devices|attempts|materials|artifacts|works)(?:[/?]|$)/.test(route))return native<T>(method,path,body,idempotencyKey);
+  if(/^\/(?:models|model-catalog|model-downloads|capabilities|devices|environment|attempts|materials|artifacts|works)(?:[/?]|$)/.test(route))return native<T>(method,path,body,idempotencyKey);
   return previewApi<T>(method,path,body);
 }

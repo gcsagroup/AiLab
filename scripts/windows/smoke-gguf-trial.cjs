@@ -127,6 +127,12 @@
     7200000,
   );
   if (saved.tagName !== 'BUTTON') throw Error(saved.textContent);
+  const performancePanel = await wait(() => {
+    const panel = document.querySelector('.result-card [aria-label="推理性能"]');
+    return panel?.textContent.includes('总耗时') && panel;
+  }, '显示本次试用总耗时');
+  performancePanel.querySelector('summary').click();
+  if (!performancePanel.innerText.includes('执行器运行')) throw Error('缺少执行器耗时');
   const display =
     kind === 'text'
       ? document.querySelector('.model-output')?.textContent
@@ -179,5 +185,13 @@
     () => [...document.querySelectorAll('button')].some((b) => b.textContent.includes('已保存作品')),
     '保存作品',
   );
-  return { passed: true, kind, display };
+  const measured = performancePanel.innerText;
+  const total = performancePanel.querySelector('.performance-highlights dd').textContent;
+  const taskName = document.querySelector('main h1').textContent;
+  btn('工作台').click();
+  const history = await wait(() => [...document.querySelectorAll('.task-row')].find(row =>
+    row.querySelector('.task-name strong')?.textContent === taskName && row.textContent.includes('查看结果')), '历史运行入口');
+  history.click();
+  await wait(() => document.querySelector('.result-card .performance-highlights dd')?.textContent === total, '历史运行读回同一总耗时');
+  return { passed: true, kind, display, measured, historyVerified: true };
 });

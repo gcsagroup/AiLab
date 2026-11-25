@@ -1,0 +1,17 @@
+{# See zai-org/cogvlm-chat-hf, _history_to_prompt("chat"). Image embeddings precede the question. #}
+{{- bos_token -}}
+{%- for message in messages -%}
+  {%- if message.role == 'user' -%}
+    {%- if message.content is string -%}
+      {%- if '<__media__>' in message.content -%}{{- '<__media__>' -}}{%- endif -%}
+      {{- 'Question: ' + (message.content | replace('<__media__>', '') | trim) + ' Answer:' -}}
+    {%- else -%}
+      {%- for part in message.content if part.type != 'text' -%}{{- '<__media__>' -}}{%- endfor -%}
+      {{- 'Question: ' -}}
+      {%- for part in message.content if part.type == 'text' -%}{{- part.text -}}{%- endfor -%}
+      {{- ' Answer:' -}}
+    {%- endif -%}
+  {%- elif message.role == 'assistant' -%}
+    {{- ' ' + message.content + '\n' -}}
+  {%- endif -%}
+{%- endfor -%}

@@ -11,6 +11,10 @@ const formatPatterns = {
   coreml: /\.(?:mlmodel|mlpackage|mlmodelc)(?:\/|$)/i,
   ggml: /\.ggml$/i,
 };
+function mainlineMember(repo, localName) {
+  return repo.toLowerCase()==='unsloth/inkling-2-mini-gguf' && /^Inkling-2-Mini-[^/]+\.gguf$/i.test(localName)
+    ? 'Mainline_Support/'+localName+'_file' : undefined;
+}
 function formatOf(filename) {
   if (formatPatterns.openvino.test(filename)) return 'openvino';
   return Object.keys(formatPatterns).find(format => formatPatterns[format].test(filename));
@@ -97,7 +101,7 @@ class HubClient {
     const formats = Object.keys(formatPatterns).filter(format => files.some(f => formatOf(f.path) === format));
     return { ...normalize(data), revision: data.sha, formats: [...formats, 'snapshot', 'file'], files };
   }
-  plan(detail, format, filename) {
+  plan(detail, format, filename, {projector} = {}) {
     if (!detail.formats.includes(format)) throw fail('当前版本没有所选的下载格式。', 'INVALID_FORMAT');
     const siblings = detail.files;
     let files;
@@ -121,10 +125,42 @@ class HubClient {
           return member;
         });
       }
-      if ((/qwen3\.5-4b-gguf$/i.test(detail.repoId) || /gemma-4-e2b-it-gguf$/i.test(detail.repoId)) && !/^(mmproj|mtp)-/i.test(chosen.path)) {
-        const projections=siblings.filter(f=>/^mmproj.*\.gguf$/i.test(f.path));
-        const proj=projections.find(f=>/Q8_0/i.test(f.path)) || projections.find(f=>/[-_]F16/i.test(f.path)) || projections[0];
-        if(proj)files.push(proj);
+      const base = chosen.path.split('/').pop();
+      const folder = chosen.path.slice(0, -base.length);
+      files.push(...require('./qwen-reap.cjs').companions(detail.repoId,chosen,siblings));
+      // The publisher shipped two tensor layouts at the same revision. Keep
+      // its conventional local filename while fetching the mainline bytes.
+      const compatible=mainlineMember(detail.repoId,chosen.path);
+      if (compatible) {
+        const mainline=siblings.find(file=>file.path===compatible);
+        if (mainline && mainline.sha256!==chosen.sha256)
+          files[0]={...mainline,path:chosen.path,sourcePath:mainline.path};
+      }
+      let assetName;
+      if (detail.repoId.toLowerCase() === 'ampixa/sanotts' && folder === 'gguf/') assetName = 'config.json';
+      if (detail.repoId.toLowerCase() === 'gradium/phonon-31m-en-audiocpp') assetName = 'default-voice.safetensors';
+      if (/^PocketTTS-Small-GGUF\//i.test(chosen.path)) assetName = 'embeddings/alba.safetensors';
+      if (assetName) {
+        const asset = siblings.find(f => f.path === folder + assetName);
+        if (asset) files.push(asset);
+        else if (detail.repoId.toLowerCase() === 'gradium/phonon-31m-en-audiocpp')
+          throw fail('Phonon GGUF 缺少默认音色文件 ' + assetName, 'INCOMPLETE_MODEL');
+      }
+      if (!/^(mmproj|mtp|eagle3|dflash)[-_.]/i.test(base)) {
+        const dir = chosen.path.slice(0, -base.length);
+        const {publishedProjector}=require('./cogvlm-layout.cjs');
+        const candidates = siblings.filter(f => /(?:^|\/)mmproj[^/]*\.gguf$/i.test(f.path) || publishedProjector(detail.repoId,f));
+        const local = candidates.filter(f => f.path.slice(0, f.path.lastIndexOf('/') + 1) === dir);
+        const top = candidates.filter(f => !f.path.includes('/'));
+        const group = local.length ? local : top.length ? top : candidates;
+        // Multiple quantizations of one projector are interchangeable. Distinct bases are ambiguous.
+        const families = new Set(group.map(f => f.path.toLowerCase().replace(/[-_.](?:bf16|f32|f16|q\d+(?:_[a-z0-9]+)*)\.gguf$/i, '.gguf')));
+        if (projector) {
+          const tested=candidates.find(f=>f.path===projector.path && f.sha256===projector.sha256);
+          if (!tested) throw fail('已验证的视觉投影器不在当前发布版本中。','INCOMPLETE_MODEL');
+          files.push(tested);
+        } else if (families.size === 1)
+          files.push(group.find(f => /q8_0/i.test(f.path)) || group.find(f => /(?:^|[-_.])f16\.gguf$/i.test(f.path)) || group[0]);
       }
       files.push(...siblings.filter(f => /^(README(?:\.md)?|NOTICE(?:\..*)?|LICEN[SC]E(?:\..*)?)$/i.test(f.path)));
     } else {
@@ -145,7 +181,7 @@ class HubClient {
       if (paths.has(name)) throw fail('文件名在 Windows 上冲突：' + file.path, 'INVALID_FILE');
       paths.add(name);
       if (!Number.isSafeInteger(file.size) || file.size < 0 || !(file.sha256 ? /^[a-f0-9]{64}$/.test(file.sha256) : /^[a-f0-9]{40}$/.test(file.gitOid || ''))) throw fail('Hub 未提供文件大小或可验证的摘要：' + file.path, 'INVALID_MANIFEST');
-      return {...file, url: resolveUrl(detail.repoId, detail.revision, file.path)};
+      return {...file, url: resolveUrl(detail.repoId, detail.revision, file.sourcePath || file.path)};
     });
     for (const item of paths) {
       const parts = item.split('/');
@@ -157,4 +193,4 @@ class HubClient {
     return {repoId: detail.repoId, revision: detail.revision, license: detail.license, task: detail.task, format, filename, files, totalBytes: files.reduce((n, f) => n + f.size, 0)};
   }
 }
-module.exports = { HubClient, repoId, revision, safeFile, resolveUrl, normalize, fail, allowedDownload };
+module.exports = { HubClient, repoId, revision, safeFile, resolveUrl, normalize, fail, allowedDownload, mainlineMember };

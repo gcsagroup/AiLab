@@ -181,15 +181,21 @@ test('large files use bounded HTTP ranges and verify the assembled snapshot', as
 });
 test('published model IDs resolve to the matching GGUF inference bundles and preserve original formats', async () => {
   const cards = [
+    ['circlestone-labs/Anima', 'JusteLeo/Anima2-GGUF', 'anima-preview2_q3_K_M.gguf', ['components/anima_encoder.gguf','components/anima_vae.safetensors']],
+    ['gradium/phonon-31m-en', 'gradium/phonon-31m-en-audiocpp', 'phonon-31m-en-q8_0.gguf', ['default-voice.safetensors']],
+    ['ekwek/Soprano-1.1-80M', 'WalkingCat/Soprano-1.1-80M-GGUF', 'Soprano-1.1-80M-GGUF/soprano-1.1-80m-q8_0.gguf', []],
+    ['swiss-ai/Apertus-8B-Instruct-2509', 'mradermacher/Apertus-8B-Instruct-2509-GGUF', 'Apertus-8B-Instruct-2509.Q4_K_M.gguf', []],
     ['Qwen/Qwen3.5-4B', 'unsloth/Qwen3.5-4B-GGUF', 'Qwen3.5-4B-Q4_K_M.gguf', ['mmproj-F16.gguf']],
     ['google/gemma-4-E2B-it', 'ggml-org/gemma-4-E2B-it-GGUF', 'gemma-4-E2B-it-Q4_0.gguf', ['mmproj-gemma-4-E2B-it-Q8_0.gguf']],
     ['MiniMaxAI/MiniMax-H3-Image', 'unsloth/MiniMax-H3-Image-GGUF', 'minimax_h3_image_pruned-Q2_K.gguf', ['components/encoder.safetensors', 'components/image_vae.safetensors']],
     ['MiniMaxAI/MiniMax-H3', 'leejet/MiniMax-H3-GGUF', 'minimax_h3_fl2va_pruned-Q4_K_M.gguf', ['components/encoder.safetensors', 'components/video_vae.safetensors', 'components/audio_vae.safetensors']],
+    ['Wan-AI/Wan2.1-T2V-1.3B', 'samuelchristlie/Wan2.1-T2V-1.3B-GGUF', 'Wan2.1-T2V-1.3B-Q4_0.gguf', ['components/umt5.gguf', 'components/wan_vae.safetensors']],
+    ['speridlabs/iris-3b', 'realrebelai/iris-3b_GGUFs', 'Iris-3B-Q3_K_S.gguf', ['components/iris_encoder.gguf']],
   ];
   const hub = new HubClient({ fetchImpl: async (url) => {
     const repo = new URL(url).pathname.split('/').slice(3,5).join('/');
     const [official, , main, companions] = cards.find(([source, quantized]) => source === repo || quantized === repo);
-    const files = repo === official ? ['model.safetensors'] : [main, ...companions.filter(name => !name.includes('/'))];
+    const files = repo === official ? ['model.safetensors', ...(repo.startsWith('gradium/') ? ['model.q4k.gguf'] : [])] : [main, ...companions.filter(name => !name.includes('/'))];
     return Response.json({id: repo, sha: 'c'.repeat(40), siblings: files.map(rfilename => ({rfilename, size: 10, lfs: {sha256: 'a'.repeat(64)}}))});
   }});
   const service = new OfficialModels({dataDir: await mkdtemp(path.join(tmpdir(), 'ailab-hf-bundles-')), hub});
@@ -202,6 +208,57 @@ test('published model IDs resolve to the matching GGUF inference bundles and pre
       assert.equal(entry.total_bytes, entry.files.reduce((n, file) => n + file.size, 0));
       for (const file of entry.files) assert.match(file.url, /\/resolve\/[0-9a-f]{40}\//);
       assert.equal((await service.inspect(official, 'safetensors')).repo, official);
+      if (official === 'gradium/phonon-31m-en') {
+        assert.ok(entry.variants.includes('model.q4k.gguf'));
+        assert.equal((await service.inspect(official, 'gguf', 'model.q4k.gguf')).repo, official);
+      }
     }
+  } finally { await service.close(); }
+});
+
+test('Qwen3.8 publisher card selects the tested revision and matching projector', async () => {
+  const publisher='Qwen/Qwen3.8-27B';
+  const release=require('../../apps/windows-ui/hf/language-sources.json')[publisher.toLowerCase()];
+  const alternate='Qwen3.8-27B-Q4_K_M.gguf', unrelated='Another-Checkpoint-Q4_K_M.gguf';
+  const revisions=[];
+  const hub=new HubClient({fetchImpl:async url=>{
+    const parts=new URL(url).pathname.split('/');
+    const id=parts.slice(3,5).join('/');
+    const converted=id===release.repo;
+    if (converted) revisions.push(parts.at(-1));
+    const files=converted ? [release.filename,alternate,unrelated,'mmproj-Q8_0.gguf',release.projector.path] : ['model.safetensors'];
+    return Response.json({id,sha:converted ? release.revision : 'b'.repeat(40),
+      siblings:files.map(rfilename=>({rfilename,size:16,lfs:{sha256:rfilename===release.filename ? release.sha256 :
+        rfilename===release.projector.path ? release.projector.sha256 : 'a'.repeat(64)}}))});
+  }});
+  const service=new OfficialModels({dataDir:await mkdtemp(path.join(tmpdir(),'ailab-language-card-')),hub});
+  try {
+    const entry=await service.inspect(publisher);
+    assert.equal(entry.repo,release.repo);
+    assert.equal(entry.revision,release.revision);
+    assert.deepEqual(entry.files.map(f=>f.path),[release.filename,release.projector.path]);
+    assert.deepEqual(entry.variants,[release.filename,alternate]);
+    assert.equal((await service.inspect(publisher,'gguf',alternate)).filename,alternate);
+    await assert.rejects(service.inspect(publisher,'gguf',unrelated),/请选择/);
+    assert.equal((await service.inspect(publisher,'safetensors')).repo,publisher);
+    assert.deepEqual(revisions,[release.revision]);
+  } finally {await service.close();}
+});
+test('two publisher cards backed by the same audio collection offer only their corresponding GGUF', async () => {
+  const vox = 'VoxCPM1-GGUF/voxcpm-0.5b-q8_0-audiovae-f16.gguf';
+  const supertonic = 'Supertonic-3-GGUF/supertonic-3-f16.gguf';
+  const hub = new HubClient({fetchImpl:async url => {
+    const repo = new URL(url).pathname.split('/').slice(3,5).join('/');
+    const files = repo === 'audio-cpp/audio.cpp-gguf' ? [vox,supertonic] : ['model.onnx'];
+    return Response.json({id:repo,sha:'c'.repeat(40),siblings:files.map(rfilename=>({rfilename,size:16,lfs:{sha256:'a'.repeat(64)}}))});
+  }});
+  const service = new OfficialModels({dataDir:await mkdtemp(path.join(tmpdir(),'ailab-audio-cards-')),hub});
+  try {
+    for (const [repo,expected] of [['openbmb/VoxCPM-0.5B',vox],['Supertone/supertonic-3',supertonic]]) {
+      const entry = await service.inspect(repo,'gguf');
+      assert.deepEqual(entry.variants,[expected]);
+      assert.equal(entry.filename,expected);
+    }
+    await assert.rejects(service.inspect('Supertone/supertonic-3','gguf',vox),/请选择当前模型/);
   } finally { await service.close(); }
 });

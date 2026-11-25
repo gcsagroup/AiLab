@@ -1,0 +1,14 @@
+{# Text trial messages use the publisher's role markers and deliberation setting. #}
+{{- bos_token -}}
+{%- if messages[0].role == 'system' -%}
+  {{- '<|system_start|>' + messages[0].content + '<|system_end|>' -}}
+{%- else -%}
+  {{- '<|system_start|>You are Apertus, a helpful assistant created by the SwissAI initiative.\nKnowledge cutoff: 2024-04\nCurrent date: ' + strftime_now('%Y-%m-%d') + '<|system_end|>' -}}
+{%- endif -%}
+{{- '<|developer_start|>Deliberation: ' + ('enabled' if enable_thinking is defined and enable_thinking else 'disabled') + '\nTool Capabilities: disabled<|developer_end|>' -}}
+{%- for message in messages -%}
+  {%- if message.role in ['user', 'assistant'] -%}
+    {{- '<|' + message.role + '_start|>' + message.content + '<|' + message.role + '_end|>' -}}
+  {%- endif -%}
+{%- endfor -%}
+{%- if add_generation_prompt -%}{{- '<|assistant_start|>' -}}{%- endif -%}

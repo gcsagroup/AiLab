@@ -1,17 +1,46 @@
 (async () => {
   const checks = [];
-  const waitFor = async (test, name) => {
-    const end = Date.now() + 15000;
-    while (!test()) { if (Date.now() > end) throw new Error(`Timed out: ${name}`); await new Promise(resolve => setTimeout(resolve, 80)); }
+  const waitFor = async (test, name, timeout = 15000) => {
+    const end = Date.now() + timeout;
+    while (!test()) {
+      if (Date.now() > end) throw new Error(`Timed out: ${name}. ${document.body.innerText.slice(0, 1200)}`);
+      await new Promise(resolve => setTimeout(resolve, 80));
+    }
     checks.push(name);
   };
   const text = () => document.body.innerText;
   const button = label => [...document.querySelectorAll('button')].find(item => item.textContent.trim() === label);
   await waitFor(() => text().includes('Windows UI 预览版') && document.querySelectorAll('nav[aria-label="主导航"] button').length === 5, 'Application mounts');
-  await waitFor(() => document.querySelector('main .category-grid, main .workbench-layout'), 'Saved project finishes loading');
+  await waitFor(() => document.querySelector('main .category-grid, main .workbench-layout'), 'Saved project finishes loading', 45000);
   const nav = [...document.querySelectorAll('nav[aria-label="主导航"] button')];
   nav[0].click();
   await waitFor(() => text().includes('模型训练 / 微调'), 'Home renders');
+  button('新建工作流').click();
+  await waitFor(() => document.querySelector('dialog[open] .workflow-setup-step:nth-of-type(2) textarea'), 'Video prompt in workflow dialog');
+  const videoPrompt = document.querySelector('dialog[open] .workflow-setup-step:nth-of-type(2) textarea');
+  Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(videoPrompt, '镜头缓慢推近');
+  videoPrompt.dispatchEvent(new Event('input', {bubbles: true}));
+  await waitFor(() => videoPrompt.value === '镜头缓慢推近' && !videoPrompt.matches(':disabled'), 'Workflow video prompt accepts text');
+  document.querySelector('dialog button[aria-label="关闭对话框"]').click();
+  await waitFor(() => !document.querySelector('dialog[open]'), 'Workflow dialog closes');
+  await waitFor(() => button('1 · 准备官方语言模型'), 'Official language model entry is present');
+  button('2 · 检查本机环境').click();
+  const reportTime = () => document.querySelector('dialog[open] time')?.dateTime;
+  await waitFor(() => reportTime() && !button('刷新环境')?.disabled, 'Home check reads a native environment report', 45000);
+  const checked = reportTime();
+  button('刷新环境').click();
+  await waitFor(() => reportTime() && reportTime() !== checked && !button('刷新环境').disabled, 'Refresh completes a new hardware and runtime probe', 45000);
+  document.querySelector('dialog details summary').click();
+  await waitFor(() => text().includes('FFmpeg 视频编码') && text().includes('FFmpeg 音频转换') && text().includes('GGML 设备枚举'), 'Individual probe results render');
+  button('导出诊断摘要').click();
+  await waitFor(() => text().includes('已保存 environment-smoke.json'), 'Current report is exported from the dialog');
+  const exportedAt = reportTime();
+  document.querySelector('dialog button[aria-label="关闭对话框"]').click();
+  await waitFor(() => !document.querySelector('dialog[open]'), 'Home environment check closes');
+  button('1 · 准备官方语言模型').click();
+  await waitFor(() => document.querySelector('dialog[open] input[type="search"]'), 'Official model search opens');
+  document.querySelector('dialog button[aria-label="关闭对话框"]').click();
+  await waitFor(() => !document.querySelector('dialog[open]'), 'Official model search closes');
   for (const [index, label] of ['模型训练与运行', '模型库', '数据集市场', '模型实验室', '作品与素材'].entries()) {
     nav[index].click(); await waitFor(() => document.querySelector('main h1')?.textContent === label, `Navigate: ${label}`);
   }
@@ -26,12 +55,12 @@
   await waitFor(() => button('新建训练') && !button('新建训练').disabled, 'Draft creation is ready');
   button('新建训练').click();
   await waitFor(() => Boolean(document.querySelector('select#training-data')), 'Training draft opens');
-  nav[0].click(); await waitFor(() => Boolean(button('直接试用')), 'Return from training draft');
+  nav[0].click(); await waitFor(() => button('直接试用') && !button('直接试用').disabled, 'Return from training draft');
   button('直接试用').click();
   await waitFor(() => Boolean(document.querySelector('textarea[aria-label="输入内容"]')), 'Text generation draft opens');
   const input = document.querySelector('textarea[aria-label="输入内容"]');
   Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(input, 'Windows UI 草稿保存测试');
   input.dispatchEvent(new Event('input', { bubbles: true }));
   await waitFor(() => JSON.parse(localStorage.getItem('gcsa-ailab-windows-ui-v1')).tasks.some(task => task.draft.input.prompt === 'Windows UI 草稿保存测试'), 'Draft persists locally');
-  return { passed: true, checks, title: document.title, localPreview: true };
+  return { passed: true, checks, title: document.title, localPreview: true, exportedAt };
 })()

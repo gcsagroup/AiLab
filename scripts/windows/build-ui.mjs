@@ -14,7 +14,7 @@ function run(file, args, env = {}) {
   if (result.status !== 0) throw new Error(`${file} failed (${result.status})`);
 }
 if (process.platform !== 'win32' || process.arch !== 'x64') throw new Error('This build targets Windows x64.');
-for (const file of ['text/ailab-gguf.exe', 'text/llama.dll', 'text/mtmd.dll', 'diffusion/ailab-image.exe', 'diffusion/stable-diffusion.dll', 'diffusion/ffmpeg.exe', 'audio/audiocpp_cli.exe']) {
+for (const file of ['text/ailab-gguf.exe', 'text/plm-worker.exe', 'text/llama.dll', 'text/llama-server.exe', 'text/llama-server-impl.dll', 'text/mtmd.dll', 'diffusion/ailab-image.exe', 'diffusion/sd-cli.exe', 'diffusion/0d71f96/sd-cli.exe', 'diffusion/stable-diffusion.dll', 'diffusion/ffmpeg.exe', 'audio/audiocpp_cli.exe', 'audio/f5/audiocpp_cli.exe', 'audio/v0.9.6/audiocpp_cli.exe', 'audio/audiocpp_gguf.exe','audio/model_specs/mira_tts.json','audio/sea_g2p_rs.dll','audio/sea_g2p.bin','audio/soxr.dll']) {
   try { await access(join(root, 'apps/windows-ui/runtime', file)); }
   catch { throw new Error(`Missing Windows inference runtime ${file}. Run python scripts/windows/prepare-gguf.py first; see scripts/windows/README-Windows.txt.`); }
 }

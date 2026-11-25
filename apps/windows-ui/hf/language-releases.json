@@ -1,0 +1,176 @@
+{
+  "deepseek-ai/deepseek-ocr": {
+    "repo": "ggml-org/DeepSeek-OCR-GGUF",
+    "revision": "7086620c3e417c744eb30dd3090fd053c6bb2e5e",
+    "filename": "DeepSeek-OCR-Q8_0.gguf",
+    "sha256": "81ede3e256230707dccf7fa052570c3a939d57db99de655f43cbb1a830d14d92",
+    "projector": {
+      "path": "mmproj-DeepSeek-OCR-Q8_0.gguf",
+      "sha256": "786c9b5159898de3d1d94a102836df559fed0bcf09f41a32f62c3219b0e278e0"
+    }
+  },
+  "deepseek-ai/deepseek-ocr-2": {
+    "repo": "SandLogicTechnologies/DeepSeek-OCR-2-GGUF",
+    "revision": "4c39336e5dcf0bb108cc567c228204c296690067",
+    "filename": "DeepSeek-OCR-2-IQ4_XS.gguf",
+    "sha256": "cbff1c6bce9aba7cda9325cc1dc34130bd20ad35f5dcd27e83e107c211890457",
+    "projector": {
+      "path": "mmproj-deepseek-ocr-2-bf16.gguf",
+      "sha256": "b65e8460acc82dd4e8546206c5abd1abed9c5c582223731ce1585689d95f5cdb"
+    }
+  },
+  "deepseek-ai/deepseek-v4.1-flash-1017": {
+    "repo": "unsloth/DeepSeek-V4.1-Flash-1017-GGUF",
+    "revision": "dfcee0ec8d6b874c6663eca0fc55d90ab32534c8",
+    "filename": "UD-IQ1_S/DeepSeek-V4.1-Flash-1017-UD-IQ1_S-00001-of-00005.gguf",
+    "sha256": "5197c309479c7be06e3612dc696d7f18e13e5942cfe52e70c3c586b7e585a5ac",
+    "projector": {
+      "path": "mmproj-BF16.gguf",
+      "sha256": "9a1ef7c40d0d702c7ed8c5f863f60abae64091387ba3fce0ad19ce9beeda3bf9"
+    }
+  },
+  "dots-studio/dots3-note-prev": {
+    "repo": "bartowski/dots-studio_dots3-note-prev-GGUF",
+    "revision": "b5e996be8568b43a95c1b2ab9ae1ec0eab6cf6a0",
+    "filename": "dots-studio_dots3-note-prev-IQ1_M/dots-studio_dots3-note-prev-IQ1_M-00001-of-00002.gguf",
+    "sha256": "2f7ba80299b70cee4d9400cc6c2a67cccc215d26aa22b700f19330f2ddaac839",
+    "projector": {
+      "path": "mmproj-dots-studio_dots3-note-prev-bf16.gguf",
+      "sha256": "d149dc27270f5bd0cc8543e75a69e9823bcb22f2f54e23177462dcd63a9d3cbf"
+    }
+  },
+  "kyutai/hibiki-1b-pytorch-bf16": {
+    "repo": "ggml-org/hibiki-1b-GGUF",
+    "revision": "9273d3322823160c6641962b05d6818c5f6457b0",
+    "filename": "hibiki-1b-Q8_0.gguf",
+    "sha256": "b5f37ecdc46b14ad99f98e988a76727d5201f6470c8f49aa03c7dd15420f7cb3",
+    "projector": {
+      "path": "mmproj-hibiki-1b-BF16.gguf",
+      "sha256": "26e7acb04883609fbdebd48e706ab9985b45101e6901e86761fd1427f0504176"
+    }
+  },
+  "kyutai/hibiki-2b-pytorch-bf16": {
+    "repo": "ggml-org/hibiki-2b-GGUF",
+    "revision": "c0c7c100f423ef10f3afa4765f0349983ca1a4e7",
+    "filename": "hibiki-2b-Q8_0.gguf",
+    "sha256": "3fb0f69ac5f38fdd6dc3037c49bc705d8c8ce28b889f1e7b0807b4adb8ac48f5",
+    "projector": {
+      "path": "mmproj-hibiki-2b-BF16.gguf",
+      "sha256": "87c0663194ac3c4cb887b2b4d2a9ed6d81c389e611df2c37480b1f8e4ac3488f"
+    }
+  },
+  "lgai-exaone/k-exaone-236b-a23b": {
+    "repo": "mradermacher/K-EXAONE-236B-A23B-GGUF",
+    "revision": "ca1dd0f0cc095e4b780ee34c7fb7f055efc03c4b",
+    "filename": "K-EXAONE-236B-A23B.Q2_K.gguf",
+    "sha256": "ed581f99712d1ca4a77693f21af13b708739fd368b8f037a354ab50f0b1b3d4b"
+  },
+  "meta-models/muse-spark-open-816b-a42b": {
+    "repo": "ggml-org/Muse-Spark-Open-816B-A42B-GGUF",
+    "revision": "ada96652107984f184027153a77ec250d67ed271",
+    "filename": "Muse-Spark-Open-816B-A42B-Q2_K-00001-of-00022.gguf",
+    "sha256": "b2eb6f55ee80b4e444fb1bde4dc89d1181fb9d159758307bf91a4118cce8b267",
+    "projector": {
+      "path": "mmproj-Muse-Spark-Open-816B-A42B-Q8_0.gguf",
+      "sha256": "c3a0613bb2be1dde38faec3d1d1bf2c118013626ab9623936de500a656232ed3"
+    }
+  },
+  "minimaxai/minimax-m3": {
+    "repo": "bartowski/MiniMax-M3-GGUF",
+    "revision": "2ee48e5fcf21a2522ee2fb9ffaa15592ec5498e6",
+    "filename": "MiniMax-M3-IQ1_S/MiniMax-M3-IQ1_S-00001-of-00003.gguf",
+    "sha256": "3fd0cf14bd23f4c6d5ec206edd6be6fd02ebdf9b967db97890305782f06b8aaa",
+    "projector": {
+      "path": "mmproj-MiniMax-M3-bf16.gguf",
+      "sha256": "76c94d2446d0b972acf236df9fdea17a94ba44931c57317f93ac5d156a7b79f4"
+    }
+  },
+  "mistralai/mistral-large-4-1t-a52b": {
+    "repo": "ggml-org/Mistral-Large-4-1T-A52B-GGUF",
+    "revision": "7d4f13b81e55e1223b3c125a58af4c19bb1ddf6a",
+    "filename": "IQ2_XXS/Mistral-Large-4-1T-A52B-IQ2_XXS-00001-of-00006.gguf",
+    "sha256": "8b096c38de3e44f5c61b88eff6b3755497efafc7393a6613eb67ce750617c49c",
+    "projector": {
+      "path": "mmproj-BF16.gguf",
+      "sha256": "4ce201e167acd83aea44260a8aa16d8aae16b56de2dd9d424f2556c267af1b0b"
+    }
+  },
+  "moonshotai/kimi-k3": {
+    "repo": "unsloth/Kimi-K3-GGUF",
+    "revision": "a0836360ce58dfec088d966a97f2ddc8a606279b",
+    "filename": "UD-Q1_0/Kimi-K3-UD-Q1_0-00001-of-00011.gguf",
+    "sha256": "6a4bef3afb5edb2223c210dd591d8f6f4b8d4ade105d26d5505d1acaeb25131c",
+    "projector": {
+      "path": "mmproj-BF16.gguf",
+      "sha256": "c858aec63e68ba8df6f78b358e9c2a7453d1de947c738dd9875addac591e0759"
+    }
+  },
+  "moonshotai/kimi-k3.1-pro": {
+    "repo": "midagedev/Kimi-K3.1-Pro-GGUF",
+    "revision": "df48ce38c7ca460e20a1386aff3a2141ce5c2437",
+    "filename": "Kimi-K3.1-Pro-IQ1_S-00001-of-00031.gguf",
+    "sha256": "302a594df9e1ff1ada57cbfe62cbdb9ae736e8c7bbff91d56732819303892a24"
+  },
+  "reflection/beam-1.0-501b-a23b": {
+    "repo": "unsloth/Beam-1.0-501B-A23B-GGUF",
+    "revision": "4cc80272381734e2b16b34c1af3362c7268a0ebc",
+    "filename": "UD-IQ1_S/Beam-1.0-501B-A23B-UD-IQ1_S-00001-of-00004.gguf",
+    "sha256": "6b8f157c8dd1cf9fe06156ee9b3973a7e5a6a9348c45768db48e558cc58c3a18"
+  },
+  "snowflake/snowflake-arctic-instruct": {
+    "repo": "DevQuasar-5/Snowflake.snowflake-arctic-instruct-GGUF",
+    "revision": "c8cf876ef249d1644268686be2130a6119f99b42",
+    "filename": "snowflake-arctic-instruct.Q2_K-00001-of-00014.gguf",
+    "sha256": "0370000e7bb57cd57308130a2d4e0df530951d2de0ee9fde12316ba9f862af36"
+  },
+  "sszymczyk/deepseek-v3.2-exp-light-gguf": {
+    "repo": "sszymczyk/DeepSeek-V3.2-Exp-light-GGUF",
+    "revision": "e3d9e7bdb05ccc85802b32c3572b3bc5a7d80790",
+    "filename": "Q4_K_M/DeepSeek-V3.2-Exp-light-Q4_K_M-00001-of-00031.gguf",
+    "sha256": "2220fba6c6d2a7c026d2290687b75859f00f445f86bdca0b90bb117acb9e46c0"
+  },
+  "tencent/hy3": {
+    "repo": "bartowski/Hy3-GGUF",
+    "revision": "3ee5a3c4d76226edd9cdaec017969d24b589b64e",
+    "filename": "Hy3-IQ1_S/Hy3-IQ1_S-00001-of-00002.gguf",
+    "sha256": "858975d21dc045afa1e94c613b8dc609db3bffd3b91f77e3ac718b8679689ebb"
+  },
+  "tencent/hy4": {
+    "repo": "AngelSlim/Hy4-GGUF",
+    "revision": "3ab6319e385d482075b5e9eb6e4bc1c3ffede8ec",
+    "filename": "Hy4-Q4_K_M.gguF",
+    "sha256": "e3903003d394dcce69632da132c946a2515b502780b741b3aaf9e806a4c32dfa",
+    "projector": {
+      "path": "mmproj-HY4-VL-BF16.gguf",
+      "sha256": "da8c4528a36116c5fb6136de494b225ac4c8deafb7f018d1a0186022ed8e711d"
+    }
+  },
+  "xai-org/grok-2": {
+    "repo": "unsloth/grok-2-GGUF",
+    "revision": "7b560aeb31bbd8ff7a026f3cfd981c0364024cbf",
+    "filename": "grok-2-UD-TQ1_0.gguf",
+    "sha256": "681893932e114c0b5b1578d6d3ff7ff351b232f8d6348eaab8b13ac3945654e2"
+  },
+  "xiaomimimo/mimo-v2.5": {
+    "repo": "bartowski/MiMo-V2.5-GGUF",
+    "revision": "e528cbf4b6197dd642b393acc069fb1cd529e085",
+    "filename": "MiMo-V2.5-IQ1_S/MiMo-V2.5-IQ1_S-00001-of-00002.gguf",
+    "sha256": "a4f597f6dd9369240cf12d0b4a8c118e0659bf123b4290e042a6f334c2182520"
+  },
+  "zai-org/glm-5.2": {
+    "repo": "unsloth/GLM-5.2-GGUF",
+    "revision": "abc55e72527792c6e77069c99b4cb7de16fa9f23",
+    "filename": "UD-IQ1_S/GLM-5.2-UD-IQ1_S-00001-of-00006.gguf",
+    "sha256": "46b6148389219ae45167cb8124fbb18ef7d432daf619b4faf9e06ea80d3f4777"
+  },
+  "zai-org/glm-5.3-flash-bf16": {
+    "repo": "bartowski/GLM-5.3-Flash-BF16-GGUF",
+    "revision": "66e5e9f0e337470e8801b99bae6c45779b042cc2",
+    "filename": "GLM-5.3-Flash-BF16-IQ1_S/GLM-5.3-Flash-BF16-IQ1_S-00001-of-00002.gguf",
+    "sha256": "c8738052c67d7b9900b613214353abdc6ae130b19d84e29c5c832e447c015ea3",
+    "projector": {
+      "path": "mmproj-GLM-5.3-Flash-BF16-f16.gguf",
+      "sha256": "5c342b1856846256be852905e686c4fce17737a8e2caba5dc9d94b3731f49fae"
+    }
+  }
+}

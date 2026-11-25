@@ -3,16 +3,26 @@ const fs = require('node:fs'),
   fsp = fs.promises,
   path = require('node:path');
 const { randomUUID, createHash } = require('node:crypto');
-const { bundle, localExtras, materialPrompt } = require('./gguf-bundle.cjs');
+const { bundle, localExtras, materialPrompt, componentPath, audioExtras } = require('./gguf-bundle.cjs');
+const generation = require('./generation-packages.cjs');
+const { inputModel, useService, structuredInput } = require('./llama-service.cjs');
 const { metadata } = require('./gguf-metadata.cjs');
-const { devices, parameters, textWorker, render, bins } = require('./trial-worker.cjs');
+const { devices, parameters, textWorker, render, bins, prepareCompactText } = require('./trial-worker.cjs');
 const { atomicJson, contained, verify } = require('./downloads.cjs');
 const { fail } = require('./hub.cjs');
+const { workflowEligible } = require('./workflows.cjs');
+const { LocalEnvironment } = require('./environment.cjs');
+const { performance } = require('node:perf_hooks');
+const { waveSeconds } = require('./trial-timing.cjs');
 const id = (prefix) => prefix + '-' + randomUUID().replaceAll('-', '');
 const digest = (o) => createHash('sha256').update(JSON.stringify(o)).digest('hex');
 const page = (items) => ({ items, next_cursor: null });
 const now = () => new Date().toISOString();
 const active = new Set(['queued', 'running', 'cancelling']);
+function modelExtension(file) {
+  const extension=path.extname(file).toLowerCase();
+  return extension==='.gguf_file' ? '.gguf' : extension;
+}
 const boundary = {
   scope_semantics: 'loader_policy_not_os_permissions',
   process: 'separate_process',
@@ -28,9 +38,15 @@ async function hash(file) {
   return h.digest('hex');
 }
 function localView(row) {
+  if (row.generation_package) {
+    try {
+      const ref=generation.stored(row);
+      return {...row,pipeline:ref.info.pipeline,execution_available:[ref.file,...Object.values(ref.extra)].every(f=>fs.existsSync(f))};
+    } catch { return {...row,execution_available:false}; }
+  }
   if (!row.component_digests && row.kind !== 'video') return row;
   try {
-    const ref = bundle([row.path, ...Object.values(localExtras(row))]);
+    const ref = bundle([row.path, ...Object.values(localExtras(row)).filter(f => /\.gguf$/i.test(f))]);
     if (ref?.info.kind === row.kind)
       return { ...row, pipeline: ref.info.pipeline, supports_media: !!ref.info.multimodal };
   } catch {}
@@ -64,15 +80,17 @@ class Trials {
   constructor(dir, downloads) {
     this.dir = dir;
     this.downloads = downloads;
+    this.environment = new LocalEnvironment(downloads.modelDir);
     this.rows = new Map();
     this.plans = new Map();
     this.queue = [];
+    this.queuedSince = new Map();
     this.current = null;
     this.closing = false;
     fs.mkdirSync(dir, { recursive: true });
     for (const name of fs
       .readdirSync(dir)
-      .filter((n) => /^(attempt|work|local|material)-[a-f0-9]{32}\.json$/.test(n))) {
+      .filter((n) => /^(attempt|work|local|material|workflow)-[a-f0-9]{32}\.json$/.test(n))) {
       try {
         const row = JSON.parse(fs.readFileSync(path.join(dir, name)));
         if (row.id + '.json' !== name) continue;
@@ -122,21 +140,36 @@ class Trials {
     return contained(path.join(this.downloads.modelDir, job.modelId), first.path);
   }
   downloadedWeights(job) {
+    const pack=generation.downloaded(job,path.join(this.downloads.modelDir,job.modelId));
+    if (pack !== undefined) return pack || {};
     const paths = job.files
-      .filter((f) => /\.gguf$/i.test(f.path))
+      .filter((f) => /\.gguf(?:_file)?$/i.test(f.path) || require('./cogvlm-layout.cjs').publishedProjector(job.repoId,f))
       .map((f) => contained(path.join(this.downloads.modelDir, job.modelId), f.path));
     if (job.derivedComponents) {
       const h3 = require('./h3-weights.cjs');
-      for (const { role } of h3.sources(job.repoId, job.filename)) {
+      for (const role of Object.keys(h3.conversionTypes(job.repoId, job.filename))) {
         if (!job.derivedComponents[role]) break;
         const type = job.derivedTypes?.[role] ?? (role === 'encoder' ? 'q4_0' : undefined);
         paths.push(h3.derivedFile(this.downloads.dataDir, role, type));
       }
     }
-    const complete = bundle(paths);
-    if (complete) return complete;
     const file = this.weight(job);
-    return { file, info: file && metadata(file) };
+    const members = paths.filter(p => !/-\d{5}-of-\d{5}\.gguf$/i.test(p) || p === file);
+    if (paths.some(p=>/-\d{5}-of-\d{5}\.gguf$/i.test(p)) && !file) return {};
+    let complete = bundle(paths);
+    if (!complete) {
+      if (!file || members.some(p => ['draft','projector','ple_table','ocr-base','speech-base'].includes(metadata(p).component))) return {};
+      const info = metadata(file);
+      if (info.requiresPleTable && !info.hasPleTable) return {};
+      complete = {file, info, extra: audioExtras(file, info.audioFamily)};
+    }
+    const assets = Object.values(complete.extra).filter(f => !/\.gguf$/i.test(f));
+    if (assets.length) {
+      const dir = path.join(this.downloads.modelDir, job.modelId);
+      const registered = new Set(job.files.map(f => contained(dir, f.path)));
+      if (assets.some(f => !registered.has(f))) return {};
+    }
+    return complete;
   }
   describe(job) {
     const m = this.downloads.model(job);
@@ -148,6 +181,7 @@ class Trials {
         pipeline: info?.pipeline,
         supports_media: !!info?.multimodal,
         execution_available: !!info?.kind,
+        workflow_eligible: !!info && workflowEligible(info),
         supports_thinking: !!info?.thinking,
         default_engine: info?.kind ? 'ailab-gguf' : undefined,
       };
@@ -159,11 +193,12 @@ class Trials {
     const local = this.rows.get(modelId);
     if (local?.id.startsWith('local-') && local.project_id === project) {
       if (!localView(local).execution_available)
-        throw Error('请选择完整的 AnimateDiff 或 MiniMax-H3 模型组合。');
+        throw Error(local.kind === 'video' ? '请导入完整的视频模型组合（AnimateDiff、MiniMax-H3 或 Wan 2.1）。' : '请重新导入该模型及其配套组件。');
       const extra = localExtras(local),
-        ref = bundle([local.path, ...Object.values(extra)]);
-      if (!ref || ref.info.kind !== local.kind)
-        throw Error('模型组件不匹配。视频需完整 AnimateDiff 或 MiniMax-H3 模型。');
+        ref = local.generation_package ? generation.stored(local) : bundle([local.path, ...Object.values(extra).filter(f => /\.gguf$/i.test(f))]);
+      if (!ref || ref.info.kind !== local.kind ||
+          Object.keys(ref.extra).some(role => ref.extra[role] !== extra[role]))
+        throw Error('已登记的 GGUF 主模型和配套组件不匹配。');
       return {
         ...ref,
         motion:extra.motion,
@@ -194,7 +229,8 @@ class Trials {
             throw Error('GGUF 组件摘要已变化。');
         }
         const dir = path.join(this.downloads.modelDir, job.modelId);
-        for (const item of job.files.filter((f) => f.path.toLowerCase().endsWith('.gguf'))) {
+        const resources = new Set([file, ...Object.values(extra)]);
+        for (const item of job.files.filter(f => /\.gguf$/i.test(f.path) || resources.has(contained(dir, f.path)))) {
           const target = contained(dir, item.path);
           if ((await fsp.realpath(target)).toLowerCase() !== target.toLowerCase())
             throw Error('权重路径已变化。');
@@ -213,8 +249,15 @@ class Trials {
     let file = await fsp.realpath(b.path);
     let group,
       extra = {};
-    if ((await fsp.stat(file)).isDirectory() && type === 'models') {
-      const candidates = (await fsp.readdir(file)).filter((n) => /\.gguf$/i.test(n));
+    if (type === 'models') {
+      const reapFiles=require('./qwen-reap.cjs').localFiles(file);
+      group=reapFiles ? bundle(reapFiles) : generation.localPackage(file);
+    }
+    if (group) {
+      file = group.file;
+      extra = group.extra;
+    } else if ((await fsp.stat(file)).isDirectory() && type === 'models') {
+      const candidates = (await fsp.readdir(file)).filter((n) => /\.gguf(?:_file)?$/i.test(n) || n===require('./cogvlm-layout.cjs').projectorName);
       if (candidates.length === 1) file = path.join(file, candidates[0]);
       else {
         group = bundle(candidates.map((name) => path.join(file, name)));
@@ -228,13 +271,28 @@ class Trials {
     let kind,
       info = {};
     if (type === 'models') {
-      if (!/\.gguf$/i.test(file)) throw Error('本机试用只接收 GGUF 模型。');
+      if (!group?.info.packageId && !/\.gguf(?:_file)?$/i.test(file)) throw Error('本机试用只接收 GGUF 模型。');
       info = group?.info || metadata(file);
+      if (!group && require('./qwen-reap.cjs').requiresBundle(info)) throw require('./qwen-reap.cjs').incomplete();
+      if (!group && info.requiresPleTable && !info.hasPleTable)
+        throw Error('这份主模型需要配套的 PLE 词嵌入查找表。请选择包含主权重和查找表的发布目录。');
+      if (!group && info.audioFamily) extra = audioExtras(file, info.audioFamily);
       kind = info.kind;
       if (info.motion && !extra.motion)
         throw Error('运动模块需要配套 SD 1.5 基座，请导入包含两份 GGUF 的目录。');
-      if (!kind) throw Error('尚未接入该 GGUF 架构。');
-      if (/-\d{5}-of-\d{5}\.gguf$/i.test(file)) throw Error('分片模型请通过官方模型入口选择完整分片组。');
+      if (!kind) {
+        if (info.component === 'anima') throw Error('Anima 需要 Qwen3-0.6B-Base 文本编码器及 Qwen Image VAE，请导入三份 GGUF 所在的目录。');
+        if (info.component === 'iris') throw Error('Iris-3B 需要 Qwen3-VL-4B 文本编码器，请导入两份 GGUF 所在的目录。');
+        if (info.component === 'wan21-t2v' || info.component === 'wan_vae')
+          throw Error('Wan 2.1 T2V 1.3B 需要主模型、UMT5-XXL 编码器和 Wan 2.1 VAE，请导入三份 GGUF 所在的目录。');
+        if (info.component==='ocr-base') throw Error('DeepSeek OCR 需要匹配的视觉投影器，请导入完整发布目录。');
+        if (['projector','speech-base','draft'].includes(info.component))
+          throw Error('请导入含配套主模型与投影器、语音编解码器或推测头的目录。');
+        if (info.arch==='gptj') throw Error('GPT-J 需要词表和分离的 Q、K、V 投影，请核对主模型文件。');
+        if (info.missingVocabulary) throw Error('已识别 '+info.arch+' 架构，但这个 GGUF 缺少词表。请选择完整主模型；分片模型请导入全部分片所在的目录。');
+        throw Error('尚未接入该 GGUF 架构。');
+      }
+      if (!group && /-\d{5}-of-\d{5}\.gguf(?:_file)?$/i.test(file)) throw Error('请导入含完整分片的目录。');
     } else {
       if (stat.size > 32 * 1024 * 1024) throw Error('素材超过 32 MiB。');
       const buf = await fsp.readFile(file);
@@ -268,10 +326,29 @@ class Trials {
       hashes[role] = await hash(member);
       total += (await fsp.stat(member)).size;
     }
+    if (info.packageId) await generation.checkHashes(group,baseSha,hashes);
+    if (info.reap25) require('./qwen-reap.cjs').verifyLocal(baseSha,hashes);
     const sha = manifest(baseSha, hashes),
       key = id('plan');
+    const familyName = ['tts','gen'].includes(info.audioTask) ? info.audioFamily : undefined;
+    const name = b.name || (extra.motion ? 'SD 1.5 + AnimateDiff GGUF' :
+      familyName || info.pipeline || info.name || path.basename(file));
+    let compactImport=false;
+    const warnings=[];
+    if (process.platform==='win32' && type==='models' && kind==='text' &&
+        !Object.keys(extra).length && info.compactTextBytes) {
+      const volume=await fsp.statfs(this.dir);
+      const free=volume.bavail*volume.bsize, margin=64*1024**2;
+      if (free<total+margin) {
+        if (free<info.compactTextBytes+margin) throw Error('模型存储目录的磁盘空间不足以保存低内存 GGUF。');
+        compactImport=true;
+        warnings.push({code:'COMPACT_CPU_IMPORT',message:'原精度副本超出可用磁盘空间。确认导入后将生成约 '+
+          (info.compactTextBytes/1024**3).toFixed(2)+' GiB 的混合 '+info.compactTextType.toUpperCase()+' 副本。'});
+      }
+    }
     this.remember(key, {
       file,
+      compactImport,
       sha,
       baseSha,
       extra,
@@ -279,9 +356,7 @@ class Trials {
       kind,
       info,
       project: b.project_id,
-      name:
-        b.name ||
-        (extra.motion ? 'SD 1.5 + AnimateDiff GGUF' : info.pipeline || info.name || path.basename(file)),
+      name,
       type,
     });
     return {
@@ -289,14 +364,12 @@ class Trials {
       plan_id: key,
       can_import: true,
       manifest_digest: sha,
-      name:
-        b.name ||
-        (extra.motion ? 'SD 1.5 + AnimateDiff GGUF' : info.pipeline || info.name || path.basename(file)),
-      format: type === 'models' ? 'GGUF' : kind === 'audio' ? 'WAV' : 'PNG',
+      name,
+      format: type === 'models' ? modelExtension(file).slice(1).toUpperCase() : kind === 'audio' ? 'WAV' : 'PNG',
       file_count: 1 + Object.keys(extra).length,
       total_bytes: total,
       blocking: [],
-      warnings: [],
+      warnings,
       trust_class: 'restricted_weights',
       loader: 'ailab.gguf',
       execution_boundary: boundary,
@@ -313,16 +386,22 @@ class Trials {
       await fsp.mkdir(dir);
       const file = path.join(
         dir,
-        type === 'models' ? 'model.gguf' : p.kind === 'audio' ? 'source.wav' : 'source.png',
+        type === 'models' ? 'model'+(/-00001-of-\d{5}(?=\.gguf(?:_file)?$)/i.exec(p.file)?.[0] || '')+modelExtension(p.file) : p.kind === 'audio' ? 'source.wav' : 'source.png',
       );
       try {
         const members = [[p.file, file, p.baseSha]];
         for (const [role, member] of Object.entries(p.extra))
-          members.push([member, path.join(dir, role + '.gguf'), p.hashes[role]]);
-        let bytes = 0;
+          members.push([member, role.startsWith('shard_') ? file.replace('-00001-of-', '-'+role.slice(6)+'-of-') : componentPath(dir, role), p.hashes[role]]);
+        let bytes = 0, storedDigest=p.sha;
         for (const [source, dest, expected] of members) {
-          await fsp.copyFile(source, dest);
-          if ((await hash(dest)) !== expected) throw Error('复制期间文件已变化。');
+          await fsp.mkdir(path.dirname(dest), { recursive: true });
+          if (p.compactImport) {
+            await prepareCompactText(source,dest,undefined,expected);
+            storedDigest=await hash(dest);
+          } else {
+            await fsp.copyFile(source, dest);
+            if ((await hash(dest)) !== expected) throw Error('复制期间文件已变化。');
+          }
           bytes += (await fsp.stat(dest)).size;
         }
         return this.save({
@@ -331,17 +410,19 @@ class Trials {
           name: p.name,
           kind: p.kind,
           modality: p.kind,
-          format: type === 'models' ? 'gguf' : p.kind === 'audio' ? 'wav' : 'png',
+          format: type === 'models' ? path.extname(file).slice(1).toLowerCase() : p.kind === 'audio' ? 'wav' : 'png',
           status: 'ready',
           execution_available: type === 'models',
           supports_thinking: p.info.thinking || false,
           default_engine: 'ailab-gguf',
           path: file,
-          version_id: p.sha,
-          manifest_digest: p.sha,
+          version_id: storedDigest,
+          manifest_digest: storedDigest,
+          ...(p.compactImport ? {source_manifest_digest:p.sha,weight_conversion:'mixed_'+p.info.compactTextType} : {}),
           total_bytes: bytes,
           component_digests: Object.keys(p.hashes).length ? p.hashes : undefined,
           motion_digest: p.hashes.motion,
+          generation_package: p.info.packageId,
           pipeline: p.info.pipeline,
           supports_media: !!p.info.multimodal,
           media_type:
@@ -375,12 +456,34 @@ class Trials {
       ref = this.resolve(draft.model_id, task.project_id);
       if (ref.info.kind !== task.kind) throw Error('所选 GGUF 架构与当前试用类别不匹配。');
       effective = parameters(draft, ref.info);
-      const engine = bins[task.kind];
+      const hibiki = ref.info.pipeline === 'llama-hibiki';
+      const engine = ref.info.pipeline==='llama-vocoder' ? bins.text : (hibiki || ref.info.pipeline==='llama-tts') ? bins.llamaService : bins[task.kind];
       await fsp.access(engine);
       const input = materialPrompt(draft.input);
-      if (task.kind === 'video') await fsp.access(bins.ffmpeg);
-      const attached = (task.kind === 'text' || ref.info.pipeline === 'h3-video') && input.reference;
-      if (attached || (task.kind === 'video' && ref.info.pipeline !== 'h3-video')) {
+      const audioInput = hibiki || ['asr', 'vad'].includes(ref.info.audioTask);
+      if (ref.info.pipeline==='llama-ocr' && !input.reference)
+        throw Error('DeepSeek OCR 需要包含文字的 PNG 图片，请拖入图片或在首行填写 @素材 加素材编号。');
+      const upscale = ['esrgan-x4', 'mosr-x4'].includes(ref.info.pipeline);
+      if (upscale || ['iris','anima','wan21-t2v','diffusion-image','diffusion-video'].includes(ref.info.pipeline)) await fsp.access(path.join(path.dirname(bins.image), 'sd-cli.exe'));
+      if (task.kind === 'video' || ref.info.audioTask || hibiki) await fsp.access(bins.ffmpeg);
+      const recipe = generation.recipe(ref.info.packageId || ref.info.nativeRecipe,!!ref.info.nativeRecipe);
+      if (recipe?.compactAudio && (await fsp.stat(ref.file)).size===recipe.files[0].size) {
+        await fsp.access(bins.text);
+        effective.audio_weight_conversion='q8_0_to_mixed_q4_k';
+      }
+      if (recipe?.kind==='audio') await fsp.access(require('./generation-runtime.cjs').audioEngine(bins.audio,recipe));
+      if (recipe?.diffusionVersion) await fsp.access(require('./generation-runtime.cjs').diffusionEngine(bins.image,recipe));
+      if (recipe?.imageReference) await fsp.access(bins.ffmpeg);
+      const audioRef = recipe?.voiceRef;
+      const imageRef = recipe?.imageReference;
+      if (recipe && input.reference && !audioRef && !imageRef)
+        throw Error('此模型配方使用纯文字输入，请清除素材引用。');
+      if (imageRef && (!input.reference || !input.prompt.trim()))
+        throw Error('此模型需要参考图片和画面描述。请在输入首行填写 @素材 和当前项目中的图片素材编号，下一行填写画面描述。');
+      if (recipe?.requiresReference && !input.reference)
+        throw Error('此模型需要参考 WAV，请在输入首行填写 @素材 和当前项目中的素材编号。');
+      const attached = (task.kind === 'text' || audioInput || audioRef || imageRef || ['llama-tts','h3-video'].includes(ref.info.pipeline)) && input.reference;
+      if (upscale || audioInput || attached || (task.kind === 'video' && !['h3-video','wan21-t2v','diffusion-video'].includes(ref.info.pipeline))) {
         const target = attached || draft.input.material_id;
         const matches = this.list('material', task.project_id).filter(
           (m) => m.id === target || m.name === target,
@@ -389,10 +492,9 @@ class Trials {
         material = matches[0];
         if (task.kind === 'text' && !ref.extra?.projector)
           throw Error('读取素材需要与此语言模型匹配的视觉投影 GGUF。');
-        if (
-          material.kind !== 'image' &&
-          !(task.kind === 'text' && ref.info.arch === 'gemma4' && material.kind === 'audio')
-        )
+        const acceptsMaterial = (audioInput || audioRef || ref.info.pipeline==='llama-tts') ? material.kind==='audio' :
+          task.kind==='text' ? (material.kind==='audio' ? ref.info.acceptsAudio : ref.info.acceptsImage) : material.kind==='image';
+        if (!acceptsMaterial)
           throw Error('当前模型不支持这种素材。');
         if (task.kind === 'text' && !input.prompt.trim()) throw Error('请在素材引用之后输入问题。');
       }
@@ -411,7 +513,67 @@ class Trials {
           if (lowMemory) effective.diffusion_placement = 'diffusion=' + device.id.toLowerCase() + ',te=cpu,vae=cpu';
         }
       }
-      if (task.kind === 'text')
+      const mode=inputModel(ref.info,input.prompt);
+      delete effective.language_weight_conversion;
+      delete effective.cpu_no_repack;
+      delete effective.cpu_working_set_mib;
+      delete effective.cpu_working_set_floor_mib;
+      if (effective.device_id==='cpu' && mode.cpuNoRepack) effective.cpu_no_repack=true;
+      if (task.kind==='text' && effective.device_id==='cpu' && (mode.compactTextBytes || mode.mappedCpuWindowBytes)) {
+        const GiB=1024**3;
+        const available=require('node:os').freemem();
+        const companions=(material && ref.extra.projector ? (await fsp.stat(ref.extra.projector)).size : 0) +
+          (ref.extra.draft ? (await fsp.stat(ref.extra.draft)).size : 0);
+        const ctx=effective.context_limit ?? 4096;
+        // The pinned, single-sequence CPU graph accounts for KV, recurrent state,
+        // logits and compute arenas. Leave 1.25 GiB for backend/host allocations.
+        const shortGraph=process.platform==='win32' && process.arch==='x64' && mode.shortContextGraphMiB && !companions &&
+          ['auto','f16'].includes(effective.kv_precision ?? 'auto');
+        if (shortGraph && ctx<=128) effective.cpu_no_repack=true;
+        const shortBudget=bytes=>bytes+mode.shortContextGraphMiB*1024**2+3.25*GiB;
+        const budget=bytes=>shortGraph && ctx<=128 ? shortBudget(bytes) :
+          bytes+Math.max(GiB,Math.ceil(bytes*0.13))+ctx*1024**2+2.5*GiB;
+        if (budget(mode.size+companions)>available) {
+          const executionBytes=mode.compactTextBytes || mode.size;
+          const required=budget(executionBytes+companions);
+          const processLimit=Math.floor((Math.min(available,required)-2*GiB)/1024**2);
+          const floor=bytes=>shortGraph && ctx<=128 && bytes
+            ? Math.ceil((bytes+1.25*GiB)/1024**2)+mode.shortContextGraphMiB : Infinity;
+          const originalFloor=floor(mode.mappedCpuWindowBytes);
+          const preparedFloor=floor(mode.preparedCpuWindowBytes);
+          const mapOriginal=originalFloor<=processLimit;
+          if (mapOriginal || (required>available && preparedFloor<=processLimit)) {
+            effective.cpu_working_set_floor_mib=mapOriginal ? originalFloor : preparedFloor;
+            effective.cpu_working_set_mib=processLimit;
+            effective.cpu_no_repack=true;
+            if (!mapOriginal) effective.language_weight_conversion='mixed_'+mode.compactTextType;
+          } else if (required>available) {
+            const hint=shortGraph && ctx>128 && shortBudget(executionBytes)<=available ?
+              '使用 128 词元的上下文总预算可通过本机预检，输入与最大输出需能放入该预算。' : '';
+            throw Error('量化后的 GGUF 与当前上下文预计需要 '+(required/GiB).toFixed(2)+
+              ' GiB 可用内存，当前可用 '+(available/GiB).toFixed(2)+' GiB。'+hint);
+          } else {
+            effective.language_weight_conversion='mixed_'+mode.compactTextType;
+          }
+        }
+      }
+      if (useService(mode,ref.extra,material,effective)) {
+        await fsp.access(bins.llamaService);
+        const structured=structuredInput(input.prompt,mode.pipeline);
+        if (structured?.files?.length) {
+          if (!ref.extra?.projector) throw Error('决策素材需要配套投影器。');
+          const available=this.list('material',task.project_id);
+          effective.decision_material_ids=structured.files.map(id=>{
+            const matches=available.filter(row=>row.id===id || row.name===id);
+            if(matches.length!==1) throw Error('决策模型引用的素材在当前项目中不唯一或不存在。');
+            const row=matches[0];
+            if(!(row.kind==='image' ? ref.info.acceptsImage : ref.info.acceptsAudio)) throw Error('此投影器不支持引用的决策素材。');
+            return row.id;
+          });
+        }
+        effective.architecture=ref.info.arch;
+        effective.context_limit=Math.min(effective.context_limit || 4096,ref.info.trainedContext || 4096);
+      } else if (task.kind === 'text' || ref.info.pipeline==='llama-vocoder')
         await textWorker(
           {
             action: 'inspect',
@@ -419,6 +581,7 @@ class Trials {
             prompt: input.prompt,
             media: material?.path,
             projector: ref.extra?.projector,
+            ple_table: ref.extra?.ple_table,
             runtime: effective,
           },
           undefined,
@@ -464,6 +627,7 @@ class Trials {
     )
       throw Error('草稿已变化，请重新检查配置。');
     if (p.attempt) return this.view(this.rows.get(p.attempt));
+    const submitted = performance.now();
     const a = {
       id: id('attempt'),
       task_id: task.id,
@@ -473,6 +637,7 @@ class Trials {
       allowed_actions: ['cancel'],
       created_at: now(),
       snapshot: structuredClone(task.draft),
+      performance: {},
       effective_config: p.effective,
       output_text: '',
       artifacts: [],
@@ -484,6 +649,7 @@ class Trials {
     this.save(a);
     p.attempt = a.id;
     this.queue.push(a);
+    this.queuedSince.set(a.id, submitted);
     this.pump();
     return this.view(a);
   }
@@ -506,6 +672,17 @@ class Trials {
     });
   }
   async execute(a, signal) {
+    const started = performance.now();
+    a.started_at = now();
+    const timing = a.performance;
+    timing.queue_ms = started - this.queuedSince.get(a.id);
+    this.queuedSince.delete(a.id);
+    let phaseStarted = started, phase = 'verify_ms';
+    const finishPhase = () => {
+      const end = performance.now();
+      timing[phase] = end - phaseStarted;
+      phaseStarted = end;
+    };
     try {
       a.state = 'running';
       a.phase = 'loading';
@@ -519,6 +696,14 @@ class Trials {
       const material = this.rows.get(a.material_id);
       if (material && (await hash(material.path)) !== material.manifest_digest)
         throw Error('输入素材摘要已变化。');
+      const decisionMedia=[];
+      for(const id of a.effective_config.decision_material_ids || []) {
+        const row=this.rows.get(id);
+        if(!row || row.project_id!==a.project_id || await hash(row.path)!==row.manifest_digest) throw Error('决策输入素材已变化。');
+        decisionMedia.push(row);
+      }
+      finishPhase();
+      phase = 'render_ms';
       const artifact = await render(
         { ...a.snapshot, runtime: a.effective_config },
         ref.file,
@@ -526,6 +711,14 @@ class Trials {
         dir,
         signal,
         (type, e) => {
+          if (['timing','prefill','metrics','config','step'].includes(type)) {
+            for (const key of ['model_load_ms','service_start_ms','prefill_ms','decode_ms','prompt_tokens','prefill_tokens',
+              'completion_tokens','decode_tokens','conditioning_ms','sampling_ms','sampling_steps','vae_encode_ms','vae_decode_ms',
+              'audio_decode_ms','audio_session_ms','media_encode_ms','media_input_ms','model_process_ms','weight_prepare_ms','output_frames']) {
+              if (Number.isFinite(e[key]) && e[key] >= 0) timing[key] = e[key];
+            }
+          }
+          if (type === 'first_token' && timing.first_token_ms === undefined) timing.first_token_ms = performance.now() - started;
           if (type === 'token') a.output_text += e.text;
           else if (type === 'stage' && e.name === 'unet') a.phase = 'generating';
           else if (type === 'step') {
@@ -542,13 +735,21 @@ class Trials {
           this.event(a, type, e);
         },
         ref.extra,
+        decisionMedia,
       );
+      finishPhase();
+      phase = 'collect_ms';
       signal.throwIfAborted();
       const file = path.join(dir, artifact.name),
         size = (await fsp.stat(file)).size;
       if (artifact.media_type !== 'text/plain' && (!size || size > 64 * 1024 * 1024))
         throw Error('媒体产物大小超出预览范围。');
       if (artifact.text !== undefined) a.output_text = artifact.text;
+      if (artifact.media_type === 'audio/wav' || (ref.info.kind === 'audio' && material?.kind === 'audio')) {
+        const output = artifact.media_type === 'audio/wav';
+        const seconds = await waveSeconds(output ? file : material.path).catch(() => undefined);
+        if (seconds > 0) timing[output ? 'audio_seconds' : 'input_audio_seconds'] = seconds;
+      }
       const sha256 = await hash(file);
       signal.throwIfAborted();
       a.artifacts = [{ ...artifact, id: id('artifact'), sha256, size, path: file }];
@@ -559,6 +760,9 @@ class Trials {
       a.state = signal.aborted ? 'cancelled' : 'failed';
       if (!signal.aborted) a.error = { message: e.message };
     } finally {
+      finishPhase();
+      timing.run_ms = performance.now() - started;
+      timing.total_ms = timing.queue_ms + timing.run_ms;
       a.phase = undefined;
       a.state_version++;
       a.allowed_actions = [];
@@ -575,6 +779,10 @@ class Trials {
       } else {
         this.queue = this.queue.filter((x) => x !== a);
         a.state = 'cancelled';
+        a.completed_at = now();
+        a.performance.queue_ms = performance.now() - this.queuedSince.get(a.id);
+        a.performance.total_ms = a.performance.queue_ms;
+        this.queuedSince.delete(a.id);
         a.allowed_actions = [];
       }
       a.state_version++;
@@ -594,29 +802,10 @@ class Trials {
     const url = new URL(route, 'https://local.invalid'),
       s = url.pathname,
       p = url.searchParams.get('project_id');
-    if (s === '/devices') return page(await devices(url.searchParams.get('refresh') === 'true'));
-    if (s === '/capabilities')
-      return page(
-        ['text', 'image', 'video', 'audio'].flatMap((kind) =>
-          ['generate', 'train'].map((operation) => {
-            const ok =
-              operation === 'generate' &&
-              fs.existsSync(bins[kind]) &&
-              (kind !== 'video' || fs.existsSync(bins.ffmpeg));
-            return {
-              kind,
-              operation,
-              supported: ok,
-              status: ok ? 'ready' : 'not_prepared',
-              reason: ok
-                ? '本机 GGUF，选择匹配架构后检查。'
-                : operation === 'train'
-                  ? 'GGUF 训练执行器尚未接入。'
-                  : '本机缺少此试用执行器。',
-            };
-          }),
-        ),
-      );
+    const refresh = url.searchParams.get('refresh') === 'true';
+    if (s === '/devices' && method === 'GET') return page(await devices(refresh));
+    if (s === '/environment' && method === 'GET') return this.environment.get(refresh);
+    if (s === '/capabilities' && method === 'GET') return page((await this.environment.get(refresh)).capabilities);
     const imported = /^\/(models|materials)\/(import-plans|imports)$/.exec(s);
     if (imported && method === 'POST')
       return imported[2] === 'imports'
@@ -628,7 +817,7 @@ class Trials {
           .records(p)
           .filter((j) => j.registeredAt)
           .map((j) => this.describe(j)),
-        ...this.list('local', p).map(localView),
+        ...this.list('local', p).map(localView).map(row => ({ ...row, workflow_eligible: workflowEligible(row) })),
       ]);
     if (s === '/materials') return page(this.list('material', p));
     if (s.startsWith('/models/') || s.startsWith('/materials/')) {

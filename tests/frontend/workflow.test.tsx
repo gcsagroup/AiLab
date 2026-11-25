@@ -59,6 +59,22 @@ it('新建工作流只建草稿，视频无伪提示词，不提交任何计算'
   expect(calls).toHaveLength(1); expect(calls[0].body.steps.video.input).toEqual({}); expect(calls[0].key).toBeTruthy();
 });
 
+it('Windows 工作流把中文视频描述和所选图生视频模型写入草稿', async () => {
+  Object.defineProperty(window, 'ailabHF', { configurable: true, value: { request: vi.fn() } });
+  try {
+    const windowsModels = models.map(model => model.modality === 'video' ? { ...model, pipeline: 'h3-video' } : model);
+    render(<WorkflowStartDialog projectId="project-a" models={windowsModels} onClose={() => {}} onCreated={() => {}} />);
+    for (const [label, kind] of [['商品图片模型','image'], ['商品视频模型','video'], ['中文配音模型','audio']])
+      fireEvent.change(screen.getByLabelText(label), { target: { value: 'model-' + kind } });
+    for (const [label, value] of [['画面描述','白色台灯'], ['视频描述','镜头缓慢推近。'], ['配音文案','一盏台灯。']])
+      fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    fireEvent.click(screen.getByRole('button', {name: '创建工作流草稿'}));
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0].body.steps.video).toMatchObject({ model_id:'model-video', input:{prompt:'镜头缓慢推近。'},
+      runtime:{engine:'ailab-gguf',device_id:'cpu',frames:22,fps:24} });
+  } finally { delete window.ailabHF; }
+});
+
 it('检查通过仍需明确开始；每次计算绑定当前步骤任务', async () => {
   view(); fireEvent.click(await screen.findByRole('button', { name: '检查本步配置' })); await screen.findByRole('button', { name: '开始本步运行' });
   expect(calls.filter(call => call.method !== 'GET').map(call => call.path)).toEqual(['/tasks/task-image/preflight']);

@@ -2,90 +2,100 @@
 
 [简体中文](README.md) · [繁體中文](i18n/zh-TW/README.md) · [English](i18n/en/README.md) · [日本語](i18n/ja/README.md) · [한국어](i18n/ko/README.md) · [Français](i18n/fr/README.md) · [Português](i18n/pt/README.md)
 
-GCSA AI Lab 是面向本地模型试用和作品管理的桌面工作台。本分支提供 **Windows x64 技术预览版**：在图形界面中准备模型和素材，检查配置，在本机进行文字、多模态理解、图片生成、视频生成和中文语音合成，并保存运行记录及作品。
+GCSA AI Lab 是本地模型试用与作品管理桌面工作台。当前分支提供 Windows x64 技术预览，支持准备模型与素材、试用语言和多模态模型、生成图片与视频、生成或处理音频，并记录运行结果、性能数据和作品。
 
-> 本页首先介绍本分支的 Windows 实现。模型名称出现在下载搜索结果中，不代表其已经接入或验证；模型架构、组件、格式和运行设备仍须通过检查。Windows 训练执行器尚未接入。页面末尾保留的原项目历史记录描述的是相应版本和环境，不等同于 Windows 功能验收。
+> 本页描述 2026-11-25 的 Windows 源码和本地构建进度。[2026-11-22 发布包](https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261122) 对应较早的代码快照，不含本页随后新增的所有功能。本次更新不自动改写该发布包。模型适配、模型下载和实际生成测试是不同阶段，具体结果见下文。
 
 ## 快速开始
 
-1. 从 [Windows 预览版发布页面](https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261122) 下载 `GCSA-AiLab-Windows-20261122-x64.zip`。仓库和发布页为私有时，需要有对应访问权限。
-2. 解压并保留完整程序目录，双击 `AiLab-UI.exe`。使用便携版不需要另外安装 Node.js、Python 或 Rust。
-3. 创建或打开项目，在模型准备入口下载、登记模型，或导入符合要求的本地模型。模型权重不包含在程序包中，需自行准备；下载需要网络和足够的磁盘空间。
-4. 在工作台选择模型及试用类型，填写提示词，按需要导入 PNG 图片或 WAV 音频；先点“检查配置”，再开始运行。完成后可在项目中查看运行记录和作品。
+1. 如使用现有发布包，下载并解压完整的 Windows 便携目录，双击 `AiLab-UI.exe`。便携包不需要另装 Node.js、Python 或 Rust。
+2. 打开工作台的“检查本机环境”，查看 CPU、GGML 识别的设备、内存、磁盘和执行器检测结果。可刷新检测并导出 JSON 诊断摘要。
+3. 在模型准备入口下载并登记模型，或导入满足要求的本地模型及配套组件。程序包不包含模型权重。
+4. 选择语言、图片、视频或音频试用，填写输入和参数，点击“检查配置”并开始运行。结果页显示输出、耗时和适用的性能指标。
+5. 在工作台的“新建工作流”中配置图片 → 视频 → 配音，视频描述和配音文字均可编辑。各步骤可检查结果并保存作品。
 
-操作细节和组件要求见 [Windows 使用说明](scripts/windows/README-Windows.txt)。发布包对应代码快照 `dd482e7`；后续 README 更新不会自动改变已经发布的压缩包。
+源码构建方法见[从源码准备和构建](#从源码准备和构建)，操作细节见 [Windows 使用说明](scripts/windows/README-Windows.txt)。
 
-## Windows 已接入的模型与试用
+## 当前功能
 
-下表说明代码中接入的指定架构和模型组合。**接入不等于每个量化版本、设备和参数都已通过实际运行验证**；具体还要看 GGUF 元数据、模型组件是否匹配以及运行时检查结果。
+| 部分 | 实现情况 |
+| --- | --- |
+| 桌面 UI | Electron Windows 界面，包含工作台、模型库、数据集市场、模型实验室、作品与素材、任务草稿及运行历史。 |
+| 模型准备 | 搜索 Hugging Face 仓库、选择文件、下载与续传、摘要校验、登记本地模型，并按已配置的配方准备所需组件。 |
+| 本机环境 | 实际枚举 GGML 设备，检查执行器启动、FFmpeg 视频编码和音频转换，测试模型目录读写并导出诊断。 |
+| 模型试用 | 语言与多模态理解、图片生成、视频生成、音频任务均接入运行入口、模型预检、队列、结果和作品保存。 |
+| 工作流 | 图片生成 → 视频生成 → 配音。步骤使用项目素材，允许修改视频描述与配音文字，保留步骤和运行记录。 |
+| 运行性能 | 总耗时包含排队。语言显示首 token 延迟、预填充与解码速度；图片和视频显示可取得的采样及 VAE 阶段，视频按实际输出帧数计算帧率；音频显示时长和实时因子。历史记录显示当时保存的数据。 |
 
-| 试用 | 接入的架构、模型或组合 | 输入与输出 | 推理执行 |
-| --- | --- | --- | --- |
-| 语言文字 | GGUF 架构 `qwen2`、`qwen3`、`qwen3moe`、`qwen35`、`gemma4`，并检查对应聊天模板；例如 Qwen2.5-0.5B、Qwen3.5-4B、Gemma 4 E2B IT 的适配组合 | 文字提示词 → 文字回答 | 本项目文字执行器调用 llama.cpp / GGML |
-| 图片与音频理解 | Qwen3.5-4B、Gemma 4 E2B IT 等满足检查的主 GGUF，外加同版本匹配的 `mmproj` 投影模型 | 文字 + PNG → 文字回答；Gemma 适配组合还支持文字 + WAV → 文字回答 | llama.cpp 的多模态接口（mtmd）；当前输入受界面和模型组合限制 |
-| 图片生成 | 完整 Tiny-SD GGUF；MiniMax-H3-Image GGUF 组合 | 文字提示词 → PNG 图片 | stable-diffusion.cpp |
-| 视频生成 | SD 1.5 完整 GGUF + AnimateDiff SD 1.5 运动模块 GGUF；MiniMax-H3 FL2VA GGUF 组合 | AnimateDiff：PNG + 提示词 → MP4；MiniMax：提示词及可选首帧 PNG → MP4 | stable-diffusion.cpp 生成帧，FFmpeg 编码视频 |
-| 中文语音合成 | 多语种 Kokoro-82M GGUF，当前使用 `zf_xiaobei` 中文音色 | 中文文字 → 24 kHz 单声道 WAV | audio.cpp，CPU 执行 |
+## 已接入的推理架构与模型
 
-### 图片与视频的模型组件
+下列名称表示项目中的架构识别或配方接入。不同权重、组件、量化和设备需要分别验证，模型搜索结果也需要通过导入与运行前检查。运行方式以任务的预检结果为准。
 
-- **Tiny-SD**：需要完整的 Tiny-SD GGUF，包含运行所需的相关组件。文件名为 GGUF 并不自动意味着任意图片模型都包含完整组件。
-- **MiniMax-H3-Image**：图片生成主体之外，还需要匹配的 4B 文本编码器和图片 VAE。单独下载 Q2 等量化的主体文件，并不代表这套图片流水线已经准备齐全。应用对接了相应组件的准备、转换与登记；默认配置为 Euler、6 步、引导强度 1。
-- **AnimateDiff**：需要包含 CLIP 和 VAE 的完整 SD 1.5 GGUF，以及匹配的 AnimateDiff SD 1.5 运动模块 GGUF。当前流程以项目中的 PNG 为输入，生成 14 帧、7 FPS 的短片；生成时将 512×288 输入补边至 512×320，随后裁去补边、放大并编码为 1024×576 MP4。
-- **MiniMax-H3 FL2VA**：需要视频生成主体、匹配的 4B 文本编码器和视频 VAE；还可使用音频 VAE 生成声音。默认生成 22 帧、24 FPS，约 0.92 秒，内部尺寸 512×320，输出放大至 1024×576。默认 4 步，可调整生成步数。
+| 类型 | 入口与主要模型 | 输入与输出 |
+| --- | --- | --- |
+| 语言和多模态 | llama.cpp b12648 的 GGUF 架构识别，包含 Qwen2.5、Qwen3、Qwen3.5、Gemma、Llama、DeepSeek 等；部分组合需要匹配的投影器。另有针对特定模型的布局转换和专用图执行器。 | 文字，以及相应模型支持的图片或音频素材，输出文字或相应任务结果。 |
+| 图片 | Tiny-SD、MiniMax-H3-Image，以及 Flux、Qwen Image、SD3、PixArt、Z-Image、Chroma 等配方。 | 根据模型配方使用提示词或参考图片，输出 PNG。 |
+| 视频 | AnimateDiff SD 1.5、MiniMax-H3 FL2VA，以及 Hunyuan Video、LingBot Video、LTX-2、LTX-2.5、Wan 2.2 配方。 | 根据配方使用提示词及可能需要的首帧，输出 MP4。 |
+| 音频 | Kokoro，以及 Qwen3-TTS、F5-TTS、CosyVoice3、Fish Audio、VibeVoice、ACE-Step、MiniMax Music 等配方和部分语音识别、检测任务。 | 根据模型使用文字或音频素材，输出 WAV、文字或检测结果。 |
 
-这些组件共同构成一次推理的流水线。其准备情况会影响能否运行，生成步数、分辨率、设备和模型量化方式也会影响耗时与效果。
+### 完整架构和配方清单
 
-## 图形界面与使用流程
+语言侧的架构注册表包含 178 个模型架构条目，另列投影器和无构造器条目。清单包含生成、编码、决策及其他专用架构，支持方式和所需组件由 [架构注册表](apps/windows-ui/hf/llama-architectures.json) 和 [运行分派逻辑](apps/windows-ui/hf/llama-model.cjs) 决定。
 
-Windows 桌面界面基于 Electron，围绕项目组织模型、任务、素材与作品：
+<details>
+<summary>展开语言模型架构标识</summary>
 
-- **工作台和模型试用**：选择已登记模型，输入提示词、设置运行参数，检查配置并启动；显示运行状态、错误信息、取消操作和结果。文字试用支持流式显示。
-- **模型库和模型准备**：搜索 Hugging Face 模型，查看下载文件及格式，下载或导入本地模型，登记到模型库；准备记录可重新打开，并显示本机保存目录。部分下载支持断点续传和文件摘要校验，MiniMax 指定配方会准备配套组件。
-- **数据与素材**：在项目内管理和引用素材；支持在对应试用中使用 PNG 图片或 WAV 音频。具体可用输入由模型与试用类型决定。
-- **作品与运行记录**：保存运行参数、状态以及生成的文字、图片、视频或音频，便于在项目内回看。
-- **模型实验室与其他页面**：界面保留原项目相关入口；Windows 预览版不因此表示训练等历史功能均已实现或验收。
+`llama`、`llama4`、`deci`、`falcon`、`grok`、`gpt2`、`gptneox`、`mpt`、`baichuan`、`starcoder`、`refact`、`bert`、`modern-bert`、`nomic-bert`、`nomic-bert-moe`、`neo-bert`、`jina-bert-v2`、`jina-bert-v3`、`eurobert`、`bloom`、`stablelm`、`qwen`、`qwen2`、`qwen2moe`、`qwen2vl`、`sensenova_u1`、`qwen3`、`flint`、`qwen3moe`、`clover_moe`、`qwen3next`、`qwen3vl`、`qwen3vlmoe`、`qwen35`、`qwen35moe`、`clef`、`vllm-decision2`、`qwen4exp`、`phi2`、`phi3`、`phimoe`、`plamo`、`plamo2`、`plamo3`、`codeshell`、`orion`、`internlm2`、`minicpm`、`minicpm3`、`gemma`、`gemma2`、`gemma3`、`gemma3n`、`gemma4`、`gemma4-assistant`、`gemma-embedding`、`gemma-embedding2`、`starcoder2`、`mamba`、`mamba2`、`maple`、`jamba`、`falcon-h1`、`xverse`、`command-r`、`cohere2`、`cohere2moe`、`dbrx`、`olmo`、`olmo2`、`olmoe`、`muse-glimmer`、`muse-spark`、`openelm`、`arctic`、`deepseek`、`deepseek2`、`deepseek2-ocr`、`deepseek32`、`deepseek4`、`deepseek41`、`xing4_0`、`chatglm`、`glm4`、`glm4moe`、`glm-dsa`、`bitnet`、`t5`、`t5encoder`、`jais`、`jais2`、`nemotron`、`nemotron_h`、`nemotron_h_moe`、`metis16`、`exaone`、`exaone4`、`exaone-moe`、`rwkv6`、`rwkv6qwen2`、`rwkv7`、`arwkv7`、`granite`、`granitemoe`、`granitehybrid`、`graniteswitch`、`granite_swa`、`chameleon`、`wavtokenizer-dec`、`plm`、`bailingmoe`、`bailingmoe2`、`bailingmoe3`、`dots1`、`dots3note`、`arcee`、`afmoe`、`laguna`、`ernie4_5`、`ernie4_5-moe`、`hunyuan-moe`、`hunyuan-dense`、`hunyuan_vl`、`hy_v3`、`hy_v4`、`smollm3`、`gpt-oss`、`lfm2`、`lfm2moe`、`lfm3`、`zaya1`、`dream`、`smallthinker`、`llada`、`llada-moe`、`seed_oss`、`grovemoe`、`apertus`、`minimax-01`、`hrm_text`、`limite`、`minimax-m2`、`minimax-m3`、`cogvlm`、`rnd1`、`pangu-embedded`、`mistral3`、`eagle3`、`dflash`、`mistral4`、`mistral-large4`、`paddleocr`、`mimo2`、`step35`、`spark2_5`、`llama-embed`、`maincoder`、`maion-coder`、`kimi-linear`、`kimi-k3`、`kimi-k31`、`glm5-next`、`talkie`、`mellum`、`nanbeige`、`qwen3tts`、`pockettts`、`moshi`、`zonos3`、`kokoro`、`tiny-voca`、`k2-horizon`、`beam`、`kolibri1`、`ricursive`、`inkling2`、`inkling2_loop`、`domynedge`
 
-语言模型和多模态理解主要输出文字；图片、视频和音频生成分别输出图片、MP4 和 WAV。输入位置和可选素材取决于所选模型和试用类型，并非每个模型都提供全部模态。
+</details>
+
+图片、视频和音频配方分别有 41、6、194 条。不同量化版本或配套文件可能分别占一条。完整固定版本、文件名称、大小和组件见 [生成模型配方](apps/windows-ui/hf/generation-packages.json)。
+
+<details>
+<summary>展开图片配方家族</summary>
+
+`boogu_image`、`chroma`、`chroma_radiance`、`ernie_image`、`fibo2`、`flux2`、`flux3`、`hidream_o1_image`、`ideogram4`、`krea2`、`lens`、`llada_image`、`longcat_image`、`mage_flow`、`ming_image`、`minit2i`、`moss_image`、`ovis_image`、`pid`、`pixart`、`qwen_image`、`qwen_image_2.1`、`sensenova_u1`、`sd3`、`z_image_l2p`、`z_image_controlnet`、`flux1`、`p_h3_image`、`sefi_image`
+
+</details>
+
+<details>
+<summary>展开视频配方家族</summary>
+
+`hunyuan_video`、`lingbot_video`、`ltx2`、`wan22_ti2v_5b`、`wan22_t2v_a14b`、`ltx25`
+
+</details>
+
+<details>
+<summary>展开音频配方家族</summary>
+
+`audio8_tts`、`auk`、`breeze_tts`、`chatterbox`、`chatterbox_turbo`、`confucius4_tts`、`cosyvoice3`、`dots_tts`、`dramabox`、`echo_tts`、`f5_tts`、`firered_audio`、`fireredtts3`、`fish_audio`、`fish_drama3`、`glm_tts`、`higgs_audio_tts`、`index_tts2`、`irodori_tts`、`kitten_tts2`、`kugelaudio`、`lfm2_audio`、`lfm3_audio`、`magpie_tts`、`maya1`、`ming3_tts`、`miotts`、`moss_tts_local`、`m5_tts`、`moss_tts_v15`、`moss_ttsd`、`neutts`、`omnivoice`、`outetts`、`plapre`、`pocket_tts`、`qwen3_tts`、`sopro_tts`、`tiny_voca`、`vibevoice`、`vieneu_v3_turbo`、`voxcpm2`、`voxmel_tts`、`voxtral_tts`、`xtts_v2`、`zipvoice`、`zonos2`、`zonos3`、`ming3_audio`、`controlfoley`、`ace_step`、`heartmula`、`midashenglm_gen`、`minimax_h3`、`minimax_music3`、`moss_soundeffect`、`mulacover`、`soulx_singer`、`vevo2`、`yue2`、`mira_tts`
+
+</details>
+
+Tiny-SD 试用使用完整 GGUF。MiniMax-H3-Image 还需要匹配的文本编码器和图片 VAE。AnimateDiff 需要包含 CLIP 和 VAE 的 SD 1.5 GGUF 及匹配的运动模块。MiniMax-H3 FL2VA 使用文本编码器和视频 VAE，可按配方带音频 VAE。具体文件与输入要求由模型准备和预检核对。
 
 ## 推理架构与底层加速
 
-AiLab 负责界面、模型与素材管理、组件检查、任务调度、参数组装、执行器调用和结果保存；底层神经网络计算由接入的推理库完成。主要调用关系如下：
+AiLab 负责界面、模型和素材管理、任务编排、模型与组件检查、运行参数、计时和结果保存。模型计算由随包的执行器和底层推理库完成。
 
-```text
-Windows 界面 → 模型/组件检查 → 任务调度与运行参数
-  ├─ 文字与多模态理解 → AiLab GGUF 执行器 → llama.cpp / GGML → 文字
-  ├─ 图片生成           → AiLab 图片执行器 → stable-diffusion.cpp → PNG
-  ├─ 视频生成           → AiLab 视频流程 → stable-diffusion.cpp → FFmpeg → MP4
-  └─ 中文语音合成       → AiLab 音频流程 → audio.cpp → WAV
-```
+| 组件 | 接入方式 |
+| --- | --- |
+| llama.cpp b12648 / GGML | AiLab 的 C++ 执行器及 llama-server 执行语言和多模态相关任务，提供 CPU、Vulkan、采样、KV 精度、停止序列、预填充分块与流式输出等设置。 |
+| stable-diffusion.cpp `532d2c1` / `0d71f96` | AiLab 图像执行器或对应 CLI 配方执行图片和视频生成，按模型使用 CPU 或 Vulkan、内存映射及 VAE 分块等设置。 |
+| audio.cpp | 随包的 0.9.5、0.9.6 和 F5 配方执行器处理音频；实际可用任务取决于模型家族与组件。 |
+| FFmpeg | 处理输入素材，并将生成帧或音频编码为可播放媒体。 |
 
-| 底层组件 | 接入情况 | 设备与优化 |
-| --- | --- | --- |
-| llama.cpp `b11669` / GGML | 文字生成及 mtmd 多模态输入；支持聊天模板、温度、top-p、种子、停止序列、流式显示和预填充分块等参数 | 支持 CPU 与 Vulkan 运行设置；CPU 根据指令集选择 Haswell 优化后端或 x64 后端，文字执行器启用 Flash Attention 配置，CPU 线程数按硬件限制在 1—8。当前多模态投影部分使用 CPU |
-| stable-diffusion.cpp `532d2c1` | 通过本项目执行器接入 Tiny-SD、MiniMax 图片及上述视频组合 | 支持 CPU 与 Vulkan 运行设置；图片执行器使用 6 个 CPU 线程。MiniMax 配方使用映射权重、VAE 分块和 Flash Attention 等设置；可用显存少于 6 GiB 时回退 CPU |
-| audio.cpp `v0.9.5` | Kokoro 中文语音生成 | 使用 CPU 版运行库，按短文本分段处理 |
-| FFmpeg | 将生成帧编码为视频；有配套音频时处理音视频输出 | 负责媒体处理和封装 |
+本机任务通过队列执行。文字执行器跨任务不共享前缀缓存。硬件、模型组件和运行参数会影响速度与内存需求。
 
-Vulkan 需要设备及驱动支持，选择相关设置并不保证所有模型或所有组件都在 GPU 上运行，也不保证一定比 CPU 快。GGUF 权重量化与推理时的 KV 缓存精度是不同设置；具体可用选项以界面和执行检查为准。
+## 近期验证与使用边界
 
-当前试用任务通过队列执行，同一进程并不提供多个任务同时生成的通用能力；文字试用每次重新启动执行器，没有实现跨任务共享的前缀缓存。停止序列用于控制当前文字生成在指定内容处结束，不是任务之间的分隔符。
+2026-11-25 在 Windows、Ryzen 7 4800H 和 GTX 1650 Ti 的本机上，检查到 GGML CPU 与 Vulkan 设备，12 项环境检查通过。Qwen2.5、Tiny-SD、AnimateDiff 和 Kokoro 的指定组合完成过试用，四类运行记录的性能数据显示及历史读取已验证。一次 CPU AnimateDiff 生成 14 帧的试用约 9 分 24 秒，其中 VAE 解码约 8 分 14 秒。测试值对应当时的硬件、模型和参数。
 
-## 检查配置会检查什么
-
-开始运行前，应用会根据试用类型检查所选模型是否已登记、GGUF 架构与模板是否匹配、需要的投影模型或生成组件是否齐全、素材类型和参数是否符合当前流程，以及运行库和目标设备等条件。检查通过表示满足已实现的运行前条件，并不保证权重正确适配所有情况、显存一定足够或生成质量达到预期；实际执行仍可能失败并返回错误。
-
-项目对可识别架构及其条件有明确判断，底层仍须由相应推理库实现并支持该架构；仅在列表里添加名称不能让模型自动获得推理能力。可参考 [GGUF 元数据识别](apps/windows-ui/hf/gguf-metadata.cjs)、[组件匹配](apps/windows-ui/hf/gguf-bundle.cjs)、[试用调度](apps/windows-ui/hf/trial-worker.cjs)、[文字执行器](workers/gguf-trial.cpp) 和 [图片执行器](workers/gguf-image.cpp)。
-
-## 已有验证与当前边界
-
-2026-11-22 的本地验证包括 Windows 发布包界面冒烟检查及 Qwen3 0.6B CPU 文字生成；前端测试和 Windows 相关测试也进行了运行。已有本机运行记录覆盖 Tiny-SD、MiniMax-H3-Image、AnimateDiff、MiniMax-H3 FL2VA 和 Kokoro 的指定组合。上述结果只说明对应环境、权重与参数下的流程曾完成，不能推断所有量化版本、GPU 或输出质量都已验证；视频的少步数试运行也不代表正式作品质量。
-
-Windows 版目前仍是技术预览：训练执行器尚未接入，模型兼容范围和输入类型有限，推理速度依赖硬件与配置，未完成面向所有设备的全新安装和广泛兼容性验收。模型下载目录包含可检索的仓库，不等同于可运行模型白名单。
+窗口中对远程执行目标、市场数据源管理、整库备份恢复和存储清理标明了 Windows 尚未接入。Windows 训练执行器尚未接入。模型适配清单并不表示每种权重和量化都已完成端到端验证。
 
 ## 从源码准备和构建
 
-源码仓库不包含预编译推理运行库，也不包含模型权重。Windows x64 开发环境需要 Node.js 24、Python 及 WSL/编译工具；准备脚本需要网络。具体依赖和操作见 [Windows 使用说明](scripts/windows/README-Windows.txt)：
+仓库不包含预编译推理运行库或模型权重。Windows x64 开发环境需要 Node.js、Python、WSL 与编译工具，准备运行库时需要网络。
 
 ```powershell
 npm ci
@@ -93,9 +103,7 @@ python scripts/windows/prepare-gguf.py
 npm run build:windows-ui
 ```
 
-准备脚本获取固定版本的推理库并构建本项目的执行器。下载已发布便携包的使用者无需执行这些构建命令。
-
-模型仓库许可与固定版本地址可查看 [语言模型目录](downloads/hf-language-model-urls.jsonl.gz) 和 [目录摘要](downloads/hf-language-urls-summary.json)。较大的跨任务文件地址目录不随源码分发，可使用 Python 3.10+ 执行 `python scripts/windows/collect_hf_urls.py --cache .artifacts/hf-refresh --declared-licenses` 重新采集；另见 [许可目录摘要](downloads/hf-declared-license-urls-summary.json) 和 [历史下载清单](downloads/windows-ui-preview.json)。
+脚本生成的便携目录包含 `AiLab-UI.exe`、Electron 依赖、各推理运行库及使用说明。保留完整目录后运行。模型需要另行下载或导入。
 
 ## 原项目历史记录
 

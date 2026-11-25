@@ -4,6 +4,8 @@
 #include "stb_image_write.h"
 #include <nlohmann/json.hpp>
 #include <cstring>
+#include <chrono>
+#include <map>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -21,9 +23,32 @@ static void check(sd_status_t status) {
 static void log_message(sd_log_level_t level, const char* message, void*) {
     if (message && level >= SD_LOG_WARN) std::cerr << message << std::endl;
 }
-static void progress(const sd_generation_progress_t* state, void*) {
-    if (!state || !state->stage || std::strcmp(state->stage, "sampling") != 0) return;
-    std::cout << json{{"type", "step"}, {"completed", state->completed}, {"total", state->total}} << std::endl;
+using Clock = std::chrono::steady_clock;
+struct GenerationTiming {
+    Clock::time_point since;
+    std::string stage;
+    std::map<std::string, double> elapsed;
+    int64_t sampling_steps = 0, last_step = 0;
+    int last_pass = -1;
+    void change(const std::string& next) {
+        if (next == stage) return;
+        const auto now = Clock::now();
+        if (!stage.empty()) elapsed[stage] += std::chrono::duration<double,std::milli>(now-since).count();
+        since = now; stage = next;
+    }
+};
+static void progress(const sd_generation_progress_t* state, void* data) {
+    if (!state || !state->stage) return;
+    auto& timing = *static_cast<GenerationTiming*>(data);
+    timing.change(state->stage);
+    if (timing.stage != "sampling") return;
+    if (timing.last_pass != state->sample_pass || state->completed < timing.last_step) timing.last_step = 0;
+    timing.sampling_steps += state->completed - timing.last_step;
+    timing.last_step = state->completed;
+    timing.last_pass = state->sample_pass;
+    const double elapsed=timing.elapsed["sampling"]+std::chrono::duration<double,std::milli>(Clock::now()-timing.since).count();
+    std::cout << json{{"type", "step"}, {"completed", state->completed}, {"total", state->total},
+        {"sampling_ms",elapsed},{"sampling_steps",timing.sampling_steps}} << std::endl;
 }
 static void condition_video(sd_opt_t* options, int width, int height) {
     const int64_t shape[] = {3, width, height};
@@ -42,6 +67,7 @@ static void generate(const json& request) {
     const auto& input = request.at("input");
     const auto pipeline = r.value("pipeline",std::string());
     const bool h3 = pipeline=="h3-image" || pipeline=="h3-video";
+    const bool z_image = !video && pipeline=="z-image";
     const int width = video ? r.at("inference_width").get<int>() : 512;
     const int height = video ? r.at("inference_height").get<int>() : 512;
     if (video && (width != 512 || height != 320)) throw std::runtime_error("Unexpected video inference size");
@@ -53,7 +79,12 @@ static void generate(const json& request) {
     if (!context || !options) throw std::runtime_error("Cannot allocate diffusion options");
     auto device = r.at("device_id").get<std::string>();
     for (char& c : device) if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
-    check(sd_opt_set_string(context.get(), h3 ? "diffusion_model_path" : "model_path", "weights.gguf"));
+    check(sd_opt_set_string(context.get(), (h3 || z_image) ? "diffusion_model_path" : "model_path", "weights.gguf"));
+    if (z_image) {
+        check(sd_opt_set_string(context.get(), "llm_path", "qwen3_encoder.gguf"));
+        check(sd_opt_set_string(context.get(), "vae_path", "flux_vae.gguf"));
+        check(sd_opt_set_bool(context.get(), "enable_mmap", true));
+    }
     if (h3) {
         check(sd_opt_set_string(context.get(), "rng_type", "cpu"));
         check(sd_opt_set_string(context.get(),"llm_path","encoder.gguf"));
@@ -80,11 +111,14 @@ static void generate(const json& request) {
         check(sd_opt_set_bool(context.get(), "diffusion_flash_attn", true));
     }
     sd_ctx_t* raw_ctx = nullptr;
+    const auto load_started = Clock::now();
     check(sd_ctx_create(context.get(), &raw_ctx));
+    std::cout << json{{"type","timing"},{"model_load_ms",std::chrono::duration<double,std::milli>(Clock::now()-load_started).count()}} << std::endl;
+    GenerationTiming timing{};
     std::unique_ptr<sd_ctx_t, decltype(&sd_ctx_free)> ctx(raw_ctx, sd_ctx_free);
     if (!(video ? sd_ctx_supports_video_generation(ctx.get()) : sd_ctx_supports_image_generation(ctx.get())))
         throw std::runtime_error("GGUF weights do not provide the requested diffusion graph");
-    sd_set_generation_progress_callback(ctx.get(), progress, nullptr);
+    sd_set_generation_progress_callback(ctx.get(), progress, &timing);
     const auto prompt = input.value("prompt", std::string());
     const auto negative = input.value("negative_prompt", std::string());
     check(sd_opt_set_string(options.get(), "prompt", prompt.c_str()));
@@ -103,6 +137,10 @@ static void generate(const json& request) {
     }
     sd_result_t* raw = nullptr;
     check(video ? sd_generate_video(ctx.get(), options.get(), &raw) : sd_generate_image(ctx.get(), options.get(), &raw));
+    timing.change("");
+    json measured={{"type","timing"},{"sampling_steps",timing.sampling_steps}};
+    for (const auto& [stage, ms] : timing.elapsed) measured[stage+"_ms"]=ms;
+    std::cout << measured << std::endl;
     std::unique_ptr<sd_result_t, decltype(&sd_result_free)> result(raw, sd_result_free);
     if (video) {
         const auto* clip = sd_result_get_video(result.get());
@@ -145,7 +183,16 @@ int main() {
         std::string line;
         std::getline(std::cin, line);
         sd_set_log_callback(log_message, nullptr);
-        generate(json::parse(line));
+        const auto request = json::parse(line);
+        if (request.value("action", std::string()) == "probe") {
+            std::unique_ptr<sd_opt_t, decltype(&sd_opt_free)> context(sd_ctx_opt_create(), sd_opt_free),
+                image(sd_img_gen_opt_create(), sd_opt_free), video(sd_vid_gen_opt_create(), sd_opt_free);
+            if (!context || !image || !video) throw std::runtime_error("Cannot initialize diffusion options");
+            check(sd_opt_set_string(context.get(), "rng_type", "cpu"));
+            std::cout << json{{"type", "diffusion_ready"}} << std::endl;
+        } else {
+            generate(request);
+        }
         return 0;
     } catch (const std::exception& error) {
         std::cerr << error.what() << std::endl;

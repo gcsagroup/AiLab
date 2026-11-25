@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, protocol, net, session, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, protocol, net, session, ipcMain, dialog } = require('electron');
 const { dirname, join, resolve, sep } = require('node:path');
 const { pathToFileURL } = require('node:url');
 const fs = require('node:fs');
@@ -26,6 +26,18 @@ app.whenReady().then(async () => {
     if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== 'ailab://ui/' || action !== 'workbench') throw new Error('无效的工作台请求。');
     try {
       if (!request || !['GET', 'POST', 'PATCH'].includes(request.method) || typeof request.path !== 'string' || !request.path.startsWith('/') || JSON.stringify(request).length > 256000) throw new Error('工作台请求格式无效。');
+      if (request.method === 'POST' && request.path === '/environment/export') {
+        const data = await models.trials.environment.export(request.body?.id, async name => {
+          // The isolated UI smoke run supplies a destination in its own temporary profile.
+          if (smokePath) return join(app.getPath('userData'), 'environment-smoke.json');
+          const result = await dialog.showSaveDialog(window, {
+            title: '保存环境诊断摘要', defaultPath: join(app.getPath('documents'), name),
+            filters: [{ name: 'JSON 诊断摘要', extensions: ['json'] }],
+          });
+          return result.canceled ? null : result.filePath;
+        });
+        return { ok: true, data: { handled: true, data } };
+      }
       return {ok: true, data: await models.request(request)};
     } catch (error) { return {ok: false, error: {code: error.code || 'MODEL_SERVICE', message: error.message || String(error)}}; }
   });

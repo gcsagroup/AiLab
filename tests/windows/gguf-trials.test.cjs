@@ -12,6 +12,35 @@ const textDraft = {
   runtime: { device_id: 'cpu', seed: 0, context_limit: 1024, max_tokens: 12, temperature: 0, top_p: 1 },
 };
 
+test('WAV detection and image upscaling require project materials and ignore synthesis fields', () => {
+  for (const [kind, pipeline] of [['audio', 'firered-vad'], ['image', 'esrgan-x4'], ['image', 'mosr-x4']]) {
+    const draft = {kind, runtime: {seed: 0}, input: {}};
+    assert.throws(() => parameters(draft, {pipeline}), /请选择/);
+    const effective = parameters({...draft, input: {material_id: 'material-one'}}, {pipeline});
+    assert.equal(effective.pipeline, pipeline);
+    assert.equal(effective.device_id, 'cpu');
+    assert.equal(effective.steps, undefined);
+    assert.equal(effective.voice, undefined);
+  }
+});
+
+test('generative audio accepts text and never inherits Kokoro or WAV-input requirements', () => {
+  const draft = {kind:'audio',runtime:{seed:7, speed:1.5},input:{prompt:'Hello'}};
+  const tts = parameters(draft,{audioTask:'tts',audioFamily:'piper_tts',pipeline:'audiocpp-tts'});
+  assert.equal(tts.speed,1.5);
+  assert.equal(tts.family,'piper_tts');
+  const music = parameters(draft,{audioTask:'gen',audioFamily:'stable_audio',pipeline:'audiocpp-gen'});
+  assert.equal(music.seed,7);
+  assert.equal(music.duration_seconds,2);
+  assert.equal(music.speed,undefined);
+});
+test('audio.cpp input models accept project WAV references and require the CPU backend', () => {
+  const info = {audioTask:'asr', pipeline:'audiocpp-asr'};
+  const draft = {kind:'audio',runtime:{seed:0},input:{prompt:'@素材 material-example\n'}};
+  assert.equal(parameters(draft,info).pipeline,'audiocpp-asr');
+  assert.throws(()=>parameters({...draft,input:{prompt:'Hello'}},info),/请选择/);
+  assert.throws(()=>parameters({...draft,runtime:{seed:0,device_id:'vulkan:0'}},info),/CPU/);
+});
 test('model-specific settings preserve the requested cache, chunk size and stopping behavior', () => {
   const draft = {
     ...textDraft,
@@ -92,12 +121,15 @@ test(
     const small = await run(long, { prefill_step_size: 512, kv_precision: 'q4', max_tokens: 1 });
     const large = await run(long, { prefill_step_size: 4096, kv_precision: 'f16', max_tokens: 1 });
     assert.equal(small.prefill.chunks, 2);
+    assert.ok(small.prefill.prefill_ms > 0 && small.prefill.prefill_tokens > 0);
+    assert.equal(small.finish.decode_ms, undefined); // First token is sampled from prefill logits.
     assert.equal(small.prefill.kv_precision, 'q4');
     assert.equal(large.prefill.chunks, 1);
     assert.equal(large.prefill.kv_precision, 'f16');
     const prompt = 'Write a creative name for a bookstore. Give a short answer.';
     const greedy = await run(prompt, { kv_precision: 'q8' });
     assert.ok(greedy.text.length >= 6);
+    assert.ok(greedy.finish.decode_ms > 0 && greedy.finish.decode_tokens > 0);
     const phrase = greedy.text.slice(1, 5);
     const stopped = await run(prompt, { kv_precision: 'q8', stop: [phrase] });
     assert.equal(stopped.text, greedy.text.slice(0, greedy.text.indexOf(phrase)));
@@ -198,7 +230,7 @@ test('FL2VA and H3 Image plan different VAEs and reuse the pinned text encoder',
 });
 test('MiniMax-H3 repairs inherited read-only timing while retaining requested generation settings', () => {
   const saved = {kind:'video', input:{prompt:'sunflowers'}, runtime:{seed:8,steps:1,frames:14,fps:7}};
-  for (const timing of [{frames:14,fps:7}, {frames:22,fps:24}, {frames:undefined,fps:undefined}]) {
+  for (const timing of [{frames:14,fps:7}, {frames:5,fps:8}, {frames:22,fps:24}, {frames:undefined,fps:undefined}]) {
     const draft = {...saved, runtime:{...saved.runtime,...timing}};
     const r = parameters(draft, {pipeline:'h3-video'});
     assert.deepEqual([r.frames,r.fps,r.steps,r.seed], [22,24,1,8]);

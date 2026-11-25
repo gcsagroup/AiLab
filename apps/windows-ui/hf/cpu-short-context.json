@@ -1,0 +1,54 @@
+{
+  "deepseek4": {
+    "sourceBytes": 37802704608,
+    "directorySha256": "9f04d39ad5035ab462231c07e67babc2f1168b9c25fb43d626c7b8ec05b62368",
+    "graphMiB": 128,
+    "moeWindowBytes": 9264660192
+  },
+  "kimi-k3": {
+    "sourceBytes": 66311464672,
+    "directorySha256": "42502dc4484f88f5b8f634b6ccc33e1492dced9867623b17363f1f29c13e0f6f",
+    "graphMiB": 640,
+    "prepared": {
+      "sourceBytes": 19578255104,
+      "directorySha256": "4b25b156b22676e2b6a21934b8df4261f578a48ddb0adbf741b88e898cdadc59",
+      "graphMiB": 640,
+      "moeWindowBytes": 17887524608
+    }
+  },
+  "dbrx": {
+    "sourceBytes": 26896612832,
+    "directorySha256": "0b8468ab3e339b48a9593216da0528d96e0dcb764997a30bdd0d9987090cd4c1",
+    "graphMiB": 128,
+    "moeWindowBytes": 2181807584
+  },
+  "step35": {
+    "sourceBytes": 24414167744,
+    "directorySha256": "c3bf431d79891847161bb8e9a0552299f1571fa84a76ffa59daf82b254dda9e0",
+    "graphMiB": 128,
+    "moeWindowBytes": 2624471744
+  },
+  "mistral4": {
+    "sourceBytes": 23985573696,
+    "directorySha256": "6749a7339b7304fc6d0cb6636b0112a30367da0a2425fcea0ec0f3276f2a594b",
+    "graphMiB": 128,
+    "moeWindowBytes": 1822871360
+  },
+  "maion-coder": {
+    "sourceBytes": 56307620832,
+    "directorySha256": "5951cfdf25ab0226c0d6fbe0bd5c84940a521cea6b631974ace369a59732004e",
+    "graphMiB": 256,
+    "prepared": {
+      "sourceBytes": 20932336640,
+      "directorySha256": "b06a719a85bb19088387992bd020db34f1e0f7d310170d965ebae4af8e9e18ee",
+      "graphMiB": 256,
+      "moeWindowBytes": 3096058880
+    }
+  },
+  "rnd1": {
+    "sourceBytes": 32483927584,
+    "directorySha256": "1ad02bc52ca9e5b469a5943ec5b34f56cac8b93caab9bc0a93c67dad869bf195",
+    "graphMiB": 256,
+    "moeWindowBytes": 2322687520
+  }
+}
