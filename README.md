@@ -4,11 +4,11 @@
 
 GCSA AI Lab 是本地模型试用与作品管理桌面工作台。当前分支提供 Windows x64 技术预览，支持准备模型与素材、试用语言和多模态模型、生成图片与视频、生成或处理音频，并记录运行结果、性能数据和作品。
 
-> 本页描述 2026-11-25 的 Windows 源码和本地构建进度。[2026-11-22 发布包](https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261122) 对应较早的代码快照，不含本页随后新增的所有功能。本次更新不自动改写该发布包。模型适配、模型下载和实际生成测试是不同阶段，具体结果见下文。
+> 本页描述 2026-11-25 的 Windows 预览版。新版便携包可从 [Windows 预览版发布页面](https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261125) 下载。模型适配、模型下载和实际生成测试是不同阶段，具体结果见下文。
 
 ## 快速开始
 
-1. 如使用现有发布包，下载并解压完整的 Windows 便携目录，双击 `AiLab-UI.exe`。便携包不需要另装 Node.js、Python 或 Rust。
+1. 从 [Windows 预览版发布页面](https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261125) 下载 `GCSA-AiLab-Windows-20261125-x64.zip`，解压完整目录并双击 `AiLab-UI.exe`。便携包不需要另装 Node.js、Python 或 Rust。
 2. 打开工作台的“检查本机环境”，查看 CPU、GGML 识别的设备、内存、磁盘和执行器检测结果。可刷新检测并导出 JSON 诊断摘要。
 3. 在模型准备入口下载并登记模型，或导入满足要求的本地模型及配套组件。程序包不包含模型权重。
 4. 选择语言、图片、视频或音频试用，填写输入和参数，点击“检查配置”并开始运行。结果页显示输出、耗时和适用的性能指标。
@@ -100,6 +100,7 @@ AiLab 负责界面、模型和素材管理、任务编排、模型与组件检�
 | 2026-11-25 | 为四类模型试用加入耗时和适用的速度指标。Qwen2.5、Tiny-SD、AnimateDiff、Kokoro 的指定组合完成运行验证，历史记录可读取已保存的性能数据。 |
 | 2026-11-25 18:17 | 构建新的 Windows x64 便携包，完成界面冒烟检查和压缩包读取验证。 |
 | 2026-11-25 18:18 后 | 提交源码与 README 到 windows-ui-preview 分支，提交号 15dcd79。 |
+| 2026-11-25 19:14 | 发布 Windows x64 便携压缩包，核对 GitHub 文件大小与 SHA-256 摘要。 |
 
 ## 近期验证与使用边界
 
