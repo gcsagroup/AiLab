@@ -74,10 +74,17 @@ async function runPackage({model,extra,material,out,input,r,bins,invoke,linkWeig
       }
       const raw=path.join(relative,'speech.wav');
       const task=material && ['zipvoice','higgs_audio_tts','chatterbox','firered_audio','fireredtts3','mira_tts','zonos2','zonos3','audio8_tts','omnivoice','voxmel_tts','m5_tts'].includes(id) ? 'clon' : spec.task;
-      const args=['--task',task,'--family',id,'--backend','cpu','--mode','offline','--model',source,'--text',music ? (id==='mulacover' ? lyrics : description) : text,
-        '--seed',String(r.seed),'--threads','4','--out',raw];
-      if (r.max_tokens!==undefined && ['max_audio_tokens','max_tokens','max_frames'].includes(spec.audioLimitOption))
-        args.push('--request-option',spec.audioLimitOption+'='+r.max_tokens);
+      const backend = 'cpu', mode = 'offline', threads = 4;
+      const args=['--task',task,'--family',id,'--backend',backend,'--mode',mode,'--model',source,'--text',music ? (id==='mulacover' ? lyrics : description) : text,
+        '--seed',String(r.seed),'--threads',String(threads),'--out',raw];
+      const qwen = id === 'qwen3_tts' ? require('./qwen3-tts.cjs').generationOptions(model, r.max_tokens) : undefined;
+      const limit = qwen?.max_tokens ?? r.max_tokens;
+      if (limit!==undefined && ['max_audio_tokens','max_tokens','max_frames'].includes(spec.audioLimitOption))
+        args.push('--request-option',spec.audioLimitOption+'='+limit);
+      if (qwen) {
+        for (const [name, value] of Object.entries(qwen.sampling)) args.push('--request-option', name + '=' + value);
+        args.push('--text-chunk-size', String(qwen.text_chunk_size));
+      }
       const language=languageFor(spec,text);
       if (id==='moss_tts_local') args.push('--session-option','moss_tts_local.weight_type=native');
       if (['heartmula','dramabox','confucius4_tts'].includes(id)) args.push('--session-option',id+'.mem_saver=true');
@@ -102,8 +109,10 @@ async function runPackage({model,extra,material,out,input,r,bins,invoke,linkWeig
       if (music && (id!=='ace_step' || song)) args.push('--lyrics',lyrics);
       if (id==='ace_step') args.push('--task-route','text2music');
       const kittenVoices=id==='kitten_tts2' ? {ar:'Arabic',zh:'Chinese',fr:'French',de:'German',hi:'Hindi',it:'Italian',pt:'Portuguese',ru:'Russian',es:'Spanish'} : {};
-      if (spec.speaker) args.push('--request-option','voice_id='+(voiceLine?.[1]==='音色' ? voiceLine[2].trim() : kittenVoices[language] || spec.speaker));
-      if (spec.voiceDesign || voiceLine?.[1]==='音色描述') args.push('--instruct',voiceLine?.[2]?.trim() || 'A clear, natural speaking voice.');
+      const voiceId = spec.speaker && (voiceLine?.[1]==='音色' ? voiceLine[2].trim() : kittenVoices[language] || spec.speaker);
+      const instruction = (spec.voiceDesign || voiceLine?.[1]==='音色描述') ? voiceLine?.[2]?.trim() || 'A clear, natural speaking voice.' : undefined;
+      if (voiceId) args.push('--request-option','voice_id='+voiceId);
+      if (instruction) args.push('--instruct',instruction);
       if (id==='auk' && !material) {
         // AuK needs a positive acoustic window for unconditioned speech.
         const cjk=/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
@@ -156,9 +165,14 @@ async function runPackage({model,extra,material,out,input,r,bins,invoke,linkWeig
         if (spec.stepOption==='num_steps') args.push('--request-option','num_steps='+r.steps);
         else args.push('--num-inference-steps',String(r.steps));
       }
-      await invoke(audioEngine(bins.audio,spec),args,{cwd:out,signal});
-      const format=spec.task==='tts'?['-af','atempo='+r.speed,'-ar','24000','-ac','1']:[];
-      await invoke(bins.ffmpeg,['-v','error','-i',raw,'-map','0:a:0',...format,'-c:a','pcm_s16le','speech.wav'],{cwd:out,signal});
+      const synthesis = qwen && { ...qwen, task, backend, mode, threads, model_file: model, text, seed: r.seed, language,
+        voice_id: voiceId, instruct: instruction, reference_audio: material, reference_text: material ? transcript : undefined,
+        x_vector_only_mode: material ? !transcript : undefined };
+      await invoke(audioEngine(bins.audio,spec),args,{cwd:out,signal,recordConfig: synthesis && {stage:'synthesis', values:synthesis}});
+      const encoding = {speed:r.speed, sample_rate:24000, channels:1, codec:'pcm_s16le'};
+      const format=spec.task==='tts'?['-af','atempo='+encoding.speed,'-ar',String(encoding.sample_rate),'-ac',String(encoding.channels)]:[];
+      await invoke(bins.ffmpeg,['-v','error','-i',raw,'-map','0:a:0',...format,'-c:a',encoding.codec,'speech.wav'],{
+        cwd:out,signal,recordConfig: qwen && {stage:'audio_encoding', values:encoding}});
       if ((await fs.stat(path.join(out,'speech.wav'))).size<128) throw Error('音频模型未返回有效波形。');
       return {name:'speech.wav',media_type:'audio/wav'};
     }

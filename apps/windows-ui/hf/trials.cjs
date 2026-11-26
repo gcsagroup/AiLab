@@ -38,19 +38,20 @@ async function hash(file) {
   return h.digest('hex');
 }
 function localView(row) {
-  if (row.generation_package) {
-    try {
-      const ref=generation.stored(row);
-      return {...row,pipeline:ref.info.pipeline,execution_available:[ref.file,...Object.values(ref.extra)].every(f=>fs.existsSync(f))};
-    } catch { return {...row,execution_available:false}; }
-  }
-  if (!row.component_digests && row.kind !== 'video') return row;
+  const kind = row.modality || row.kind;
   try {
-    const ref = bundle([row.path, ...Object.values(localExtras(row)).filter(f => /\.gguf$/i.test(f))]);
-    if (ref?.info.kind === row.kind)
-      return { ...row, pipeline: ref.info.pipeline, supports_media: !!ref.info.multimodal };
+    const extra = localExtras(row);
+    if (row.path && Object.values(extra).every(fs.existsSync) && fs.existsSync(row.path)) {
+      const ref = row.generation_package ? generation.stored(row)
+        : bundle([row.path, ...Object.values(extra).filter(f => /\.gguf$/i.test(f))]);
+      if (ref?.info.kind && (!kind || ref.info.kind === kind)) {
+        return { ...row, kind: ref.info.kind, modality: ref.info.kind, pipeline: ref.info.pipeline,
+          supports_media: !!ref.info.multimodal, supports_thinking: !!ref.info.thinking,
+          execution_available: Object.values(ref.extra).every(fs.existsSync) };
+      }
+    }
   } catch {}
-  return { ...row, execution_available: false };
+  return { ...row, modality: kind, execution_available: false };
 }
 function manifest(base, extras) {
   const entries = Object.entries(extras).sort(([a], [b]) => a.localeCompare(b));
@@ -111,7 +112,7 @@ class Trials {
   }
   list(prefix, project) {
     return [...this.rows.values()]
-      .filter((x) => x.id.startsWith(prefix + '-') && (!project || x.project_id === project))
+      .filter((x) => x.id.startsWith(prefix + '-') && !x.deleted && (!project || x.project_id === project))
       .reverse()
       .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
   }
@@ -192,17 +193,18 @@ class Trials {
   resolve(modelId, project) {
     const local = this.rows.get(modelId);
     if (local?.id.startsWith('local-') && local.project_id === project) {
-      if (!localView(local).execution_available)
+      const model = localView(local);
+      if (!model.execution_available)
         throw Error(local.kind === 'video' ? '请导入完整的视频模型组合（AnimateDiff、MiniMax-H3 或 Wan 2.1）。' : '请重新导入该模型及其配套组件。');
       const extra = localExtras(local),
         ref = local.generation_package ? generation.stored(local) : bundle([local.path, ...Object.values(extra).filter(f => /\.gguf$/i.test(f))]);
-      if (!ref || ref.info.kind !== local.kind ||
+      if (!ref || ref.info.kind !== model.modality ||
           Object.keys(ref.extra).some(role => ref.extra[role] !== extra[role]))
         throw Error('已登记的 GGUF 主模型和配套组件不匹配。');
       return {
         ...ref,
         motion:extra.motion,
-        model: local,
+        model,
         verify: async () => {
           const hashes = {};
           for (const [role, file] of Object.entries(extra)) hashes[role] = await hash(file);
@@ -711,6 +713,11 @@ class Trials {
         dir,
         signal,
         (type, e) => {
+          if (type === 'execution_parameters') {
+            Object.assign(a.effective_config, e);
+            this.save(a);
+            return;
+          }
           if (['timing','prefill','metrics','config','step'].includes(type)) {
             for (const key of ['model_load_ms','service_start_ms','prefill_ms','decode_ms','prompt_tokens','prefill_tokens',
               'completion_tokens','decode_tokens','conditioning_ms','sampling_ms','sampling_steps','vae_encode_ms','vae_decode_ms',
@@ -819,6 +826,39 @@ class Trials {
           .map((j) => this.describe(j)),
         ...this.list('local', p).map(localView).map(row => ({ ...row, workflow_eligible: workflowEligible(row) })),
       ]);
+    if (method === 'DELETE' && /^\/models\/(?:local-[a-f0-9]{32}|hf-[a-f0-9]{24})$/.test(s)) {
+      projectKey(p);
+      const modelId = s.split('/')[2];
+      if (this.list('attempt', p).some(a => active.has(a.state) && a.snapshot?.model_id === modelId))
+        throw Error('模型正在运行或排队，请先停止相关任务。');
+      const local = this.rows.get(modelId);
+      if (local) {
+        if (local.project_id !== p) throw Error('当前项目缺少该模型。');
+        const directory = path.join(this.dir, modelId);
+        if (fs.existsSync(directory)) {
+          const stat = fs.lstatSync(directory);
+          if (stat.isSymbolicLink() || !stat.isDirectory() ||
+              path.dirname(fs.realpathSync(directory)).toLowerCase() !== fs.realpathSync(this.dir).toLowerCase())
+            throw Error('模型目录已变化，无法删除。');
+          fs.rmSync(directory, { recursive: true });
+        }
+        fs.rmSync(path.join(this.dir, modelId + '.json'), { force: true });
+        this.rows.delete(modelId);
+      } else {
+        const job = this.downloads.records(p).find(item => item.modelId === modelId && item.registeredAt);
+        if (!job) throw Error('当前项目缺少该模型。');
+        this.downloads.remove(job.id);
+      }
+      return {deleted:true};
+    }
+    if (method === 'DELETE' && /^\/tasks\/task-[\w-]+\/record$/.test(s)) {
+      projectKey(p);
+      const taskId = s.split('/')[2];
+      if (this.list('attempt', p).some(a => a.task_id === taskId && active.has(a.state)))
+        throw Error('任务仍在运行或排队，请先停止。');
+      for (const [key, plan] of this.plans) if (plan.task?.id === taskId && plan.task.project_id === p) this.plans.delete(key);
+      return {deleted:true};
+    }
     if (s === '/materials') return page(this.list('material', p));
     if (s.startsWith('/models/') || s.startsWith('/materials/')) {
       const mid = s.split('/')[2];
@@ -903,6 +943,11 @@ class Trials {
     if (s === '/works') return page(this.list('work', p));
     if (/^\/works\/work-[a-f0-9]{32}$/.test(s)) {
       const work = this.rows.get(s.slice(7));
+      if (method === 'DELETE' && work && p && work.project_id === p) {
+        work.deleted = true;
+        this.save(work);
+        return {deleted:true};
+      }
       if (work && (!p || work.project_id === p)) return work;
       throw Error('当前项目缺少该作品。');
     }

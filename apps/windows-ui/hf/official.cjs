@@ -226,8 +226,8 @@ class OfficialModels {
     const url = new URL(request.path, 'https://ailab.invalid');
     const {method, body, idempotencyKey} = request;
     const project = url.searchParams.get('project_id');
-    if (this.workflows.handles(url.pathname)) return handled(await this.workflows.request(request, url));
-    if (/^\/(?:models|materials|devices|capabilities|environment|attempts|artifacts|works)(?:\/|$)/.test(url.pathname) || /^\/tasks\/task-[\w-]+\/(?:attempts|preflight)$/.test(url.pathname))
+    if (this.workflows.handles(url.pathname) && !url.pathname.endsWith('/record')) return handled(await this.workflows.request(request, url));
+    if (/^\/(?:models|materials|devices|capabilities|environment|attempts|artifacts|works)(?:\/|$)/.test(url.pathname) || /^\/tasks\/task-[\w-]+\/(?:attempts|preflight|record)$/.test(url.pathname))
       return handled(await this.trials.request(request));
     if (method === 'GET' && url.pathname === '/model-catalog/search') {
       const q = (url.searchParams.get('q') || '').trim();
@@ -255,19 +255,30 @@ class OfficialModels {
     if (method === 'POST' && url.pathname === '/model-downloads') {
       if (!body || !/^project-[a-zA-Z0-9-]+$/.test(body.project_id) || typeof idempotencyKey !== 'string' || !idempotencyKey) throw fail('无效的项目或下载请求。','INVALID_REQUEST');
       const previous = this.downloads.records(body.project_id).find(job => job.manifestDigest === body.manifest_digest && body.manifest_digest === body.catalog_id);
-      if (previous) return handled(this.record(previous));
+      if (previous) { if (previous.hidden) { delete previous.hidden; this.downloads.save(previous); } return handled(this.record(previous)); }
       const plan = this.plans.get(body.catalog_id);
       if (!plan || body.manifest_digest !== body.catalog_id) throw fail('请重新选择模型并核对文件清单。','MODEL_CATALOG_CHANGED');
       const job = await this.downloads.create(plan, body.project_id, body.manifest_digest);
       return handled(this.record(job));
     }
-    if (method === 'GET' && url.pathname === '/model-downloads') return handled({items: this.downloads.records(project).map(job => this.record(job)), next_cursor: null});
+    if (method === 'GET' && url.pathname === '/model-downloads') return handled({items: this.downloads.records(project).filter(job => !job.hidden).map(job => this.record(job)), next_cursor: null});
     const match = /^\/model-downloads\/(download-[0-9a-f]{24})(?:\/(cancel|resume|models))?$/.exec(url.pathname);
     if (!match) throw fail('未知的模型下载请求。', 'INVALID_REQUEST');
     const job = this.downloads.get(match[1]);
     if (project && job.projectId !== project) throw fail('此下载属于其他项目。','RESOURCE_NOT_FOUND');
     if (method === 'GET' && !match[2]) return handled(this.record(job));
-    if (method === 'POST' && match[2] === 'models') { await this.downloads.register(job.id); return handled(this.trials.describe(job)); }
+    if (method === 'DELETE' && !match[2]) {
+      if (!project || job.projectId !== project) throw fail('请选择当前项目。');
+      if (this.downloads.active.has(job.id) || this.downloads.registering.has(job.id)) throw fail('请先停止下载或等待登记完成。');
+      if (job.registeredAt) { job.hidden = true; this.downloads.save(job); return handled({deleted:true}); }
+      return handled(this.downloads.remove(job.id));
+    }
+    if (method === 'POST' && match[2] === 'models') {
+      if (this.downloads.registering.has(job.id)) throw fail('模型正在登记。');
+      this.downloads.registering.add(job.id);
+      try { await this.downloads.register(job.id); return handled(this.trials.describe(job)); }
+      finally { this.downloads.registering.delete(job.id); }
+    }
     if (method === 'POST' && match[2] === 'resume') return handled(this.record(await this.downloads.resume(job.id)));
     if (method === 'POST' && match[2] === 'cancel') return handled(this.record(await this.downloads.pause(job.id)));
     throw fail('未知的模型下载操作。','INVALID_REQUEST');

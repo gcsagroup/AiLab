@@ -58,7 +58,7 @@ for (const entry of await readdir(assetsDir, {withFileTypes:true})) {
 }
 await cp(join(root, 'downloads/hf-language-repos.txt.gz'), join(appDir, 'hf-language-repos.txt.gz'));
 await cp(join(root, 'apps/desktop/src-tauri/icons/icon.png'), join(appDir, 'icon.png'));
-for (const file of ['smoke.cjs', 'smoke-model-download.cjs', 'smoke-gguf-trial.cjs']) await cp(join(root, 'scripts/windows', file), join(appDir, file));
+for (const file of ['smoke.cjs', 'smoke-model-download.cjs', 'smoke-gguf-trial.cjs', 'smoke-ai-assistance.cjs']) await cp(join(root, 'scripts/windows', file), join(appDir, file));
 await cp(join(root, 'scripts/windows/README-Windows.txt'), join(output, '使用说明.txt'));
 const require = createRequire(join(root, 'package.json'));
 const licenses = [];

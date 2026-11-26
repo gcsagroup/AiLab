@@ -33,7 +33,7 @@ async function verify(filename, file, signal) {
 }
 class Downloads {
   constructor({ dataDir, hub }) {
-    this.dataDir = path.resolve(dataDir); this.hub = hub; this.active = new Map(); this.jobs = new Map();
+    this.dataDir = path.resolve(dataDir); this.hub = hub; this.active = new Map(); this.jobs = new Map(); this.registering = new Set();
     this.jobDir = path.join(dataDir, 'downloads'); this.modelDir = path.join(dataDir, 'models');
     fs.mkdirSync(this.jobDir, { recursive: true }); fs.mkdirSync(this.modelDir, { recursive: true });
     for (const file of fs.readdirSync(this.jobDir).filter(f => /^download-[0-9a-f]{24}\.json$/.test(f))) {
@@ -63,7 +63,11 @@ class Downloads {
     return [...this.jobs.values()].filter(job => !projectId || job.projectId === projectId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
   model(job) {
-    return {id: job.modelId, project_id: job.projectId, name: job.filename ? job.repoId + ' · ' + job.filename : job.repoId, format: job.format, status: 'downloaded', modality: 'text',
+    // When a registered download is incomplete, keep it under the publisher's task category.
+    const taskKinds = { 'text-to-image': 'image', 'image-to-image': 'image', 'unconditional-image-generation': 'image',
+      'text-to-video': 'video', 'image-to-video': 'video', 'video-to-video': 'video',
+      'text-to-audio': 'audio', 'text-to-speech': 'audio', 'audio-to-audio': 'audio', 'automatic-speech-recognition': 'audio' };
+    return {id: job.modelId, project_id: job.projectId, name: job.filename ? job.repoId + ' · ' + job.filename : job.repoId, format: job.format, status: 'downloaded', modality: taskKinds[job.task] || 'text',
       path: path.join(this.modelDir, job.modelId), version_id: job.revision, manifest_digest: job.manifestDigest, total_bytes: job.totalBytes,
       provenance: {source: 'huggingface', repo: job.repoId, revision: job.revision, license: job.license, source_url: 'https://huggingface.co/' + job.repoId + '/tree/' + job.revision}};
   }
@@ -95,6 +99,32 @@ class Downloads {
     return this.model(job);
   }
   get(id) { const job = this.jobs.get(id); if (!job) throw fail('下载任务不存在。'); return job; }
+  remove(id) {
+    const job = this.get(id);
+    if (this.active.has(id) || this.registering.has(id)) throw fail('请先等待下载或模型登记结束。');
+    const directory = path.join(this.modelDir, job.modelId);
+    const root = fs.realpathSync(this.modelDir);
+    if (fs.existsSync(directory)) {
+      const stat = fs.lstatSync(directory);
+      if (stat.isSymbolicLink() || !stat.isDirectory() || path.dirname(fs.realpathSync(directory)).toLowerCase() !== root.toLowerCase())
+        throw fail('模型目录已变化，无法删除。');
+    }
+    const names = fs.readdirSync(this.jobDir).filter(name => name.startsWith(job.id + '.') && name !== job.id + '.json');
+    for (const name of names) {
+      const target = path.join(this.jobDir, name);
+      const stat = fs.lstatSync(target);
+      if (stat.isSymbolicLink()) throw fail('下载缓存包含链接，无法删除。');
+    }
+    for (const name of names) {
+      const target = path.join(this.jobDir, name);
+      const stat = fs.lstatSync(target);
+      fs.rmSync(target, { recursive: stat.isDirectory() });
+    }
+    fs.rmSync(directory, { recursive: true, force: true });
+    fs.rmSync(path.join(this.jobDir, job.id + '.json'), { force: true });
+    this.jobs.delete(id);
+    return { deleted: true };
+  }
   async create(plan, projectId, manifestDigest) {
     const key = downloadKey(projectId,plan.repoId,plan.revision,plan.format,plan.files);
     const id = `download-${key}`; if (this.jobs.has(id)) return this.get(id);

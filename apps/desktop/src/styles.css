@@ -86,6 +86,8 @@ progress { width: 100%; accent-color: var(--accent); }
 
 /* 任务编号和下一步始终留在原任务行，长编号在窄屏换行。 */
 .task-row .task-name small{display:block;overflow-wrap:anywhere}
+.deletable-row{display:flex;align-items:center;gap:8px}
+.deletable-row>.task-row{flex:1;min-width:0}
 .task-state{display:grid;justify-items:end;gap:5px;flex-shrink:0;max-width:110px}
 .task-state small{font-size:10px;color:var(--accent)}
 .task-state .badge{white-space:normal;text-align:right}
@@ -109,4 +111,68 @@ progress { width: 100%; accent-color: var(--accent); }
 .work-revisions pre {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.assets-page {
+  display: grid;
+  gap: clamp(24px, 2.4vw, 40px);
+}
+.assets-page > .page-heading,
+.assets-page > .recent-section {
+  margin: 0;
+}
+.assets-page .works-grid,
+.assets-page .resource-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 27rem), 1fr));
+  gap: clamp(16px, 1.6vw, 26px);
+}
+.assets-page .work-card,
+.assets-page .resource-card {
+  min-width: 0;
+  padding: clamp(18px, 1.7vw, 28px);
+  overflow-wrap: anywhere;
+}
+.assets-page .work-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.assets-page .work-card > .work-text,
+.assets-page .work-card > .media-preview {
+  margin: 0;
+}
+.assets-page .work-card > small {
+  margin-top: auto;
+  font-size: 12px;
+}
+.assets-page .work-card .section-title {
+  align-items: baseline;
+}
+.assets-page .work-card .badge {
+  flex-shrink: 0;
+}
+.assets-page .work-card > .card-actions {
+  justify-content: flex-start;
+  gap: 8px 10px;
+}
+.assets-page .resource-card {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.assets-page .resource-card > .button {
+  justify-self: start;
+}
+@media (min-width: 1151px) {
+  .main-and-ai.with-ai:has(.assets-page) {
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 23vw, 360px);
+  }
+}
+@media (max-width: 1150px) {
+  .main-and-ai.with-ai:has(.assets-page) > .ai-panel {
+    grid-row: 1;
+    padding: 16px clamp(15px, 2vw, 24px);
+  }
+  .main-and-ai.with-ai:has(.assets-page) > .ai-panel .empty {
+    padding: 16px;
+  }
 }

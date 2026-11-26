@@ -56,7 +56,26 @@ export async function previewApi<T>(method: string, path: string, body?: unknown
   else if (route === '/ui-context' && method === 'PATCH') {
     if (!value || !state.projects.some(item => item.id === value.project_id)) throw missing();
     state.context = { project_id: value.project_id, projects: { ...state.context.projects, [value.project_id]: value.context } }; save(); result = state.context;
-  } else if (route === '/tasks' && method === 'GET') result = page(state.tasks.filter(item => !project || item.project_id === project));
+  } else if (window.ailabHF && route === '/ai/generation-tasks' && method === 'POST') {
+    const target = state.tasks.find(task => task.id === value?.target_id && task.project_id === value?.project_id);
+    if (!value || !target) throw missing();
+    if (target.draft_revision !== value.expected_revision) throw Error('草稿已改变，请重新请求建议。');
+    const generation = draft('text', 'generate');
+    generation.model_id = value.model_id;
+    generation.input.prompt = value.prompt;
+    Object.assign(generation.runtime, { max_tokens: 512, thinking: value.thinking });
+    const task: Task = {
+      id: 'task-ai-' + crypto.randomUUID(), project_id: target.project_id, name: 'AI 建议 · ' + target.name,
+      kind: 'text', operation: 'generate', draft_revision: 1, immutable_draft: true, draft: generation,
+      attempts: [], created_at: new Date().toISOString(),
+    };
+    state.tasks.unshift(task); save(); result = task;
+  } else if (/^\/tasks\/task-[\w-]+$/.test(route) && method === 'DELETE' && window.ailabHF) {
+    const task = state.tasks.find(item => item.id === route.split('/')[2] && item.project_id === project);
+    if (!task) throw missing();
+    state.tasks = state.tasks.filter(item => item.id !== task.id); save(); result = {deleted:true};
+  } else if (route === '/tasks' && method === 'GET') result = page(state.tasks.filter(item =>
+    !item.id.startsWith('task-ai-') && (!project || item.project_id === project)));
   else if (route === '/tasks' && method === 'POST') {
     if (!value || !state.projects.some(item => item.id === value.project_id)) throw missing();
     const task: Task = { id: `task-${crypto.randomUUID()}`, project_id: value.project_id, name: value.name,
@@ -65,6 +84,7 @@ export async function previewApi<T>(method: string, path: string, body?: unknown
     state.tasks.unshift(task); save(); result = task;
   } else if (/^\/tasks\/[^/]+\/draft$/.test(route) && method === 'PATCH') {
     const task = state.tasks.find(item => item.id === route.split('/')[2]); if (!task) throw missing();
+    if (task.immutable_draft) throw Error('此任务已固定配置。');
     if (value?.expected_revision !== task.draft_revision) throw { error: { code: 'REVISION_CONFLICT', message: '草稿版本已变化，请重新打开任务。' } };
     task.draft = structuredClone(value.draft); task.draft_revision += 1; save(); result = task;
   } else if (/^\/tasks\/[^/]+\/preflight$/.test(route) && method === 'POST') result = {

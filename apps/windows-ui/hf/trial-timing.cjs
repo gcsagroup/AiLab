@@ -46,6 +46,11 @@ function timedMediaInvoke(invoke, bins, event) {
         if (count) frames = Number(count[1]);
       } };
     }
+    // Capture after adding native instrumentation, immediately before the actual launch.
+    if (options.recordConfig) {
+      const { stage, values } = options.recordConfig;
+      event('execution_parameters', { [stage]: { ...values, executable: exe, cwd: options.cwd, argv: [...args] } });
+    }
     const start = performance.now();
     try {
       const result = await invoke(exe, args, options);

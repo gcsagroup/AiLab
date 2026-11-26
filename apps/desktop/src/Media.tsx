@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { errorMessage, mediaBlob, type ImportKind } from './api';
 import type { Adapter, Artifact, Dataset, Draft, Material, Model, Runtime } from './types';
 import { Button, ErrorNotice } from './ui';
+import { libraryModelKind, TrialModelSelect } from './TrialModelSelect';
 
 export function defaultMediaRuntime(kind: string, train: boolean): Runtime {
   if (kind === 'audio') return { engine: 'kokoro', device_id: 'cpu', voice: 'zf_xiaobei', speed: 1, sample_rate: 24000, seed: 0 };
@@ -60,8 +61,11 @@ export function MediaFields({ draft, models, datasets, adapters, materials, onCh
   const image = kind === 'image';
   const video = kind === 'video';
   const audio = kind === 'audio';
-  const selectableModels = models.filter(model => model.modality === kind && (!window.ailabHF || model.execution_available !== false));
-  const pipeline=selectableModels.find(m=>m.id===draft.model_id)?.pipeline;
+  const selectableModels = models.filter(model => window.ailabHF && !train
+    ? libraryModelKind(model) === kind && model.execution_available !== false
+    : model.modality === kind && (!window.ailabHF || model.execution_available !== false));
+  const selectedModel = selectableModels.find(model => model.id === draft.model_id);
+  const pipeline = selectedModel?.pipeline;
   const llamaSpeech = pipeline === 'llama-tts';
   const vocoder = pipeline === 'llama-vocoder';
   const wan = pipeline === 'wan21-t2v' || pipeline === 'diffusion-video';
@@ -89,8 +93,12 @@ export function MediaFields({ draft, models, datasets, adapters, materials, onCh
   const update = (field: keyof Runtime, value: number | string) => onChange({ ...draft, runtime: { ...runtime, [field]: value } });
   if (train && !image) return <p className="warning">此组合尚未开放训练。请返回工作台的“运行 / 试用”，视频可使用图片生成短片，音频可输入中文生成配音。</p>;
   return <>
-    <div className="field"><div className="label-action"><label htmlFor="media-model">{audio ? (audioInput || audioGen ? '音频模型' : '配音模型') : video ? '视频模型' : '图片基座模型'}</label><button tabIndex={0} type="button" onClick={() => onImport('model')}>导入模型</button></div><select id="media-model" aria-label="选择媒体模型" value={draft.model_id || ''} onChange={e => selectModel(e.target.value)}><option value="">请选择本类别的模型</option>{draft.model_id && !selectableModels.some(model => model.id === draft.model_id) && <option value={draft.model_id} disabled>原模型待核实 · {draft.model_id}</option>}{selectableModels.map(model => <option key={model.id} value={model.id}>{model.name}</option>)}</select></div>
-    <p className="muted">{window.ailabHF ? (pipeline?.startsWith('diffusion-') ? 'stable-diffusion.cpp · 本机 CPU' : wan ? 'Wan 2.1 T2V 1.3B · 本机 CPU' : audioGen ? '音乐 / 音效生成 · 本机 CPU' : audioTts ? '语音合成 · 本机 CPU' : h3 ? (image ? 'MiniMax-H3-Image · 本机 GGUF' : 'MiniMax-H3 · 本机 GGUF') : upscale ? (pipeline === 'mosr-x4' ? 'MoSR 四倍放大 · 本机 CPU' : 'Real-ESRGAN 四倍放大 · 本机 CPU') : pipeline === 'anima' ? 'Anima · 本机 CPU' : pipeline === 'iris' ? 'Iris-3B · 本机 CPU' : pipeline === 'z-image' ? 'Z-Image · 本机 GGUF' : image ? 'Tiny-SD · 本机 GGUF' : video ? 'AnimateDiff 图生视频 · stable-diffusion.cpp · 本机 GGUF' : hibiki ? 'Hibiki 法语语音翻译' : asr ? '语音转写 · 本机 CPU' : pipeline === 'audiocpp-vad' ? '语音活动检测 · 本机 CPU' : audioInput ? 'FireRed VAD 语音活动检测 · 本机 CPU' : 'Kokoro 中文配音 · 本机 CPU') : image ? 'Tiny-SD · 本机 Apple GPU' : video ? 'SVD 图生视频 · 本机 Apple GPU' : 'Kokoro 中文配音 · 本机 CPU'}。每次运行独立加载；质量需要检查实际产物。</p>
+    {window.ailabHF && !train ? <TrialModelSelect id="media-model" ariaLabel="选择媒体模型" models={models} kind={kind} value={draft.model_id}
+      onChange={selectModel} onImport={() => onImport('model')} /> :
+    <div className="field"><div className="label-action"><label htmlFor="media-model">{audio ? (audioInput || audioGen ? '音频模型' : '配音模型') : video ? '视频模型' : '图片基座模型'}</label><button tabIndex={0} type="button" onClick={() => onImport('model')}>导入模型</button></div><select id="media-model" aria-label="选择媒体模型" value={draft.model_id || ''} onChange={e => selectModel(e.target.value)}><option value="">请选择本类别的模型</option>{draft.model_id && !selectableModels.some(model => model.id === draft.model_id) && <option value={draft.model_id} disabled>原模型待核实 · {draft.model_id}</option>}{selectableModels.map(model => <option key={model.id} value={model.id}>{model.name}</option>)}</select></div>}
+    {window.ailabHF && !train
+      ? selectedModel && <p className="muted">{selectedModel.name} · {selectedModel.format} · 本机试用</p>
+      : <p className="muted">{image ? (window.ailabHF ? 'Tiny-SD · 本机 GGUF' : 'Tiny-SD · 本机 Apple GPU') : video ? 'SVD 图生视频 · 本机 Apple GPU' : 'Kokoro 中文配音 · 本机 CPU'}。每次运行独立加载；质量需要检查实际产物。</p>}
     {runtime.engine !== engine && <div className="review-box"><p className="warning">这份旧草稿使用了其它类别的参数，需要先重新选择媒体配置。</p><Button onClick={resetRuntime}>应用本类别默认配置</Button></div>}
     {train ? <><div className="field"><div className="label-action"><label htmlFor="image-data">图片与描述数据</label><button tabIndex={0} type="button" onClick={() => onImport('image-dataset')}>导入图片数据</button></div><select id="image-data" value={draft.dataset_id || ''} onChange={e => onChange({ ...draft, dataset_id: e.target.value || null })}><option value="">请选择已检查的图片数据</option>{datasets.filter(dataset => dataset.schema === 'image_caption_v1').map(dataset => <option key={dataset.id} value={dataset.id}>{dataset.name} · {dataset.sample_count} 张</option>)}</select></div><p className="muted">1—8 张 512×512 RGB 图片；每张保留描述与来源。仅更新注意力层 LoRA，保留基座。当前没有图片检查点恢复及质量自动准入。</p></> : <>
     {((video && !wan) || fromMaterial) && <div className="field"><div className="label-action"><label htmlFor="video-source">{audioInput ? '输入音频' : '输入图片'}</label><button tabIndex={0} type="button" onClick={() => onImport('material')}>{audioInput ? '导入音频素材' : '导入图片素材'}</button></div><select id="video-source" value={draft.input.material_id || ''} onChange={e => onChange({ ...draft, input: { ...draft.input, material_id: e.target.value || null } })}><option value="">{audioInput ? '请选择当前项目的 WAV 素材' : h3 ? '可选首帧 · 从当前项目选择 PNG' : '请选择当前项目的 PNG 素材'}</option>{draft.input.material_id && !materials.some(item => item.id === draft.input.material_id && item.kind === materialKind) && <option value={draft.input.material_id} disabled>原素材待核实 · {draft.input.material_id}</option>}{materials.filter(item => item.kind === materialKind).map(item => <option key={item.id} value={item.id}>{item.name}{!audioInput && ` · ${item.width}×${item.height}`}</option>)}</select></div>}

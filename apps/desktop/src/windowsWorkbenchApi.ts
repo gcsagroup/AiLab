@@ -26,6 +26,18 @@ function windowsTask(task:Task) {
 export async function windowsWorkbenchApi<T>(method:string,path:string,body?:unknown,idempotencyKey?:string):Promise<T>{
   if(!window.ailabHF)return previewApi<T>(method,path,body);
   const route=path.split('?')[0];
+  if (method === 'DELETE' && /^\/tasks\/task-[\w-]+$/.test(route)) {
+    const project = new URL(path, 'https://preview.invalid').searchParams.get('project_id');
+    if (!project) throw Error('请选择当前项目。');
+    await native('DELETE', route + '/record?project_id=' + encodeURIComponent(project));
+    if (route.startsWith('/tasks/task-wf-')) {
+      const key = 'ailab-hidden-workflow-tasks:' + project;
+      const hidden: string[] = JSON.parse(localStorage.getItem(key) || '[]');
+      localStorage.setItem(key, JSON.stringify([...new Set([...hidden, route.split('/')[2]])]));
+      return {deleted:true} as T;
+    }
+    return previewApi<T>(method,path,body);
+  }
   if (route.startsWith('/workflow-runs') || route.startsWith('/tasks/task-wf-'))
     return native<T>(method,path,body,idempotencyKey);
   if(method==='POST'&&route==='/tasks'){
@@ -51,7 +63,9 @@ export async function windowsWorkbenchApi<T>(method:string,path:string,body?:unk
     const attach=(task:Task)=>{windowsTask(task);task.attempts=items.filter(a=>a.task_id===task.id);task.latest_attempt=task.attempts[0];return task;};
     if('items' in reply) {
       const workflowTasks = await native<{items:Task[]}>('GET', '/workflow-tasks?' + filter);
-      reply.items = [...reply.items, ...workflowTasks.items].map(attach).sort((a,b) => (b.created_at || '').localeCompare(a.created_at || ''));
+      const project = new URL(path, 'https://preview.invalid').searchParams.get('project_id');
+      const hidden: string[] = project ? JSON.parse(localStorage.getItem('ailab-hidden-workflow-tasks:' + project) || '[]') : [];
+      reply.items = [...reply.items, ...workflowTasks.items.filter(task => !hidden.includes(task.id))].map(attach).sort((a,b) => (b.created_at || '').localeCompare(a.created_at || ''));
     } else attach(reply);
     return reply as T;
   }

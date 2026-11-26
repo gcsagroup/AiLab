@@ -25,7 +25,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('ailab:official-models', async (event, action, request) => {
     if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== 'ailab://ui/' || action !== 'workbench') throw new Error('无效的工作台请求。');
     try {
-      if (!request || !['GET', 'POST', 'PATCH'].includes(request.method) || typeof request.path !== 'string' || !request.path.startsWith('/') || JSON.stringify(request).length > 256000) throw new Error('工作台请求格式无效。');
+      if (!request || !['GET', 'POST', 'PATCH', 'DELETE'].includes(request.method) || typeof request.path !== 'string' || !request.path.startsWith('/') || JSON.stringify(request).length > 256000) throw new Error('工作台请求格式无效。');
       if (request.method === 'POST' && request.path === '/environment/export') {
         const data = await models.trials.environment.export(request.body?.id, async name => {
           // The isolated UI smoke run supplies a destination in its own temporary profile.
@@ -79,10 +79,11 @@ app.whenReady().then(async () => {
   if (smokePath) {
     try {
       const modelSmoke = process.argv.includes('--smoke-model-download');
+      const assistantSmoke = process.argv.includes('--smoke-ai-assistance');
       const trialKind = process.argv.find(arg=>/^--smoke-gguf-trial=(text|image|video|audio)$/.test(arg))?.split('=')[1];
       const family=process.argv.find(a=>/^--smoke-family=(Qwen3\.5|Gemma 4|MiniMax-H3-Image|MiniMax-H3)$/i.test(a))?.slice('--smoke-family='.length);
       const stepCount = Number(process.argv.find(arg => /^--smoke-steps=(?:[1-9]\d?|100)$/.test(arg))?.split('=')[1]) || null;
-      const script = fs.readFileSync(join(__dirname, trialKind ? 'smoke-gguf-trial.cjs' : modelSmoke ? 'smoke-model-download.cjs' : 'smoke.cjs'), 'utf8').trim();
+      const script = fs.readFileSync(join(__dirname, trialKind ? 'smoke-gguf-trial.cjs' : modelSmoke ? 'smoke-model-download.cjs' : assistantSmoke ? 'smoke-ai-assistance.cjs' : 'smoke.cjs'), 'utf8').trim();
       const result = await window.webContents.executeJavaScript(trialKind ? '(' + script.replace(/;$/, '') + ')(' + JSON.stringify(trialKind) + ','+JSON.stringify(family||null)+','+JSON.stringify(stepCount)+')' : modelSmoke ? script + '(' + process.argv.includes('--smoke-small-gguf') + ')' : script);
       if (trialKind && (result?.passed !== true || result.kind !== trialKind)) throw Error('试用验收未返回该类别的完整结果。');
       fs.writeFileSync(smokePath, JSON.stringify({ ...result, failures }, null, 2));

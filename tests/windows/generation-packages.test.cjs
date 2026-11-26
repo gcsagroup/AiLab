@@ -96,6 +96,39 @@ test('AuK Flash uses the selected generator, companion weights, voice descriptio
   assert.equal(args[args.indexOf('--num-inference-steps')+1],'4');
 });
 
+test('Qwen3 TTS records both samplers and the resolved voice with the exact launched arguments', async t => {
+  const {runPackage} = require('../../apps/windows-ui/hf/generation-runtime.cjs');
+  const {timedMediaInvoke} = require('../../apps/windows-ui/hf/trial-timing.cjs');
+  const out = await fs.mkdtemp(path.join(os.tmpdir(), 'ailab-qwen-params-'));
+  t.after(() => fs.rm(out, {recursive:true, force:true}));
+  const bins = {audio:'audiocpp_cli.exe', ffmpeg:'ffmpeg.exe'};
+  const config = {}, commands = [];
+  const invoke = timedMediaInvoke(async (exe, argv) => {
+    commands.push(argv);
+    if (exe === bins.ffmpeg) await fs.writeFile(path.join(out, 'speech.wav'), Buffer.alloc(256));
+  }, bins, (type, data) => { if (type === 'execution_parameters') Object.assign(config, data); });
+  await runPackage({model:'customvoice.gguf', extra:{}, out, input:'@音色 Ryan\n你好',
+    r:{generation_package:'qwen3_tts__qwen3_tts_1_7b_customvoice_q8_0', seed:0, max_tokens:77, speed:1.25},
+    bins, invoke, linkWeight:async () => {}});
+  const {synthesis, audio_encoding} = config;
+  assert.deepEqual(synthesis.argv, commands[0]);
+  assert.ok(synthesis.argv.includes('--metrics'));
+  assert.equal(synthesis.max_tokens_source, 'request');
+  assert.equal(synthesis.max_tokens, 77);
+  assert.equal(synthesis.voice_id, 'Ryan');
+  assert.equal(synthesis.language, 'zh');
+  assert.equal(synthesis.text, '你好');
+  assert.equal(synthesis.seed, 0);
+  assert.deepEqual(synthesis.sampling, {do_sample:true, temperature:0.9, top_k:50, top_p:1, repetition_penalty:1.05,
+    subtalker_do_sample:true, subtalker_temperature:0.9, subtalker_top_k:50, subtalker_top_p:1});
+  for (const [key, value] of Object.entries({...synthesis.sampling, voice_id:'Ryan', max_tokens:77})) {
+    assert.ok(synthesis.argv.includes(key + '=' + value));
+  }
+  assert.deepEqual(audio_encoding.argv, commands[1]);
+  assert.equal(audio_encoding.speed, 1.25);
+  assert.ok(audio_encoding.argv.includes('atempo=1.25'));
+});
+
 test('the Windows converter keeps the Flux VAE batch counter when packing floating-point weights',async t=>{
   const {runPackage}=require('../../apps/windows-ui/hf/generation-runtime.cjs');
   const {invoke}=require('../../apps/windows-ui/hf/trial-worker.cjs');
