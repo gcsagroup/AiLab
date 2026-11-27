@@ -112,6 +112,7 @@ AiLab 负责界面、模型和素材管理、任务编排、模型与组件检�
 | 17 | 2026-11-27 | 为本机 CPU 试用增加线程数设置，完善语言模型 KV 缓存精度与提示词分块设置，并将实际参数带入执行器。 |
 | 18 | 2026-11-27 | 优化试用草稿中的模型选择和媒体运行设置；语言模型结果新增可展开的思考过程，回答与思考内容分开展示。 |
 | 19 | 2026-11-27 | 完善模型文件校验与设备匹配，补充不同推理引擎的 CUDA、Vulkan 运行库准备和 Windows 便携包构建配置。 |
+| 20 | 2026-11-27 | 将 Windows 程序包与推理运行库分开：语言基础、图片视频、音频和各引擎 CUDA 组件可按需下载；环境页面提供下载入口和安装提示。 |
 
 ## 近期验证与使用边界
 
@@ -121,15 +122,16 @@ AiLab 负责界面、模型和素材管理、任务编排、模型与组件检�
 
 ## 从源码准备和构建
 
-仓库不包含预编译推理运行库或模型权重。Windows x64 开发环境需要 Node.js、Python、WSL 与编译工具，准备运行库时需要网络。
+仓库不包含预编译推理运行库或模型权重。Windows x64 轻量程序包可单独构建，首次构建 Electron 需要网络：
 
 ```powershell
 npm ci
-python scripts/windows/prepare-gguf.py
 npm run build:windows-ui
 ```
 
-脚本生成的便携目录包含 `AiLab-UI.exe`、Electron 依赖、各推理运行库及使用说明。保留完整目录后运行。模型需要另行下载或导入。
+程序包包含 `AiLab-UI.exe`、Electron 依赖和使用说明。推理运行库按需另行下载：先安装语言基础组件，图片视频、音频及各自的 CUDA 组件按用途选择。关闭程序后将组件压缩包内的目录解压到程序目录的 `resources/app/runtime`，重新打开并刷新环境。模型权重需要另行下载或导入。
+
+自行制作运行库组件需要 Python、WSL Ubuntu-24.04 与 MinGW：先运行 `python scripts/windows/prepare-gguf.py`，再运行 `python scripts/windows/package-runtimes.py`。组件包输出到上一级 `release/runtime-components`，不会写入源码仓库。
 
 ## 原项目历史记录
 

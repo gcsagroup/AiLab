@@ -33,6 +33,10 @@ export function WindowsEnvironment({ report, busy, error, onRefresh, onClose, ch
   const storage = report?.checks.find(item => item.id === 'storage');
   const issues = report?.checks.filter(item => item.status !== 'ready') || [];
   return <Dialog title="设备与环境" wide onClose={onClose}>
+    <section className="data-management" aria-label="运行库准备"><h3>按需准备运行库</h3>
+      <p>程序包不含推理运行库。先下载语言基础运行库；图片、视频或音频功能及 CUDA 加速按需下载对应组件。关闭程序后将组件解压到程序目录的 resources/app/runtime，再重新打开并刷新环境。</p>
+      <Button onClick={() => void window.ailabHF?.openRuntimeDownloads?.().catch(e => setSaveError(errorMessage(e)))}><Download size={15} />打开运行库下载页面</Button>
+    </section>
     <div className="dialog-actions">
       <Button primary busy={busy} disabled={saving} onClick={() => { setSaved(''); setSaveError(''); onRefresh(); }}>
         <RefreshCw size={15} />刷新环境

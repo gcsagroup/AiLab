@@ -1,6 +1,8 @@
 GCSA AI Lab — Windows UI 预览版 3.0.0
 
 运行方法：双击同目录的 AiLab-UI.exe。
+本版程序与推理运行库分开提供。界面可以直接打开；运行模型前，请从发布页面按需下载运行库压缩包，将压缩包内容解压到本程序目录的 resources\app\runtime（不存在时先创建），保持其中的 text、diffusion、audio 目录结构，然后重启程序并刷新环境。不要把压缩包多套一层目录。
+先安装 base 基础运行库（语言执行器、设备识别及 FFmpeg）；图片或视频另加 image-video，音频另加 audio。如需 CUDA，再安装对应的 text-cuda、image-video-cuda 或 audio-cuda。模型权重需要另外准备。运行库下载页面可从“设备与环境”打开。
 在右上角打开“AI 辅助”，进入试用草稿，选择当前项目模型库中已登记的语言生成模型。填写问题，点击“检查建议请求”，通过后点击“生成建议（本机）”。模型通过本机 CPU 生成回答。可应用的字段会显示旧值、新值和原因，点击“应用这些字段”后才写入草稿。
 任务队列、模型库、模型准备记录和作品卡片提供删除操作。模型删除会移除应用保存的该模型文件。若下载已经登记为模型，删除下载记录会保留模型，删除模型则同时移除对应下载记录。正在运行的任务和使用中的模型需要先停止。删除任务或作品记录会保留来源运行产物，供已保存作品和工作流使用。其他模型共享的转换缓存会保留。
 四类模型的“运行结果”中可查看“推理性能”。总耗时从提交起算，包含排队。展开“查看计时明细”可查看输入校验、执行器运行与结果登记耗时。语言生成显示首 token 延迟及执行器实测的预填充、解码速度。图片和视频显示执行器上报的采样阶段，视频生成速度按实际输出帧数计算。音频实时因子等于执行器运行耗时除以音频时长。历史运行保留当时采集的数据。
@@ -14,7 +16,7 @@ GCSA AI Lab — Windows UI 预览版 3.0.0
 确认许可、固定提交和文件大小后，点击“下载并核对所选文件”。可停止并在“模型准备记录”中续传。核对完成后，点击“加入当前项目模型库”查看保存位置。权重和配置均作为文件保存。
 受限仓库需在 Hugging Face 获得授权后设置 HF_TOKEN 并重新打开程序。
 在“模型准备记录”打开已登记的 Qwen GGUF，点击“用此模型开始试用”。也可从模型库点击“试用”。在原工作台输入内容，点击“检查配置”和“开始运行”。本地 C++ 执行器使用 ggml 和 libllama。CPU、Vulkan、CUDA、KV 精度、采样、停止序列、分块与流式显示由现有执行设置控制。Qwen3 模板支持思考模式切换，Qwen2.5 使用模型默认。
-本机 CUDA 试用随包提供三套独立环境：llama.cpp 用于语言和多模态，stable-diffusion.cpp 用于图片和视频，audio.cpp 用于音频。可在设置的环境检测明细中分别查看这三个引擎识别到的 CUDA 显卡，再在试用的“执行设备”中选择显卡名后标有 CUDA 的选项。
+本机 CUDA 试用按需安装三套独立环境：llama.cpp 用于语言和多模态，stable-diffusion.cpp 用于图片和视频，audio.cpp 用于音频。可在设置的环境检测明细中分别查看这三个引擎识别到的 CUDA 显卡，再在试用的“执行设备”中选择显卡名后标有 CUDA 的选项。
 Qwen3.5-4B 和 Gemma 4 E2B IT 既可处理文字，也能结合项目 PNG 回答问题。Gemma 还可读取 WAV。导入本地目录时，放入主 GGUF 和同版本的 mmproj GGUF；从模型准备入口选 GGUF 时自动加入配套投影。将 PNG 或 WAV 拖到“输入内容”可以导入并引用素材。也可以在第一行写“@素材 素材名称或编号”，换行写问题，同名素材请使用编号。
 MiniMax-H3-Image 用于文生图，默认采用 6 步 Euler 采样和引导强度 1。MiniMax-H3 FL2VA 可按画面描述生成短片，可在“输入图片”中选择项目 PNG 作为首帧。两者使用各自的 VAE，共用保留 BF16 精度的 4B 文本编码器。可用显存少于 6 GiB 时，两种 MiniMax 配方均使用 CPU。选择这两个官方项目的 GGUF 格式时，清单会显示量化仓库和配套组件的下载地址与大小，下载后按固定版本的摘要核验。加入模型库时，应用在本机将配套权重转换为 GGUF。视频试用默认 4 步、22 帧、24 FPS，生成步数可调，配备音频 VAE 时会同时保存声音。
 图片试用可使用完整 Tiny-SD GGUF；音频试用使用 audio.cpp 的多语种 Kokoro GGUF 与小北中文音色。视频和图片共用 stable-diffusion.cpp。选择 AnimateDiff 视频试用时，需要完整 SD 1.5 GGUF（含 CLIP 和 VAE）和 AnimateDiff SD 1.5 运动模块 GGUF。在“导入模型”选择只包含这两个 GGUF 的目录，再选当前项目中的 PNG。工作台使用所选种子和步数，将 512×288 的输入上下补边到 512×320，联合生成 14 帧，去除对齐补边后放大并编码为 1024×576、7 FPS 的 H.264 短片。运行记录与作品保存在当前项目。
@@ -26,14 +28,8 @@ MiniMax-H3-Image 用于文生图，默认采用 6 步 Euler 采样和引导强�
 
 从源码重新构建：
 1. 在项目根目录用 Node.js 24 执行 npm ci。
-2. 新下载的源码不包含本地执行器。安装 Python 3.12+、WSL Ubuntu-24.04 及 g++-mingw-w64-x86-64-posix，执行 python scripts/windows/prepare-gguf.py 下载校验推理库并编译执行器。随后执行 npm run build:windows-ui。首次构建会下载 Electron Windows 运行时。
+2. 执行 npm run build:windows-ui 构建轻量程序包，首次构建会下载 Electron。源码不包含推理运行库。要自行制作运行库组件，安装 Python 3.12+、WSL Ubuntu-24.04 及 g++-mingw-w64-x86-64-posix，执行 python scripts/windows/prepare-gguf.py，然后执行 python scripts/windows/package-runtimes.py。
 3. 输出位于上一级 release\GCSA-AiLab-Windows-UI。
 4. 如需更改输出目录，先设置 AILAB_WINDOWS_OUTPUT_DIR 环境变量。
 
-历史上游 UI 预览包（本次下载功能请使用当前源码的构建产物）：
-https://github.com/gcsagroup/AiLab/releases/download/windows-ui-preview-20261020/GCSA-AiLab-Windows-UI-3.0-x64.zip
-下载并解压后双击 AiLab-UI.exe。无需运行 GitHub Actions。
-本分支已移除云端自动打包流程。
-
-便携包 SHA-256：
-8e26c0ab56363d8a1530ecc25910c714561b7699904c91bb4bc2ddde1d92287f
+下载页面：https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261127

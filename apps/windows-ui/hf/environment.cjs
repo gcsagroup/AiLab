@@ -8,7 +8,7 @@ const { audioEngine, diffusionEngine } = require('./generation-runtime.cjs');
 const { version } = require('../package.json');
 
 function failureDetail(error) {
-  if (error.code === 'ENOENT') return '找不到程序或目录，请检查 Windows 运行包是否完整。';
+  if (error.code === 'ENOENT') return '未找到运行库。请在本页打开下载页面，按需安装组件后重新检测。';
   if (['EPERM', 'EACCES', 'EROFS'].includes(error.code)) return '访问被拒绝，请检查目录权限或安全软件记录。';
   if (error.code === 'ENOSPC') return '磁盘空间不足。';
   if (error.message?.includes('响应超时')) return '执行器响应超时，请检查设备驱动后重新检测。';

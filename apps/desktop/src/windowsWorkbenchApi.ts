@@ -4,7 +4,7 @@ import type { Attempt, Task } from './types';
 
 declare global {
   interface Window {
-    ailabHF?: { filePath?: (file:File)=>string; request: (action: string, payload: unknown) => Promise<{ok: true; data: unknown} | {ok: false; error: {code: string; message: string}}> };
+    ailabHF?: { filePath?: (file:File)=>string; openRuntimeDownloads?: () => Promise<void>; request: (action: string, payload: unknown) => Promise<{ok: true; data: unknown} | {ok: false; error: {code: string; message: string}}> };
   }
 }
 async function native<T>(method: string, path: string, body?: unknown, idempotencyKey?: string, task?: Partial<Task>): Promise<T> {

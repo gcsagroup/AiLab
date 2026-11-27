@@ -14,21 +14,6 @@ function run(file, args, env = {}) {
   if (result.status !== 0) throw new Error(`${file} failed (${result.status})`);
 }
 if (process.platform !== 'win32' || process.arch !== 'x64') throw new Error('This build targets Windows x64.');
-const cudaFiles = [
-  ...['ailab-gguf.exe', 'llama-server.exe', 'llama-server-impl.dll', 'llama-common.dll', 'llama.dll', 'mtmd.dll',
-    'ggml.dll', 'ggml-base.dll', 'ggml-cuda.dll'].map(file => 'text/native-kernels/cuda/' + file),
-  ...['text', 'diffusion', 'audio'].flatMap(engine =>
-    ['cudart64_12.dll', 'cublas64_12.dll', 'cublasLt64_12.dll'].map(file => engine + '/cuda-runtime/' + file)),
-  'audio/cuda-runtime/cufft64_11.dll',
-  'text/cuda/ailab-gguf.exe', 'text/cuda/plm-worker.exe', 'text/cuda/llama-server.exe', 'diffusion/cuda/ailab-image.exe',
-  ...['diffusion/cuda', 'diffusion/0d71f96/cuda'].map(dir => dir + '/sd-cli.exe'),
-  ...['audio/cuda', 'audio/v0.9.6/cuda'].map(dir => dir + '/audiocpp_cli.exe'),
-  ...['text/cuda', 'diffusion/cuda', 'diffusion/0d71f96/cuda', 'audio/cuda', 'audio/v0.9.6/cuda'].map(dir => dir + '/ggml-cuda.dll'),
-];
-for (const file of [...cudaFiles, 'text/ailab-gguf.exe', 'text/plm-worker.exe', 'text/llama.dll', 'text/llama-server.exe', 'text/llama-server-impl.dll', 'text/mtmd.dll', 'diffusion/ailab-image.exe', 'diffusion/sd-cli.exe', 'diffusion/0d71f96/sd-cli.exe', 'diffusion/stable-diffusion.dll', 'diffusion/ffmpeg.exe', 'audio/audiocpp_cli.exe', 'audio/vulkan/audiocpp_cli.exe', 'audio/v0.9.6/vulkan/audiocpp_cli.exe', 'diffusion/0d71f96/vulkan/ggml-vulkan.dll', 'diffusion/0d71f96/vulkan/sd-cli.exe', 'audio/f5/audiocpp_cli.exe', 'audio/v0.9.6/audiocpp_cli.exe', 'audio/audiocpp_gguf.exe','audio/model_specs/mira_tts.json','audio/sea_g2p_rs.dll','audio/sea_g2p.bin','audio/soxr.dll']) {
-  try { await access(join(root, 'apps/windows-ui/runtime', file)); }
-  catch { throw new Error(`Missing Windows inference runtime ${file}. Run python scripts/windows/prepare-gguf.py first; see scripts/windows/README-Windows.txt.`); }
-}
 let runtimeReady = false;
 try {
   await access(join(root, 'node_modules/electron/dist/electron.exe'));
@@ -57,10 +42,13 @@ for (const entry of await readdir(runtimeDir, {withFileTypes:true})) {
 }
 const appDir = join(output, 'resources/app');
 await mkdir(appDir, { recursive: true });
-// Retire the previous packaged Python video worker when updating a portable build in place.
-for (const obsolete of ['runtime/video', 'hf/svd-worker.py', 'hf/svd-config.json'])
+// Do not overwrite or silently remove a runtime installed in an existing output.
+try { await access(join(appDir, 'runtime')); throw new Error('The output already contains a runtime; choose a fresh AILAB_WINDOWS_OUTPUT_DIR.'); }
+catch (error) { if (error.code !== 'ENOENT') throw error; }
+for (const obsolete of ['hf/svd-worker.py', 'hf/svd-config.json'])
   await rm(join(appDir, obsolete), { recursive:true, force:true });
-await cp(join(root, 'apps/windows-ui'), appDir, { recursive: true });
+const sourceApp = join(root, 'apps/windows-ui');
+await cp(sourceApp, appDir, { recursive: true, filter: src => src !== join(sourceApp, 'runtime') });
 const assetsDir = join(appDir, 'dist/assets');
 const currentAssets = new Set(await readdir(join(root, 'apps/windows-ui/dist/assets')));
 for (const entry of await readdir(assetsDir, {withFileTypes:true})) {

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, protocol, net, session, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, Menu, protocol, net, session, ipcMain, dialog, shell } = require('electron');
 const { dirname, join, resolve, sep } = require('node:path');
 const { pathToFileURL } = require('node:url');
 const fs = require('node:fs');
@@ -21,6 +21,10 @@ app.whenReady().then(async () => {
   models = new OfficialModels({
     dataDir: join(app.getPath('userData'), 'official-models'),
     catalogPath: join(__dirname, 'hf-language-repos.txt.gz'),
+  });
+  ipcMain.handle('ailab:runtime-downloads', async event => {
+    if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== 'ailab://ui/') throw new Error('无效的运行库请求。');
+    await shell.openExternal('https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261127');
   });
   ipcMain.handle('ailab:official-models', async (event, action, request) => {
     if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== 'ailab://ui/' || action !== 'workbench') throw new Error('无效的工作台请求。');
