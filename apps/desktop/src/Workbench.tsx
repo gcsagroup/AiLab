@@ -449,7 +449,7 @@ export default function Workbench({ task, models: listedModels, datasets, device
     const owner={owner:crypto.randomUUID(),project_id:task.project_id,task_id:task.id};
     const settings={device_id:runtime.device_id,context_limit:runtime.context_limit,kv_precision:runtime.kv_precision,
       cpu_threads:runtime.cpu_threads,prefill_step_size:runtime.prefill_step_size};
-    setLoadStatus('正在加载基座模型…');
+    setLoadStatus('正在准备运行库并加载基座模型…');
     void api<{device_id:string;device_name:string;fallback:boolean}>('POST','/models/resident',{...owner,model_id:draft.model_id,runtime:settings}).then(result=>{
       if (live) setLoadStatus(result.fallback ? '显存不足，模型已加载到内存，使用 CPU 推理。' :
         result.device_id==='cpu' ? '基座模型已加载到内存。' : '基座模型已加载到显存 · '+result.device_name);

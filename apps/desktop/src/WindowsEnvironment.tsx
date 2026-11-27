@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Download, RefreshCw } from 'lucide-react';
 import { api, errorMessage } from './api';
 import { Button, Dialog, ErrorNotice } from './ui';
 import type { Capability, Device, Kind } from './types';
+import type { RuntimeStatus } from './windowsWorkbenchApi';
 
 type Check = { id: string; label: string; status: 'ready' | 'partial' | 'failed'; detail: string; free_bytes?: number };
 export type WindowsEnvironmentReport = {
@@ -21,6 +22,30 @@ export function WindowsEnvironment({ report, busy, error, onRefresh, onClose, ch
 }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(''), [saveError, setSaveError] = useState('');
+  const [runtime, setRuntime] = useState<RuntimeStatus | null>(null);
+  const [runtimeError, setRuntimeError] = useState('');
+  const wasBusy = useRef(false), refreshRef = useRef(onRefresh);
+  refreshRef.current = onRefresh;
+  useEffect(() => {
+    let live = true;
+    const poll = async () => {
+      try {
+        const next = await window.ailabHF?.runtime?.('status');
+        if (!live || !next) return;
+        if (wasBusy.current && !next.busy && !next.error) refreshRef.current();
+        wasBusy.current = next.busy; setRuntime(next);
+      } catch (e) { if (live) setRuntimeError(errorMessage(e)); }
+    };
+    void poll(); const timer = window.setInterval(() => void poll(), 1500);
+    return () => { live = false; window.clearInterval(timer); };
+  }, []);
+  async function runtimeAction(action: 'start' | 'cancel', component?: string) {
+    setRuntimeError('');
+    try {
+      const next = await window.ailabHF?.runtime?.(action, component);
+      if (next) { wasBusy.current = next.busy; setRuntime(next); }
+    } catch (e) { setRuntimeError(errorMessage(e)); }
+  }
   async function save() {
     if (!report) return;
     setSaving(true); setSaveError(''); setSaved('');
@@ -34,8 +59,14 @@ export function WindowsEnvironment({ report, busy, error, onRefresh, onClose, ch
   const issues = report?.checks.filter(item => item.status !== 'ready') || [];
   return <Dialog title="设备与环境" wide onClose={onClose}>
     <section className="data-management" aria-label="运行库准备"><h3>按需准备运行库</h3>
-      <p>程序包不含推理运行库。先下载语言基础运行库；图片、视频或音频功能及 CUDA 加速按需下载对应组件。关闭程序后将组件解压到程序目录的 resources/app/runtime，再重新打开并刷新环境。</p>
-      <Button onClick={() => void window.ailabHF?.openRuntimeDownloads?.().catch(e => setSaveError(errorMessage(e)))}><Download size={15} />打开运行库下载页面</Button>
+      <p>选择要使用的功能。程序会一并安装所需的基础运行库，已有组件可离线复用。使用 NVIDIA 显卡加速时，再选择对应的 CUDA 组件。</p>
+      <p className="muted">引擎和 CUDA 库从上游下载，AiLab 执行器从项目发布页下载。所有文件均在安装前核对 SHA-256。</p>
+      <div className="form-stack">{runtime?.components.map(item => <div key={item.id} className="dialog-actions">
+        <strong>{item.label}</strong><Button disabled={runtime.busy || item.installed} onClick={() => void runtimeAction('start',item.id)}>{item.installed ? '已准备' : '下载并配置'}</Button>
+      </div>)}</div>
+      {runtime?.busy && <div><p role="status">{runtime.phase}{runtime.total ? ` · ${(100 * (runtime.received || 0) / runtime.total).toFixed(0)}%` : ''}</p><Button onClick={() => void runtimeAction('cancel')}>取消下载</Button></div>}
+      {!runtime?.busy && runtime?.phase && <p role="status">{runtime.phase}</p>}
+      <ErrorNotice message={runtimeError || runtime?.error || ''} />
     </section>
     <div className="dialog-actions">
       <Button primary busy={busy} disabled={saving} onClick={() => { setSaved(''); setSaveError(''); onRefresh(); }}>

@@ -60,12 +60,12 @@ function catalog(job) {
 }
 
 class OfficialModels {
-  constructor({dataDir, hub = new HubClient(), catalogPath}) {
+  constructor({dataDir, hub = new HubClient(), catalogPath, ensureRuntime}) {
     this.hub = hub;
     if (process.env.HF_TOKEN) this.hub.setToken(process.env.HF_TOKEN);
-    this.downloads = new Downloads({dataDir, hub});
+    this.downloads = new Downloads({dataDir, hub, ensureRuntime});
     const {Trials}=require('./trials.cjs');
-    this.trials=new Trials(require('node:path').join(dataDir,'trials'),this.downloads);
+    this.trials=new Trials(require('node:path').join(dataDir,'trials'),this.downloads, ensureRuntime);
     this.workflows = new (require('./workflows.cjs').Workflows)(this.trials);
     this.plans = new Map();
     this.catalogPath = catalogPath;

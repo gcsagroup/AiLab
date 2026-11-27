@@ -32,7 +32,8 @@ async function verify(filename, file, signal) {
   return algorithm;
 }
 class Downloads {
-  constructor({ dataDir, hub }) {
+  constructor({ dataDir, hub, ensureRuntime }) {
+    this.ensureRuntime = ensureRuntime;
     this.dataDir = path.resolve(dataDir); this.hub = hub; this.active = new Map(); this.jobs = new Map(); this.registering = new Set();
     this.jobDir = path.join(dataDir, 'downloads'); this.modelDir = path.join(dataDir, 'models');
     fs.mkdirSync(this.jobDir, { recursive: true }); fs.mkdirSync(this.modelDir, { recursive: true });
@@ -88,7 +89,7 @@ class Downloads {
       job.status = 'failed'; job.error = '登记前文件核对失败：' + error.message; this.save(job);
       throw fail(job.error, 'INTEGRITY');
     }
-    const derived = await h3.prepare(job, this.modelDir, this.dataDir);
+    const derived = await h3.prepare(job, this.modelDir, this.dataDir, this.ensureRuntime);
     if (derived) {
       job.derivedComponents = derived;
       job.derivedTypes = types;

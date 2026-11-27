@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, protocol, net, session, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, Menu, protocol, net, session, ipcMain, dialog } = require('electron');
 const { dirname, join, resolve, sep } = require('node:path');
 const { pathToFileURL } = require('node:url');
 const fs = require('node:fs');
@@ -7,9 +7,11 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'ailab', privileges: { standard:
 const smokePath = process.argv.find(arg => arg.startsWith('--smoke-result='))?.slice('--smoke-result='.length);
 // Preview data is separate from any existing full AiLab installation.
 app.setPath('userData', smokePath ? join(dirname(smokePath), 'smoke-profile') : join(app.getPath('appData'), 'GCSA-AiLab-UI-Preview'));
+process.env.AILAB_RUNTIME_DIR = join(app.getPath('userData'), 'runtime');
 app.setAppUserModelId('org.gcsa.ailab.ui-preview');
 let window;
 let models;
+let runtimeInstaller;
 let closing = false;
 if (!app.requestSingleInstanceLock()) app.exit(0);
 app.on('second-instance', () => {
@@ -18,13 +20,20 @@ app.on('second-instance', () => {
 const failures = [];
 app.whenReady().then(async () => {
   const { OfficialModels } = require('./hf/official.cjs');
+  const { RuntimeInstaller } = require('./hf/runtime-installer.cjs');
+  runtimeInstaller = new RuntimeInstaller(process.env.AILAB_RUNTIME_DIR);
   models = new OfficialModels({
     dataDir: join(app.getPath('userData'), 'official-models'),
     catalogPath: join(__dirname, 'hf-language-repos.txt.gz'),
+    ensureRuntime: id => runtimeInstaller.ensure(id),
   });
-  ipcMain.handle('ailab:runtime-downloads', async event => {
+  ipcMain.handle('ailab:runtime', async (event, action, component) => {
     if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== 'ailab://ui/') throw new Error('无效的运行库请求。');
-    await shell.openExternal('https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261127');
+    if (action === 'status') return runtimeInstaller.status();
+    if (action === 'cancel') { runtimeInstaller.cancel(); return runtimeInstaller.status(); }
+    if (action !== 'start') throw new Error('未知的运行库操作。');
+    runtimeInstaller.start(component);
+    return runtimeInstaller.status();
   });
   ipcMain.handle('ailab:official-models', async (event, action, request) => {
     if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== 'ailab://ui/' || action !== 'workbench') throw new Error('无效的工作台请求。');
@@ -106,6 +115,6 @@ app.on('before-quit', event => {
   if (!models || closing) return;
   event.preventDefault();
   closing = true;
-  models.close().finally(() => app.quit());
+  Promise.allSettled([runtimeInstaller?.close(), models.close()]).finally(() => app.quit());
 });
 app.on('window-all-closed', () => app.quit());

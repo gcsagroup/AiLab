@@ -11,7 +11,7 @@ const { audioEngine, diffusionEngine } = require('./generation-runtime.cjs');
 const { synthesize } = require('./kokoro.cjs');
 const { StringDecoder } = require('node:string_decoder');
 const { createInterface } = require('node:readline');
-const root = path.resolve(__dirname, '../runtime');
+const root = process.env.AILAB_RUNTIME_DIR || path.resolve(__dirname, '../runtime');
 const customGraphs = new Set(['llama-plm', 'llama-step35-full', 'llama-qwen4exp-ple']);
 const bins = {
   text: path.join(root, 'text', 'ailab-gguf.exe'),

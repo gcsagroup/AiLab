@@ -4,12 +4,12 @@
 
 GCSA AI Lab 是本地模型试用与作品管理桌面工作台。当前分支提供 Windows x64 技术预览，支持准备模型与素材、试用语言和多模态模型、生成图片与视频、生成或处理音频，并记录运行结果、性能数据和作品。
 
-> 2026-11-26 Windows x64 技术预览版可从 [Windows 预览版发布页面](https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261126) 下载。
+> [下载 Windows x64 轻量程序包（2026-11-27）](https://github.com/gcsagroup/AiLab/releases/download/windows-ui-preview-20261127-lite/GCSA-AiLab-Windows-20261127-Lite-x64.zip)
 
 ## 快速开始
 
-1. 从 [Windows 预览版发布页面](https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261126) 下载 `GCSA-AiLab-Windows-20261126-x64.zip`，解压完整目录并双击 `AiLab-UI.exe`。便携包不需要另装 Node.js、Python 或 Rust。
-2. 打开工作台的“检查本机环境”，查看 CPU、GGML 识别的设备、内存、磁盘和执行器检测结果。可刷新检测并导出 JSON 诊断摘要。
+1. 下载上方的轻量程序包，解压完整目录，双击 `AiLab-UI.exe` 打开工作台。
+2. 首次加载语言模型或检查试用配置时，程序会自动下载所需运行库。要提前准备或启用 NVIDIA 加速，打开“设备与环境”，在“按需准备运行库”中点击对应功能的“下载并配置”。只用 CPU 或 Vulkan 时无需选择 CUDA。
 3. 在模型准备入口下载并登记模型，或导入满足要求的本地模型及配套组件。程序包不包含模型权重。
 4. 选择语言、图片、视频或音频试用，填写输入和参数，点击“检查配置”并开始运行。结果页显示输出、耗时和适用的性能指标。
 5. 在工作台的“新建工作流”中配置图片 → 视频 → 配音，视频描述和配音文字均可编辑。各步骤可检查结果并保存作品。
@@ -76,13 +76,13 @@ Tiny-SD 试用使用完整 GGUF。MiniMax-H3-Image 还需要匹配的文本编�
 
 ## 推理架构与底层加速
 
-AiLab 负责界面、模型和素材管理、任务编排、模型与组件检查、运行参数、计时和结果保存。模型计算由随包的执行器和底层推理库完成。
+AiLab 负责界面、模型和素材管理、任务编排、模型与组件检查、运行参数、计时和结果保存。模型计算由按需安装的执行器和底层推理库完成。
 
 | 组件 | 接入方式 |
 | --- | --- |
 | llama.cpp b12648 / GGML | AiLab 的 C++ 执行器及 llama-server 执行语言和多模态相关任务，提供 CPU、Vulkan、采样、KV 精度、停止序列、预填充分块与流式输出等设置。 |
 | stable-diffusion.cpp `532d2c1` / `0d71f96` | AiLab 图像执行器或对应 CLI 配方执行图片和视频生成，按模型使用 CPU 或 Vulkan、内存映射及 VAE 分块等设置。 |
-| audio.cpp | 随包的 0.9.5、0.9.6 和 F5 配方执行器处理音频；实际可用任务取决于模型家族与组件。 |
+| audio.cpp | 音频运行库提供 0.9.5、0.9.6 和 F5 配方执行器，实际可用任务取决于模型家族与组件。 |
 | FFmpeg | 处理输入素材，并将生成帧或音频编码为可播放媒体。 |
 
 本机任务通过队列执行。文字执行器跨任务不共享前缀缓存。硬件、模型组件和运行参数会影响速度与内存需求。
@@ -113,6 +113,7 @@ AiLab 负责界面、模型和素材管理、任务编排、模型与组件检�
 | 18 | 2026-11-27 | 优化试用草稿中的模型选择和媒体运行设置；语言模型结果新增可展开的思考过程，回答与思考内容分开展示。 |
 | 19 | 2026-11-27 | 完善模型文件校验与设备匹配，补充不同推理引擎的 CUDA、Vulkan 运行库准备和 Windows 便携包构建配置。 |
 | 20 | 2026-11-27 | 将 Windows 程序包与推理运行库分开：语言基础、图片视频、音频和各引擎 CUDA 组件可按需下载；环境页面提供下载入口和安装提示。 |
+| 21 | 2026-11-27 | 首次加载语言模型、检查试用配置或登记需要转换权重的模型时，工作台会自动下载并安装对应运行库。“设备与环境”可提前准备指定引擎的 CUDA 库，查看进度、取消或重新下载。已安装组件可跨启动复用。 |
 
 ## 近期验证与使用边界
 
@@ -129,9 +130,9 @@ npm ci
 npm run build:windows-ui
 ```
 
-程序包包含 `AiLab-UI.exe`、Electron 依赖和使用说明。推理运行库按需另行下载：先安装语言基础组件，图片视频、音频及各自的 CUDA 组件按用途选择。关闭程序后将组件压缩包内的目录解压到程序目录的 `resources/app/runtime`，重新打开并刷新环境。模型权重需要另行下载或导入。
+程序包包含桌面界面和 Electron。首次加载语言基座或检查本机试用配置时，程序会按任务引擎与所选设备自动补齐依赖。也可在“设备与环境”中选择该项并点击“下载并配置”。程序从上游获取固定版本的引擎与 GPU 运行库，从 AiLab 获取配套执行器，逐个校验 SHA-256，安装到 `%APPDATA%\GCSA-AiLab-UI-Preview\runtime`。安装完成后刷新设备列表，已安装的组件可离线使用。NVIDIA 驱动由用户安装。模型权重在模型库中另行下载或导入。
 
-自行制作运行库组件需要 Python、WSL Ubuntu-24.04 与 MinGW：先运行 `python scripts/windows/prepare-gguf.py`，再运行 `python scripts/windows/package-runtimes.py`。组件包输出到上一级 `release/runtime-components`，不会写入源码仓库。
+开发者如需重新制作 AiLab 配套执行器，可在安装 Python、WSL Ubuntu-24.04 与 MinGW 后运行 `python scripts/windows/prepare-gguf.py`，再运行 `python scripts/windows/package-adapters.py ../release/runtime-components` 生成供程序按需下载的执行器压缩包。
 
 ## 原项目历史记录
 

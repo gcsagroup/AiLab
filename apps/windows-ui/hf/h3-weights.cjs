@@ -52,7 +52,7 @@ function derivedFile(dataDir, role, type) {
   if (quant !== c.quant && !(role === 'encoder' && quant === 'q4_0')) throw Error('未知的 GGUF 组件精度。');
   return path.join(dataDir, 'derived-gguf', 'sd-532d2c1-' + quant + '-' + c.sha256, role + '.gguf');
 }
-async function convert(source, dest, role) {
+async function convert(source, dest, role, ensureRuntime) {
   const { bins, invoke } = require('./trial-worker.cjs'),
     dir = path.dirname(dest);
   await fs.promises.mkdir(path.dirname(dir), { recursive: true });
@@ -63,6 +63,7 @@ async function convert(source, dest, role) {
     return record.sha256;
   };
   if (fs.existsSync(dest)) return existing();
+  await ensureRuntime?.('image-video');
   const tmp = await fs.promises.mkdtemp(dir + '-');
   try {
     const input = path.join(tmp, 'source.safetensors');
@@ -94,20 +95,20 @@ async function convert(source, dest, role) {
     await fs.promises.rm(tmp, { recursive: true, force: true });
   }
 }
-async function prepareComponent(source, role, dataDir) {
+async function prepareComponent(source, role, dataDir, ensureRuntime) {
   const dest = derivedFile(dataDir, role);
   if (!pending.has(dest)) {
-    pending.set(dest, convert(source, dest, role).finally(() => pending.delete(dest)));
+    pending.set(dest, convert(source, dest, role, ensureRuntime).finally(() => pending.delete(dest)));
   }
   return pending.get(dest);
 }
-async function prepare(job, modelDir, dataDir) {
+async function prepare(job, modelDir, dataDir, ensureRuntime) {
   const members = sources(job.repoId, job.filename);
   if (!members.length || members.some(member => !job.files.some(f => f.path === member.path && f.sha256 === member.sha256))) return undefined;
   const hashes = {};
   for (const member of members) {
     if (!catalog[member.role].quant) continue;
-    hashes[member.role] = await prepareComponent(path.join(modelDir, job.modelId, member.path), member.role, dataDir);
+    hashes[member.role] = await prepareComponent(path.join(modelDir, job.modelId, member.path), member.role, dataDir, ensureRuntime);
   }
   return hashes;
 }

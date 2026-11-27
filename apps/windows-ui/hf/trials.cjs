@@ -96,8 +96,9 @@ function projectKey(p) {
   return p;
 }
 class Trials {
-  constructor(dir, downloads) {
+  constructor(dir, downloads, ensureRuntime) {
     this.dir = dir;
+    this.ensureRuntime = ensureRuntime;
     this.downloads = downloads;
     this.environment = new LocalEnvironment(downloads.modelDir);
     this.rows = new Map();
@@ -560,6 +561,12 @@ class Trials {
       effective = parameters(draft, ref.info,loading);
       const hibiki = ref.info.pipeline === 'llama-hibiki';
       const engine = ref.info.pipeline==='llama-vocoder' ? bins.text : (hibiki || ref.info.pipeline==='llama-tts') ? bins.llamaService : bins[task.kind];
+      if (this.ensureRuntime) {
+        const textEngine = engine === bins.text || engine === bins.llamaService;
+        const group = textEngine ? 'text' : task.kind === 'audio' ? 'audio' : 'image-video';
+        const component = effective.device_id?.startsWith('CUDA') ? group + '-cuda' : textEngine ? 'base' : group;
+        await this.ensureRuntime(component);
+      }
       const input = materialPrompt(draft.input);
       const audioInput = hibiki || ['asr', 'vad'].includes(ref.info.audioTask);
       if (!loading && ref.info.pipeline==='llama-ocr' && !input.reference)

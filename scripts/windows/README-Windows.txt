@@ -1,8 +1,8 @@
 GCSA AI Lab — Windows UI 预览版 3.0.0
 
 运行方法：双击同目录的 AiLab-UI.exe。
-本版程序与推理运行库分开提供。界面可以直接打开；运行模型前，请从发布页面按需下载运行库压缩包，将压缩包内容解压到本程序目录的 resources\app\runtime（不存在时先创建），保持其中的 text、diffusion、audio 目录结构，然后重启程序并刷新环境。不要把压缩包多套一层目录。
-先安装 base 基础运行库（语言执行器、设备识别及 FFmpeg）；图片或视频另加 image-video，音频另加 audio。如需 CUDA，再安装对应的 text-cuda、image-video-cuda 或 audio-cuda。模型权重需要另外准备。运行库下载页面可从“设备与环境”打开。
+首次加载语言模型、检查本机试用配置或登记需要转换权重的模型时，工作台会自动补齐所需运行库。也可打开“设备与环境”，在“按需准备运行库”中点击所需功能旁的“下载并配置”。选择 CUDA 加速时会自动安装相应基础组件。
+程序从固定上游下载引擎，从 AiLab 下载自编执行器，核对 SHA-256 后安装在 %APPDATA%\GCSA-AiLab-UI-Preview\runtime。下载可以取消并重新开始，已安装组件可以离线复用。NVIDIA 显卡驱动及模型权重需另行准备。
 在右上角打开“AI 辅助”，进入试用草稿，选择当前项目模型库中已登记的语言生成模型。填写问题，点击“检查建议请求”，通过后点击“生成建议（本机）”。模型通过本机 CPU 生成回答。可应用的字段会显示旧值、新值和原因，点击“应用这些字段”后才写入草稿。
 任务队列、模型库、模型准备记录和作品卡片提供删除操作。模型删除会移除应用保存的该模型文件。若下载已经登记为模型，删除下载记录会保留模型，删除模型则同时移除对应下载记录。正在运行的任务和使用中的模型需要先停止。删除任务或作品记录会保留来源运行产物，供已保存作品和工作流使用。其他模型共享的转换缓存会保留。
 四类模型的“运行结果”中可查看“推理性能”。总耗时从提交起算，包含排队。展开“查看计时明细”可查看输入校验、执行器运行与结果登记耗时。语言生成显示首 token 延迟及执行器实测的预填充、解码速度。图片和视频显示执行器上报的采样阶段，视频生成速度按实际输出帧数计算。音频实时因子等于执行器运行耗时除以音频时长。历史运行保留当时采集的数据。
@@ -28,8 +28,8 @@ MiniMax-H3-Image 用于文生图，默认采用 6 步 Euler 采样和引导强�
 
 从源码重新构建：
 1. 在项目根目录用 Node.js 24 执行 npm ci。
-2. 执行 npm run build:windows-ui 构建轻量程序包，首次构建会下载 Electron。源码不包含推理运行库。要自行制作运行库组件，安装 Python 3.12+、WSL Ubuntu-24.04 及 g++-mingw-w64-x86-64-posix，执行 python scripts/windows/prepare-gguf.py，然后执行 python scripts/windows/package-runtimes.py。
+2. 执行 npm run build:windows-ui 构建轻量程序包，首次构建会下载 Electron。要自行制作 AiLab 配套执行器，安装 Python 3.12+、WSL Ubuntu-24.04 及 g++-mingw-w64-x86-64-posix，执行 python scripts/windows/prepare-gguf.py，然后执行 python scripts/windows/package-adapters.py ../release/runtime-components。
 3. 输出位于上一级 release\GCSA-AiLab-Windows-UI。
 4. 如需更改输出目录，先设置 AILAB_WINDOWS_OUTPUT_DIR 环境变量。
 
-下载页面：https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261127
+下载页面：https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261127-lite

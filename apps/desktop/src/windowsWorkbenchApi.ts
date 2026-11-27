@@ -4,9 +4,10 @@ import type { Attempt, Task } from './types';
 
 declare global {
   interface Window {
-    ailabHF?: { filePath?: (file:File)=>string; openRuntimeDownloads?: () => Promise<void>; request: (action: string, payload: unknown) => Promise<{ok: true; data: unknown} | {ok: false; error: {code: string; message: string}}> };
+    ailabHF?: { filePath?: (file:File)=>string; runtime?: (action: 'status' | 'start' | 'cancel', component?: string) => Promise<RuntimeStatus>; request: (action: string, payload: unknown) => Promise<{ok: true; data: unknown} | {ok: false; error: {code: string; message: string}}> };
   }
 }
+export type RuntimeStatus = { busy: boolean; id?: string; component?: string; phase?: string; error?: string; received?: number; total?: number; components: { id: string; label: string; installed: boolean }[] };
 async function native<T>(method: string, path: string, body?: unknown, idempotencyKey?: string, task?: Partial<Task>): Promise<T> {
   const response=await window.ailabHF!.request('workbench',{method,path,body,idempotencyKey,task});
   if (!response.ok) throw {error:response.error};
