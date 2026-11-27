@@ -3,16 +3,11 @@
   "version": "3.0.0",
   "platform": "win32-x64",
   "branch": "windows-ui-preview",
-  "source_commit": "7c49c7798b7c40d2252d0a85204c1d662aaceb96",
+  "source_commit": "e0097b8f5aef2164cda34598da301743bce6efa1",
   "build_location": "local-windows",
-  "filename": "GCSA-AiLab-Windows-UI-3.0-x64.zip",
-  "size_bytes": 163264526,
-  "sha256": "8e26c0ab56363d8a1530ecc25910c714561b7699904c91bb4bc2ddde1d92287f",
-  "download_url": "https://github.com/gcsagroup/AiLab/releases/download/windows-ui-preview-20261020/GCSA-AiLab-Windows-UI-3.0-x64.zip",
-  "release_url": "https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261020",
-  "verification": {
-    "local_tests_passed": 13,
-    "packaged_ui_smoke_test": "passed",
-    "renderer_errors": 0
-  }
+  "filename": "GCSA-AiLab-Windows-20261127-Lite-x64.zip",
+  "size_bytes": 163122595,
+  "sha256": "f4a54b83e62c3ceaa574db56bb8ec567f0d62f5bfea7e60bb4a19c8fd2f9bdda",
+  "download_url": "https://github.com/gcsagroup/AiLab/releases/download/windows-ui-preview-20261127-lite/GCSA-AiLab-Windows-20261127-Lite-x64.zip",
+  "release_url": "https://github.com/gcsagroup/AiLab/releases/tag/windows-ui-preview-20261127-lite"
 }
