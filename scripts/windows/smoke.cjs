@@ -49,6 +49,22 @@
   document.querySelector('dialog button[aria-label="关闭对话框"]').click();
   await waitFor(() => !document.querySelector('dialog[open]'), 'Environment dialog closes');
   nav[0].click(); await waitFor(() => text().includes('模型训练 / 微调'), 'Home returns');
+  for (const [category, modelLabel] of [['模型', '基座模型'], ['图片', '图片基座模型'], ['视频', '视频模型'], ['音频', '配音模型']]) {
+    const categoryButton = [...document.querySelectorAll('.category')].find(item => item.querySelector('strong')?.textContent === category + '训练 / 微调');
+    categoryButton.click();
+    await waitFor(() => categoryButton.getAttribute('aria-pressed') === 'true', category + '分类已选中');
+    button('运行 / 试用').click();
+    await waitFor(() => {
+      const steps = [...document.querySelectorAll('.module-start .steps span')].map(item => item.textContent);
+      const create = button('新建试用');
+      return create && !create.disabled && steps.join('|') === '1选择模型|2填写输入|3检查并运行' && !document.querySelector('.module-start select');
+    }, category + '试用入口显示原三步提示和新建按钮');
+    button('新建试用').click();
+    const selectId = category === '模型' ? 'base-model' : 'media-model';
+    await waitFor(() => document.querySelector('select#' + selectId) && document.querySelector('label[for="' + selectId + '"]')?.textContent === modelLabel, category + '草稿使用原模型选择栏');
+    nav[0].click();
+    await waitFor(() => document.querySelector('.category-grid'), category + '草稿返回工作台');
+  }
   document.querySelector('.category').click();
   await waitFor(() => document.querySelector('.module-heading h2')?.textContent === '语言与多模态', 'Text category selected');
   document.querySelector('[aria-label="工作台操作"] [role="tab"]').click();

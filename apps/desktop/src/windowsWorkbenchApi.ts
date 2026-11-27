@@ -1,3 +1,4 @@
+import { preferredTextGpu } from './types';
 import { previewApi } from './previewApi';
 import type { Attempt, Task } from './types';
 
@@ -16,7 +17,8 @@ async function native<T>(method: string, path: string, body?: unknown, idempoten
 function windowsTask(task:Task) {
   const r=task.draft.runtime;
   if(task.operation==='generate' && !task.draft.execution_target_id && (r.engine==='mlx'||r.device_id==='apple-gpu'||r.engine==='kokoro'||r.engine==='diffusers')){
-    r.engine='ailab-gguf';r.device_id='cpu';
+    r.engine='ailab-gguf';
+    if (!r.device_id || r.device_id==='apple-gpu') r.device_id='cpu';
     if(task.kind==='image')Object.assign(r,{size:r.size??512,steps:r.steps??20,cfg:r.cfg??7.5});
     if(task.kind==='video')Object.assign(r,{steps:r.steps??25,frames:r.frames??14,fps:r.fps??7});
     if(task.kind==='audio')Object.assign(r,{voice:r.voice??'zf_xiaobei',speed:r.speed??1,sample_rate:24000});
@@ -42,10 +44,11 @@ export async function windowsWorkbenchApi<T>(method:string,path:string,body?:unk
     return native<T>(method,path,body,idempotencyKey);
   if(method==='POST'&&route==='/tasks'){
     let task=windowsTask(await previewApi<Task>(method,path,body));
-    if(task.operation==='generate'&&(task.kind==='image'||task.kind==='video')){
-      const inventory=await native<{items:{id:string;free_bytes:number}[]}>('GET','/devices').catch(()=>({items:[]}));
+    if(task.operation==='generate'&&['text','image','video'].includes(task.kind)){
+      const inventory=await native<{items:{id:string;free_bytes:number;cuda_engines?:string[]}[]}>('GET','/devices').catch(()=>({items:[]}));
       const minFreeGiB = task.kind === 'video' ? 3 : 2;
-      const gpu = inventory.items.find(d => /^Vulkan\d+$/.test(d.id) && d.free_bytes >= minFreeGiB * 1024**3);
+      const gpu = task.kind==='text' ? preferredTextGpu(inventory.items) :
+        inventory.items.find(d => /^(?:Vulkan|CUDA)\d+$/.test(d.id) && d.free_bytes >= minFreeGiB * 1024**3);
       if(gpu)task=await previewApi<Task>('PATCH','/tasks/'+task.id+'/draft',{expected_revision:task.draft_revision,draft:{...task.draft,runtime:{...task.draft.runtime,device_id:gpu.id}}});
     }
     return task as T;

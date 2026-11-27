@@ -34,6 +34,7 @@ function draft(kind: Draft['kind'], operation: Draft['operation']): Draft {
   if (window.ailabHF) {
     runtime.device_id = 'cpu';
     runtime.engine = 'ailab-gguf';
+    if (kind === 'text' && !train) Object.assign(runtime, { kv_precision: 'f16' });
     if (kind !== 'text') Object.assign(runtime,kind==='image' ? {size:512,steps:20,cfg:7.5} : kind==='video' ? {steps:25,frames:14,fps:7} : {voice:'zf_xiaobei',speed:1,sample_rate:24000});
   }
   return { kind, operation, model_id: null, dataset_id: null, adapter_id: null, execution_target_id: null, input: { prompt: '' }, runtime };

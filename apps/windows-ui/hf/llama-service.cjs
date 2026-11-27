@@ -2,6 +2,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { randomBytes } = require('node:crypto');
+const { trialThreads } = require('./trial-devices.cjs');
 const { spawn } = require('node:child_process');
 const { setTimeout: delay } = require('node:timers/promises');
 const { createInterface } = require('node:readline');
@@ -78,7 +79,7 @@ function structuredInput(prompt, pipeline) {
 }
 // Muse may stream its raw recipient protocol through the generic chat parser.
 // Buffer only an incomplete header or delimiter across server events.
-function museAnswerStream() {
+function museAnswerStream(onThought = () => {}) {
   const start='<|start|>assistant', message='<|message|>', boundaries=['<|eom|>','<|eot|>',start];
   let pending='',state='header',sawPrivate=false;
   return {
@@ -98,8 +99,9 @@ function museAnswerStream() {
               if (final) pending='';
               break;
             }
-            state=head.slice(3,end)==='user' ? 'public' : 'private';
-            sawPrivate ||= state==='private';
+            const recipient=head.slice(3,end);
+            state=recipient==='user' ? 'public' : recipient==='self' ? 'thought' : 'private';
+            sawPrivate ||= state!=='public';
             pending=head.slice(end+message.length);
             continue;
           }
@@ -115,6 +117,7 @@ function museAnswerStream() {
           if (tail>=0 && boundaries.some(token=>token.startsWith(pending.slice(tail)))) end=tail;
         }
         if (state==='public') visible+=pending.slice(0,end);
+        else if (state==='thought' && end) onThought(pending.slice(0,end));
         pending=pending.slice(end+marker.length);
         if (!marker) break;
         state='header';
@@ -155,7 +158,11 @@ function flags(file, info, r, extra, key) {
     '--fit',
     'off',
   ];
-  if (r.device_id === 'cpu') args.push('--no-mmproj-offload');
+  if (r.device_id === 'cpu') {
+    const threads = String(trialThreads(r));
+    args.push('--no-mmproj-offload', '--threads', threads, '--threads-batch', threads);
+    if (extra.draft) args.push('--spec-draft-threads', threads, '--spec-draft-threads-batch', threads);
+  }
   if (info.pipeline === 'llama-hibiki') args.push('--seed', String(r.seed));
   const compactCpu=r.device_id==='cpu' && (r.language_weight_conversion || r.cpu_no_repack ||
     (extra.ple_table && extra.recovery_lora));
@@ -172,7 +179,10 @@ function flags(file, info, r, extra, key) {
   if (extra.ple_table) args.push('--ple',csvPath(extra.ple_table),'--lazy-mode','on');
   if (extra.recovery_lora) args.push('--lora',csvPath(extra.recovery_lora),
     '--presence-penalty','1.5','--repeat-last-n',String(Math.min(ctx,20480)));
-  if (extra.projector) args.push('--mmproj', extra.projector);
+  if (extra.projector) {
+    args.push('--mmproj', extra.projector);
+    if (r.device_id?.startsWith('CUDA')) args.push('--mmproj-device', r.device_id);
+  }
   if (extra.draft)
     args.push(
       '--slots',
@@ -188,7 +198,11 @@ function flags(file, info, r, extra, key) {
   if (info.pipeline === 'llama-embedding') args.push('--embedding');
   if (info.pipeline === 'llama-rerank') args.push('--reranking');
   const cache = { q4: 'q4_0', q8: 'q8_0', f16: 'f16' }[r.kv_precision];
-  if (cache) args.push('--cache-type-k', cache, '--cache-type-v', cache, '--flash-attn', 'on');
+  if (cache) {
+    args.push('--cache-type-k', cache, '--cache-type-v', cache);
+    if (extra.draft) args.push('--spec-draft-type-k', cache, '--spec-draft-type-v', cache);
+    if (cache !== 'f16') args.push('--flash-attn', 'on');
+  }
   return args;
 }
 async function withServer(exe, args, key, env, signal, run) {
@@ -269,7 +283,7 @@ async function withServer(exe, args, key, env, signal, run) {
     await closed;
   }
 }
-async function runService({ exe, env, file, info, r, extra, media, decisionMedia = [], prompt, out, signal, event = () => {} }) {
+async function runService({ exe, env, file, info, r, extra, media, decisionMedia = [], prompt, out, signal, event = () => {}, resident, preload }) {
   if (info.normalizeNfc) prompt=prompt.normalize('NFC');
   if (info.legacyCogChat && !media && extra.projector) extra={...extra,projector:undefined};
   const key = randomBytes(24).toString('hex');
@@ -278,9 +292,9 @@ async function runService({ exe, env, file, info, r, extra, media, decisionMedia
     exe=path.join(path.dirname(exe),'ailab-gguf.exe');
     args.unshift('--bounded-service',String(r.cpu_working_set_floor_mib),String(r.cpu_working_set_mib));
   }
-  const data = structuredInput(prompt, info.pipeline);
+  const data = preload ? null : structuredInput(prompt, info.pipeline);
   const startup = performance.now();
-  return withServer(exe, args, key, env, signal, async (post,mappedLimit, connection) => {
+  const run = async (post,mappedLimit, connection) => {
     event('timing', { service_start_ms: performance.now() - startup });
     if (info.pipeline==='llama-hibiki')
       return require('./hibiki.cjs').translate(connection,media,out);
@@ -426,12 +440,18 @@ async function runService({ exe, env, file, info, r, extra, media, decisionMedia
         seed: r.seed,
         ...(native ? {n_predict:r.max_tokens} : {max_tokens:r.max_tokens}),
         stop: stops,
-        reasoning_format: chat && (r.thinking === 'disabled' || channelChat || info.arch==='gpt-oss') ? 'deepseek' : 'none',
+        reasoning_format: chat && (info.thinking || r.thinking === 'disabled' || info.arch==='gpt-oss') ? 'deepseek' : 'none',
       });
       text = '';
       let finished = false, reasoning = false, firstToken = false;
       const metrics = { prompt_tokens: n, ...(mappedLimit ? {mapped_working_set_mib:mappedLimit} : {}) };
-      const recipientReader=info.museRecipients ? museAnswerStream() : null;
+      let bufferedThought = '';
+      function receiveThought(fragment) {
+        if (!fragment || r.thinking === 'disabled') return;
+        if (r.stream) event('reasoning', { text: fragment });
+        else bufferedThought += fragment;
+      }
+      const recipientReader=info.museRecipients ? museAnswerStream(receiveThought) : null;
       const lines = createInterface({
         input: require('node:stream').Readable.fromWeb(res.body),
         crlfDelay: Infinity,
@@ -460,6 +480,7 @@ async function runService({ exe, env, file, info, r, extra, media, decisionMedia
           event('first_token', {});
           firstToken = true;
         }
+        receiveThought(choice.delta?.reasoning_content);
         const token = recipientReader ? recipientReader.push(rawToken,!!choice.finish_reason) : rawToken;
         text += token;
         if (r.stream && token) event('token', { text: token });
@@ -468,12 +489,26 @@ async function runService({ exe, env, file, info, r, extra, media, decisionMedia
           metrics.finish_reason = choice.finish_reason;
         }
       }
+      if (bufferedThought) event('reasoning', { text: bufferedThought });
       if (!finished) throw Error('llama.cpp 流式输出中断。');
       event('metrics', metrics);
       if (!text.trim() && (reasoning || recipientReader?.sawPrivate)) throw Error('模型已生成思考内容，尚未输出最终回答。请增加最大输出 token。');
     }
     await fs.writeFile(path.join(out, 'result.txt'), text);
     return { name: 'result.txt', media_type: 'text/plain', text };
-  });
+  };
+  if (!resident) return withServer(exe,args,key,env,signal,run);
+  const identity=JSON.stringify([exe,...args.map(arg=>arg===key?'':arg)]);
+  const handle=await resident.connect(identity,(lifetime,ready)=>withServer(exe,args,key,env,lifetime,async (...handle)=>{
+    const lost=handle[2].signal;
+    await Promise.race([ready(handle),new Promise(resolve=>lost.addEventListener('abort',resolve,{once:true}))]);
+  }),signal);
+  if (!preload) {
+    signal?.throwIfAborted();
+    const cancel=()=>{void resident.stop();};
+    signal?.addEventListener('abort',cancel,{once:true});
+    try { return await run(...handle); }
+    finally { signal?.removeEventListener('abort',cancel); }
+  }
 }
 module.exports = { inputModel, useService, runService, structuredInput, flags, museAnswerStream };

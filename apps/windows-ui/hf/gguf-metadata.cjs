@@ -164,7 +164,7 @@ function metadata(file, directory = false) {
         } else if (widths[elem]) skip(widths[elem] * count);
         else throw Error('GGUF 元数据类型不受支持。');
       } else if (type === 7 && ['clip.has_gen_audio_encoder','clip.has_audio_encoder','clip.has_vision_encoder','tokenizer.ggml.normalizer.nfc','ailab.cpu_no_repack'].includes(key)) meta[key]=!!take(1)[0];
-      else if ((key.endsWith('.pooling_type') || key.endsWith('.context_length') || ['moshi.embedding_length','clip.audio.projection_dim','clip.vision.projection_dim','deepseek2-ocr.embedding_length'].includes(key) || key==='exaone-moe.expert_gating_func' || qwenPleDimensions.has(key) ||
+      else if ((/\.(block_count|embedding_length|attention\.(head_count|head_count_kv|key_length|value_length))$/.test(key) || key.endsWith('.pooling_type') || key.endsWith('.context_length') || ['clip.audio.projection_dim','clip.vision.projection_dim'].includes(key) || key==='exaone-moe.expert_gating_func' || qwenPleDimensions.has(key) ||
                 key==='general.alignment' || key==='split.count' || key==='gemma4.embedding_length_per_layer_input' || key==='minimax-01.block_count' || key==='minimax-01.full_attention_interval') && [0,1,2,3,4,5].includes(type)) {
         const size = widths[type], buf = take(size);
         meta[key] = type % 2 ? buf.readIntLE(0,size) : buf.readUIntLE(0,size);
@@ -411,6 +411,9 @@ function metadata(file, directory = false) {
       apertusChatTemplate: arch === 'apertus' && apertusTemplates.has(
         createHash('sha256').update(meta['tokenizer.chat_template'] || '').digest('hex')),
       trainedContext: meta[sourceArch + '.context_length'],
+      kvElementsPerToken: (meta[sourceArch+'.block_count'] || 0) * (meta[sourceArch+'.attention.head_count_kv'] ?? meta[sourceArch+'.attention.head_count'] ?? 0) *
+        ((meta[sourceArch+'.attention.key_length'] ?? meta[sourceArch+'.embedding_length']/meta[sourceArch+'.attention.head_count']) +
+         (meta[sourceArch+'.attention.value_length'] ?? meta[sourceArch+'.embedding_length']/meta[sourceArch+'.attention.head_count'])) || 0,
       ...(arch==='moshi' || arch==='deepseek2-ocr' ? {modelWidth:meta[arch+'.embedding_length']} : {}),
       ...(component==='projector' ? {projectionWidth:meta['clip.vision.projection_dim'] || meta['clip.audio.projection_dim']} : {}),
       audioFamily, audioTask,

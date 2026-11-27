@@ -6,6 +6,8 @@ const { spawn } = require('node:child_process');
 const { metadata } = require('./gguf-metadata.cjs');
 const { inputModel, useService, runService } = require('./llama-service.cjs');
 const { materialPrompt, componentPath } = require('./gguf-bundle.cjs');
+const { audioDeviceArgs, audioDevices, diffusionDevices, gpuBackend, deviceExecutable, textExecutable, logicalProcessors, trialThreads } = require('./trial-devices.cjs');
+const { audioEngine, diffusionEngine } = require('./generation-runtime.cjs');
 const { synthesize } = require('./kokoro.cjs');
 const { StringDecoder } = require('node:string_decoder');
 const { createInterface } = require('node:readline');
@@ -31,7 +33,7 @@ function driverFile() {
   } catch { cachedDriver = null; }
   return cachedDriver;
 }
-function environment() {
+function environment(exe) {
   const env = {};
   for (const k of [
     'SystemRoot',
@@ -45,6 +47,17 @@ function environment() {
   ])
     if (process.env[k]) env[k] = process.env[k];
   env.PATH = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32');
+  if (exe && path.basename(path.dirname(exe)) === 'cuda') {
+    const engine = path.relative(root, exe).split(path.sep)[0];
+    if (!['text', 'diffusion', 'audio'].includes(engine)) throw Error('无法识别 CUDA 推理环境。');
+    env.PATH = path.join(root, engine, 'cuda-runtime') + path.delimiter + env.PATH;
+    // The driver compiles kernels on first use. Keep its writable cache outside the portable package.
+    if (env.LOCALAPPDATA) {
+      const cache = path.join(env.LOCALAPPDATA, 'GCSA-AiLab-UI-Preview', 'cuda-cache', engine);
+      try { fs.mkdirSync(cache, { recursive: true }); env.CUDA_CACHE_PATH = cache; }
+      catch { /* Inference can also run without a writable driver cache. */ }
+    }
+  }
   // On hybrid Windows laptops an obsolete second ICD can hang enumeration. Use
   // the active NVIDIA ICD when present, otherwise let the Vulkan loader probe.
   const driver = driverFile();
@@ -59,7 +72,7 @@ function invoke(exe, args, { cwd = path.dirname(exe), input, signal, onLine = ()
     }
     const child = spawn(exe, args, {
       cwd,
-      env: environment(),
+      env: environment(exe),
       windowsHide: true,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
@@ -103,10 +116,18 @@ function invoke(exe, args, { cwd = path.dirname(exe), input, signal, onLine = ()
     });
   });
 }
-async function textWorker(input, signal, event = () => {}) {
+async function textWorker(input, signal, event = () => {}, resident) {
   if (input.model && typeof input.prompt==='string' && metadata(input.model).normalizeNfc)
     input={...input,prompt:input.prompt.normalize('NFC')};
-  if (['inspect','generate'].includes(input.action) && input.runtime?.pipeline === 'llama-gptj') {
+  if (resident && input.runtime?.pipeline==='llama-gptj') {
+    const dir=await resident.directory();
+    if (!resident.gptj) {
+      await linkWeight(input.model,path.join(dir,'weights.gguf'));
+      await invoke(bins.text,[],{cwd:dir,signal,input:{action:'prepare-gptj-layout',vocabulary_only:false}});
+      resident.gptj=path.join(dir,'layout.gguf');
+    }
+    input={...input,model:resident.gptj};
+  } else if (['inspect','generate'].includes(input.action) && input.runtime?.pipeline === 'llama-gptj') {
     const dir=await fsp.mkdtemp(path.join(require('node:os').tmpdir(),'ailab-gptj-'));
     try {
       const inspect=input.action==='inspect';
@@ -118,13 +139,23 @@ async function textWorker(input, signal, event = () => {}) {
       return await nativeTextWorker({...input,model:path.join(dir,'layout.gguf')},signal,event);
     } finally { await fsp.rm(dir,{recursive:true,force:true}); }
   }
-  return nativeTextWorker(input,signal,event);
+  return nativeTextWorker(input,signal,event,undefined,undefined,resident);
 }
-async function nativeTextWorker(input, signal, event) {
-  const exe = customGraphs.has(input.runtime?.pipeline) ? path.join(path.dirname(bins.text),'plm-worker.exe') : bins.text;
+async function nativeTextWorker(input, signal, event, executable, onLog, resident) {
+  const worker = customGraphs.has(input.runtime?.pipeline) ? path.join(path.dirname(bins.text),'plm-worker.exe') : bins.text;
+  const exe = executable ?? textExecutable(worker, input.runtime);
+  if (resident) {
+    const r=input.runtime;
+    const key=JSON.stringify([exe,input.model,input.ple_table,r.device_id,r.language_weight_conversion,r.cpu_no_repack,r.cpu_working_set_mib]);
+    const send=await resident.connect(key,(lifetime,ready)=>
+      require('./resident-text.cjs').nativeSession(exe,environment(exe),input,lifetime,ready),signal);
+    if (input.action!=='preload') return send(input,event,signal);
+    return;
+  }
   await invoke(exe, [], {
     input,
     signal,
+    onLog,
     timeout: input.action === 'devices' ? 15000 : input.action === 'inspect' ? 90000 : 0,
     onLine(line) {
       const e = JSON.parse(line);
@@ -133,15 +164,33 @@ async function nativeTextWorker(input, signal, event) {
     },
   });
 }
-async function enumerateDevices(cpuOnly) {
+async function enumerateDevices(cpuOnly, executable = bins.text) {
   let items;
-  await textWorker({ action: 'devices', cpu_only: cpuOnly }, undefined, (event) => {
+  const capabilities = new Map();
+  await nativeTextWorker({ action: 'devices', cpu_only: cpuOnly }, undefined, (event) => {
     if (event.type === 'devices') items = event.items;
+  }, executable, line => {
+    const match = /^\s*Device (\d+): .*?, compute capability (\d+\.\d+),/i.exec(line);
+    if (match) capabilities.set('CUDA' + match[1], match[2]);
   });
   if (!Array.isArray(items) || !items.some(device => device.id === 'cpu'))
     throw Error('GGML 执行器未返回 CPU 设备。');
-  return items.map(device => ({
-    ...device, name: device.name.trim() + ' · ' + device.backend, status: 'ready', engine: 'AiLab GGUF',
+  return items.map(item => capabilities.has(item.id) ? { ...item, cuda_compute_capability: capabilities.get(item.id) } : item);
+}
+
+async function cudaInventories() {
+  const probes = {
+    text: enumerateDevices(false, path.join(root, 'text', 'cuda', 'ailab-gguf.exe')),
+    audio: audioDevices(invoke, path.join(root, 'audio', 'cuda', 'audiocpp_cli.exe')).then(rows =>
+      rows.map(row => ({ id: row.name, name: row.description, memory_bytes: row.memory?.total_bytes, free_bytes: row.memory?.free_bytes }))),
+    diffusion: diffusionDevices(invoke, path.join(root, 'diffusion', 'cuda', 'sd-cli.exe')),
+  };
+  return Promise.all(Object.entries(probes).map(async ([engine, probe]) => {
+    try {
+      return { engine, devices: (await probe).filter(row => /^CUDA\d+$/.test(row.id)) };
+    } catch (error) {
+      return { engine, devices: [], error: error.message };
+    }
   }));
 }
 let cachedInventory, inventoryPending;
@@ -151,11 +200,21 @@ function deviceInventory(refresh = false) {
   if (refresh) cachedDriver = undefined;
   cachedInventory = undefined;
   inventoryPending = (async () => {
-    try {
-      return { devices: await enumerateDevices(false), cpuFallback: false };
-    } catch {
-      return { devices: await enumerateDevices(true), cpuFallback: true };
+    const [standard, cuda] = await Promise.all([enumerateDevices(false).catch(() => null), cudaInventories()]);
+    const items = standard ?? await enumerateDevices(true).catch(() => []);
+    for (const { engine, devices } of cuda) {
+      for (const row of devices) {
+        const existing = items.find(item => item.id === row.id);
+        if (existing) (existing.cuda_engines ??= []).push(engine);
+        else items.push({ ...row, backend: row.id, cuda_engines: [engine] });
+      }
     }
+    if (!items.length) throw Error('本机推理环境未返回可用设备。');
+    const devices = items.map(device => ({
+      ...device, ...(device.id === 'cpu' ? { logical_processors: logicalProcessors() } : {}),
+      name: device.name.trim() + ' · ' + device.backend, status: 'ready', engine: 'AiLab GGUF',
+    }));
+    return { devices, cuda, cpuFallback: !standard && devices.every(device => device.id === 'cpu') };
   })().then(result => (cachedInventory = result)).finally(() => { inventoryPending = undefined; });
   return inventoryPending;
 }
@@ -165,8 +224,25 @@ async function devices(refresh = false) {
 function limits(n, min, max, integer = false) {
   return Number.isFinite(n) && (!integer || Number.isInteger(n)) && n >= min && n <= max;
 }
-function parameters(draft, info) {
+function parameters(draft, info, loading=false) {
+  const config = modelParameters(draft, info, loading);
+  if (config.device_id === 'cpu') {
+    const maximum = logicalProcessors();
+    const threads = draft.runtime.cpu_threads ?? maximum;
+    if (!limits(threads, 1, maximum, true)) throw Error('CPU 逻辑核心数必须是 1 到 ' + maximum + ' 之间的整数。');
+    config.cpu_threads = threads;
+  } else {
+    delete config.cpu_threads;
+  }
+  return config;
+}
+
+function modelParameters(draft, info, loading) {
   const r = { ...draft.runtime };
+  r.device_id ??= 'cpu';
+  if (r.device_id !== 'cpu') gpuBackend(r.device_id);
+  delete r.audio_device_index;
+  delete r.cuda_compute_capability;
   if (draft.execution_target_id || draft.adapter_id || draft.checkpoint_id)
     throw Error('本次 GGUF 试用需要本机基座模型。');
   if (!limits(r.seed, 0, 4294967295, true)) throw Error('随机种子超出范围。');
@@ -175,13 +251,12 @@ function parameters(draft, info) {
       throw Error('请填写 1—2000 字的画面描述。');
     if (!limits(r.steps,1,100,true) || !limits(r.cfg ?? 2,0,30)) throw Error('生成步数或引导强度超出范围。');
     if (draft.kind === 'image' && r.size !== 512) throw Error('当前图片试用尺寸为 512 × 512。');
-    if (r.device_id && r.device_id !== 'cpu') throw Error('请选择当前模型配方支持的 CPU。');
     if (draft.input.negative_prompt != null && (typeof draft.input.negative_prompt !== 'string' || draft.input.negative_prompt.length>2000))
       throw Error('负面提示词最多可填写 2000 字。');
     if (draft.kind === 'video' && (!limits(r.frames ?? 5, 1, 129, true) || !limits(r.fps ?? 8, 1, 60, true)))
       throw Error('视频帧数或帧率超出范围。');
     const spec=require('./generation-packages.cjs').recipe(info.packageId);
-    return {engine:'ailab-gguf',device_id:'cpu',pipeline:info.pipeline,generation_package:info.packageId,seed:r.seed,steps:r.steps,
+    return {engine:'ailab-gguf',device_id:r.device_id,pipeline:info.pipeline,generation_package:info.packageId,seed:r.seed,steps:r.steps,
       diffusion_backend:'stable-diffusion.cpp@'+(spec?.diffusionVersion || '532d2c1'),
       cfg:r.cfg ?? 2,negative_prompt:draft.input.negative_prompt || '',
       ...(draft.kind==='video'?{frames:r.frames ?? 5,fps:r.fps ?? 8,inference_width:160,inference_height:96}:{size:r.size})};
@@ -192,7 +267,7 @@ function parameters(draft, info) {
     Object.assign(r, {
       context_limit: r.context_limit ?? 4096,
       prefill_step_size: r.prefill_step_size ?? 2048,
-      kv_precision: r.kv_precision ?? 'auto',
+      kv_precision: r.kv_precision ?? 'f16',
       stop: r.stop ?? [],
       stream: r.stream ?? true,
       thinking: r.thinking ?? 'default',
@@ -228,17 +303,17 @@ function parameters(draft, info) {
     if (r.overflow && r.overflow !== 'reject') throw Error('仅支持完整输入预算检查。');
   } else if (draft.kind === 'image' && ['esrgan-x4', 'mosr-x4'].includes(info.pipeline)) {
     if (!draft.input.material_id) throw Error('请选择需要放大的 PNG 图片。');
-    return {engine:'ailab-gguf', pipeline:info.pipeline, device_id:'cpu', scale:4};
+    return {engine:'ailab-gguf', pipeline:info.pipeline, device_id:r.device_id, scale:4};
   } else if (draft.kind === 'audio' && ['gen', 'tts'].includes(info.audioTask)) {
     const prompt = draft.input.prompt;
     if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 2000)
       throw Error('请输入 1—2000 字的试用内容。');
-    if (r.device_id && r.device_id !== 'cpu') throw Error('当前音频生成运行库使用 CPU。');
-    const config = {engine: 'ailab-gguf', pipeline: info.pipeline, family: info.audioFamily, device_id: 'cpu', seed: r.seed};
+    const config = {engine: 'ailab-gguf', pipeline: info.pipeline, family: info.audioFamily, device_id: r.device_id, seed: r.seed};
     if (info.packageId || info.nativeRecipe) {
       config.generation_package=info.packageId || info.nativeRecipe;
       if (info.nativeRecipe) config.native_recipe=true;
       const spec=require('./generation-packages.cjs').recipe(config.generation_package,config.native_recipe);
+      if (r.device_id !== 'cpu' && spec.audioWorker === 'f5') throw Error('F5-TTS 的 Windows 配方仅支持 CPU。');
       config.audio_backend='audio.cpp@'+(spec.audioVersion || '0.9.5')+(spec.audioWorker?'/'+spec.audioWorker+'-windows':'');
       const material=materialPrompt(draft.input);
       if (info.audioTask==='tts' && spec.audioLimitOption && r.max_tokens!==undefined) {
@@ -263,25 +338,23 @@ function parameters(draft, info) {
     return { ...config, speed: r.speed ?? 1, sample_rate: 24000 };
   } else if (draft.kind === 'audio' && (info.audioTask || info.pipeline === 'firered-vad')) {
     if (!materialPrompt(draft.input).reference) throw Error('请选择当前项目中的 WAV 音频素材。');
-    if (info.pipeline !== 'firered-vad' && r.device_id && r.device_id !== 'cpu') throw Error('当前音频分析运行库使用 CPU。');
-    return {engine:'ailab-gguf', pipeline:info.pipeline, device_id:'cpu', sample_rate:16000};
+    return {engine:'ailab-gguf', pipeline:info.pipeline, device_id:r.device_id, sample_rate:16000};
   } else if (draft.kind === 'audio' && info.pipeline==='llama-hibiki') {
     if (!materialPrompt(draft.input).reference) throw Error('Hibiki 需要当前项目中的法语 WAV 素材。');
-    return {engine:'ailab-gguf',pipeline:info.pipeline,device_id:r.device_id || 'cpu',seed:r.seed,
+    return {engine:'ailab-gguf',pipeline:info.pipeline,device_id:r.device_id,seed:r.seed,
       context_limit:Math.min(info.trainedContext || 1500,1500),prefill_step_size:512,kv_precision:'auto'};
   } else if (draft.kind === 'audio' && ['llama-tts','llama-vocoder'].includes(info.pipeline)) {
     if (typeof draft.input.prompt !== 'string' || !draft.input.prompt.trim()) throw Error('请输入语音文本或音频码。');
     if (r.speed !== undefined && !limits(r.speed,0.5,2)) throw Error('语速超出范围。');
-    return {engine:'ailab-gguf',pipeline:info.pipeline,device_id:r.device_id || 'cpu',seed:r.seed,speed:r.speed ?? 1,
+    return {engine:'ailab-gguf',pipeline:info.pipeline,device_id:r.device_id,seed:r.seed,speed:r.speed ?? 1,
       context_limit:Math.min(info.trainedContext || 4096,4096),max_tokens:1,prefill_step_size:512,kv_precision:'auto'};
   } else if (draft.kind === 'audio') {
     if (
-      r.device_id !== 'cpu' ||
       r.voice !== 'zf_xiaobei' ||
       r.sample_rate !== 24000 ||
       !limits(r.speed, 0.5, 2)
     )
-      throw Error('中文配音需要本机 CPU、小北音色及 24 kHz 输出。');
+      throw Error('中文配音需要小北音色及 24 kHz 输出。');
     if (
       !/^[\p{Script=Han}\d\s，。！？、：；“”‘’（）…—,.!?;:]+$/u.test(draft.input.prompt) ||
       draft.input.prompt.length > 120
@@ -295,10 +368,10 @@ function parameters(draft, info) {
       if (typeof draft.input.prompt !== 'string' || !draft.input.prompt.trim() || draft.input.prompt.length > 2000)
         throw Error('请填写 1—2000 字的视频画面描述。');
       if (draft.input.material_id) throw Error('Wan 2.1 T2V 使用文字生成视频，请清除首帧素材。');
-      Object.assign(r, {pipeline:info.pipeline, device_id:'cpu', frames:5, fps:8, inference_width:160,
+      Object.assign(r, {pipeline:info.pipeline, frames:5, fps:8, inference_width:160,
         inference_height:96, diffusion_backend:'stable-diffusion.cpp@532d2c1'});
     } else if (draft.kind === 'image' && ['iris','anima'].includes(info.pipeline)) {
-      Object.assign(r, {pipeline:info.pipeline, device_id:'cpu', diffusion_backend:'stable-diffusion.cpp@532d2c1'});
+      Object.assign(r, {pipeline:info.pipeline, diffusion_backend:'stable-diffusion.cpp@532d2c1'});
     } else if (info.pipeline === 'z-image') {
       Object.assign(r, { pipeline: info.pipeline, diffusion_backend: 'stable-diffusion.cpp@532d2c1' });
     } else if (info.pipeline === 'h3-image' || info.pipeline === 'h3-video') {
@@ -328,7 +401,7 @@ function parameters(draft, info) {
       throw Error('负面提示词无效。');
   }
   if (
-    draft.kind !== 'video' &&
+    !loading && draft.kind !== 'video' &&
     (typeof draft.input.prompt !== 'string' ||
       !draft.input.prompt.trim() ||
       draft.input.prompt.length > (draft.kind === 'text' ? 12000 : 2000))
@@ -360,8 +433,8 @@ async function renderGeneratedAudio(model, prompt, r, extra, out, signal, invoke
     }
     const source = Object.keys(extra).length ? path.basename(dir) : path.join(path.basename(dir), 'model.gguf');
     const raw = path.join(path.basename(dir), 'generated.wav');
-    const args = ['--task', audioTask, '--family', audioFamily, '--mode', 'offline', '--backend', 'cpu',
-      '--threads', '4', '--model', source, '--text', prompt.trim(), '--seed', String(r.seed), '--out', raw];
+    const args = ['--task', audioTask, '--family', audioFamily, '--mode', 'offline', ...audioDeviceArgs(r),
+      '--threads', String(trialThreads(r)), '--model', source, '--text', prompt.trim(), '--seed', String(r.seed), '--out', raw];
     if (['piper_tts', 'inflect_v2', 'sanotts', 'kitten_tts'].includes(audioFamily)) {
       const phonemizer = path.join(path.dirname(bins.audio), 'espeak');
       args.push('--session-option', audioFamily + '.espeak_library_path=' + path.join(phonemizer, 'espeak-ng.dll'),
@@ -372,7 +445,7 @@ async function renderGeneratedAudio(model, prompt, r, extra, out, signal, invoke
       if (audioFamily === 'stable_audio')
         args.push('--num-inference-steps', String(r.steps), '--request-option', 'duration_padding_sec=0');
     }
-    await invoke(bins.audio, args, { cwd: out, signal });
+    await invoke(audioEngine(bins.audio, undefined, r.device_id), args, { cwd: out, signal });
     const format = audioTask === 'tts' ? ['-af', 'atempo=' + r.speed, '-ar', String(r.sample_rate), '-ac', '1'] : [];
     await invoke(bins.ffmpeg, ['-v', 'error', '-i', raw, '-map', '0:a:0', ...format,
       '-c:a', 'pcm_s16le', 'speech.wav'], { cwd: out, signal });
@@ -392,23 +465,27 @@ async function prepareCompactText(source, output, signal, sourceSha256) {
   await invoke(bins.text,[],{signal,input:{action:'compact-language',cpu_only:true,model:source,output,matrices,source_sha256:sourceSha256}});
   if (info.legacyCogQkv) await require('./cogvlm-layout.cjs').joinInPrivateFile(output);
 }
-async function render(job, model, material, out, signal, event, extra = {}, decisionMedia = []) {
+async function render(job, model, material, out, signal, event, extra = {}, decisionMedia = [], resident, preload=false) {
   const runMedia = require('./trial-timing.cjs').timedMediaInvoke(invoke, bins, event);
   const { runtime: r, input, kind } = job;
   if (r.generation_package)
     return require('./generation-runtime.cjs').runPackage({model,extra,material,out,input:material ? materialPrompt(input).prompt : input.prompt,
       r:{...r,negative_prompt:input.negative_prompt},bins,invoke:runMedia,linkWeight,signal});
+  const service = textExecutable(bins.llamaService, r);
   if (r.pipeline === 'llama-hibiki' && kind === 'audio') {
     const pcm = path.join(out,'hibiki-input.pcm');
     try {
       await runMedia(bins.ffmpeg,['-v','error','-i',material,'-map','0:a:0','-ac','1','-ar','24000','-f','s16le',pcm],{cwd:out,signal});
-      return await runService({exe:bins.llamaService,env:environment(),file:model,info:{...metadata(model),pipeline:r.pipeline},
+      return await runService({exe:service,env:environment(service),file:model,info:{...metadata(model),pipeline:r.pipeline},
         r,extra,media:pcm,prompt:'',out,signal,event});
     } finally { await require('node:fs/promises').rm(pcm,{force:true}); }
   }
   if (kind === 'text' || r.pipeline==='llama-tts') {
     const shards=Object.keys(extra).filter(key=>/^shard_\d{5}$/.test(key)).sort().map(key=>extra[key]);
-    model=await require('./legacy-q4.cjs').prepareShards([model,...shards],out,r.model_manifest_digest,signal,linkWeight);
+    if (resident) {
+      resident.shards ??= await require('./legacy-q4.cjs').prepareShards([model,...shards],await resident.directory(),r.model_manifest_digest,signal,linkWeight);
+      model=resident.shards;
+    } else model=await require('./legacy-q4.cjs').prepareShards([model,...shards],out,r.model_manifest_digest,signal,linkWeight);
     const sourceInfo=metadata(model);
     if (sourceInfo.compactTextBytes && r.device_id==='cpu' && r.language_weight_conversion==='mixed_'+sourceInfo.compactTextType) {
       const source=model;
@@ -433,8 +510,10 @@ async function render(job, model, material, out, signal, event, extra = {}, deci
     }
     if (extra.draft) info.specType=metadata(extra.draft).specType;
     if (useService(info,extra,material,r) && !(info.legacyCogChat && material && r.device_id==='cpu'))
-      return runService({exe:bins.llamaService,env:environment(),file:model,info,r,extra,media:material,decisionMedia,
-        prompt:material ? materialPrompt(input).prompt : input.prompt,out,signal,event});
+      return runService({exe:service,env:environment(service),file:model,info,r,extra,media:material,decisionMedia,
+        prompt:material ? materialPrompt(input).prompt : input.prompt,out,signal,event,resident,preload});
+    if (info.nativeThinkPrefill && r.thinking !== 'disabled')
+      event('execution_parameters', { reasoning_prefilled: true });
   }
   if (kind === 'text' || r.pipeline==='llama-vocoder') {
     const decoder = new StringDecoder('utf8');
@@ -442,7 +521,7 @@ async function render(job, model, material, out, signal, event, extra = {}, deci
       done = false;
     await textWorker(
       {
-        action: 'generate',
+        action: preload ? 'preload' : 'generate',
         model,
         prompt: material ? materialPrompt(input).prompt : input.prompt,
         media: material,
@@ -462,7 +541,9 @@ async function render(job, model, material, out, signal, event, extra = {}, deci
           event('metrics', e);
         } else event(e.type, e);
       },
+      resident,
     );
+    if (preload) return;
     if (!done) throw Error('推理进程没有返回完成状态。');
     if (r.pipeline==='llama-vocoder') return {name:'result.wav',media_type:'audio/wav'};
     const rest = decoder.end();
@@ -482,8 +563,9 @@ async function render(job, model, material, out, signal, event, extra = {}, deci
       const source = path.join(out, 'input.png');
       temporary.push(source);
       await linkWeight(material, source);
-      await runMedia(path.join(path.dirname(bins.image),'sd-cli.exe'),
-        ['-M','upscale','--backend','cpu','--params-backend','cpu','--upscale-model',local,'-i','input.png','-o','image.png'], {cwd:out,signal});
+      await runMedia(diffusionEngine(bins.image, undefined, r.device_id),
+        ['-M','upscale','--backend',r.device_id.toLowerCase(),'--params-backend','cpu','--upscale-model',local,
+          ...(r.device_id === 'cpu' ? ['-t', String(trialThreads(r))] : []),'-i','input.png','-o','image.png'], {cwd:out,signal});
       const result = await fsp.open(path.join(out,'image.png'),'r');
       try {
         const input = await fsp.open(source,'r');
@@ -501,15 +583,16 @@ async function render(job, model, material, out, signal, event, extra = {}, deci
       if (!audioTask) throw Error('音频权重与执行配置不匹配。');
       temporary.push(path.join(out, 'input.wav'));
       await runMedia(bins.ffmpeg, ['-v','error','-i',material,'-map','0:a:0','-ac','1','-ar','16000','-c:a','pcm_s16le','input.wav'], {cwd:out,signal});
-      const args = ['--task',audioTask,'--family',audioFamily,'--backend','cpu','--model',local,'--audio','input.wav'];
+      const args = ['--task',audioTask,'--family',audioFamily,...audioDeviceArgs(r),
+        ...(r.device_id === 'cpu' ? ['--threads', String(trialThreads(r))] : []),'--model',local,'--audio','input.wav'];
       if (audioTask === 'asr') {
-        await runMedia(bins.audio,[...args,'--text-out','result.txt'],{cwd:out,signal});
+        await runMedia(audioEngine(bins.audio, undefined, r.device_id),[...args,'--text-out','result.txt'],{cwd:out,signal});
         const text=(await fsp.readFile(path.join(out,'result.txt'),'utf8')).trim();
         if (!text) throw Error('未识别出有效语音。');
         return {name:'result.txt',media_type:'text/plain',text};
       }
       let segments;
-      await runMedia(bins.audio, args, {
+      await runMedia(audioEngine(bins.audio, undefined, r.device_id), args, {
         cwd:out, signal, onLine(line) {
           if (line.startsWith('speech_segments=')) segments = JSON.parse(line.slice('speech_segments='.length));
         },
@@ -521,14 +604,14 @@ async function render(job, model, material, out, signal, event, extra = {}, deci
       return {name:'result.txt',media_type:'text/plain',text};
     }
     if (kind === 'audio')
-      return await synthesize(bins.audio, runMedia, local, input.prompt, r, out, signal, event);
+      return await synthesize(audioEngine(bins.audio, undefined, r.device_id), runMedia, local, input.prompt, r, out, signal, event);
     for (const [role, file] of Object.entries(extra)) {
       const dest = path.join(out, role + '.gguf');
       await linkWeight(file, dest);
       temporary.push(dest);
     }
     if (kind === 'image' && ['iris','anima'].includes(r.pipeline)) {
-      const cli = path.join(path.dirname(bins.image), 'sd-cli.exe'), info = metadata(model);
+      const cli = diffusionEngine(bins.image, undefined, r.device_id), info = metadata(model);
       let denoiser = local;
       if (r.pipeline === 'iris' && info.irisPackedMatrices) {
         const disk = await fsp.statfs(out);
@@ -539,12 +622,12 @@ async function render(job, model, material, out, signal, event, extra = {}, deci
         temporary.push(prepared);
         await runMedia(bins.text, [], {cwd:out, signal, input:{action:'prepare-iris-layout', matrices:info.irisPackedMatrices}});
       }
-      await runMedia(cli, ['-M','img_gen','--backend','cpu','--params-backend','cpu',
+      await runMedia(cli, ['-M','img_gen','--backend',r.device_id.toLowerCase(),'--params-backend','cpu',
         '--diffusion-model',denoiser,'--llm',r.pipeline + '_encoder.gguf',
         ...(r.pipeline === 'anima' ? ['--vae','anima_vae.gguf','--sampling-method','euler'] : []),
         '-p',input.prompt,'-n',input.negative_prompt || '',
         '-W',String(r.size),'-H',String(r.size),'--steps',String(r.steps),'--cfg-scale',String(r.cfg),
-        '-t','4','-s',String(r.seed),'-o','image.png'], {cwd:out,signal});
+        '-t',String(trialThreads(r)),'-s',String(r.seed),'-o','image.png'], {cwd:out,signal});
       return {name:'image.png', media_type:'image/png'};
     }
     if (kind === 'video')
@@ -553,10 +636,10 @@ async function render(job, model, material, out, signal, event, extra = {}, deci
       );
     if (kind === 'video' && r.pipeline === 'wan21-t2v') {
       temporary.push(path.join(out, 'wan.avi'));
-      await runMedia(path.join(path.dirname(bins.video), 'sd-cli.exe'), ['-M','vid_gen','--backend','cpu','--params-backend','cpu',
+      await runMedia(diffusionEngine(bins.video, undefined, r.device_id), ['-M','vid_gen','--backend',r.device_id.toLowerCase(),'--params-backend','cpu',
         '--diffusion-model',local,'--t5xxl','umt5.gguf','--vae','wan_vae.gguf','-p',input.prompt,'-n',input.negative_prompt || '',
         '-W',String(r.inference_width),'-H',String(r.inference_height),'--video-frames',String(r.frames),'--fps',String(r.fps),
-        '--steps',String(r.steps),'--cfg-scale','1','--sampling-method','euler','--flow-shift','3','-t','4','-s',String(r.seed),'-o','wan.avi'], {cwd:out,signal});
+        '--steps',String(r.steps),'--cfg-scale','1','--sampling-method','euler','--flow-shift','3','-t',String(trialThreads(r)),'-s',String(r.seed),'-o','wan.avi'], {cwd:out,signal});
       await runMedia(bins.ffmpeg, ['-v','error','-i','wan.avi','-map','0:v:0','-c:v','libx264','-pix_fmt','yuv420p',
         '-movflags','+faststart','video.mp4'], {cwd:out,signal});
       return {name:'video.mp4', media_type:'video/mp4'};
@@ -583,7 +666,7 @@ async function render(job, model, material, out, signal, event, extra = {}, deci
         { cwd: out, signal },
       );
     }
-    await runMedia(bins[kind], [], {
+    await runMedia(deviceExecutable(bins[kind], r.device_id), [], {
       cwd: out,
       signal,
       input: {

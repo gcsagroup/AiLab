@@ -10,12 +10,12 @@ it('Anima 使用原有图片试用的描述、步数和引导强度', () => {
   try {
     const model = {id:'anima',name:'Anima',modality:'image' as const,format:'gguf',pipeline:'anima'};
     const draft: Draft = {kind:'image',operation:'generate',model_id:null,dataset_id:null,
-      runtime:{...defaultMediaRuntime('image',false),engine:'ailab-gguf'},input:{prompt:'A sailboat'}};
+      runtime:{...defaultMediaRuntime('image',false),engine:'ailab-gguf',device_id:'Vulkan1'},input:{prompt:'A sailboat'}};
     const props = {draft,models:[model],datasets:[],adapters:[],materials:[],onChange:vi.fn(),onImport:vi.fn()};
     const view = render(<MediaFields {...props} />);
     fireEvent.change(screen.getByLabelText('选择媒体模型'), {target:{value:model.id}});
     const next = props.onChange.mock.lastCall?.[0] as Draft;
-    expect(next.runtime).toMatchObject({device_id:'cpu',steps:1,cfg:3});
+    expect(next.runtime).toMatchObject({device_id:'Vulkan1',steps:1,cfg:3});
     view.rerender(<MediaFields {...props} draft={next} />);
     fireEvent.change(screen.getByLabelText('生成步数'), {target:{value:'3'}});
     expect(props.onChange.mock.lastCall?.[0].runtime.steps).toBe(3);
@@ -26,12 +26,12 @@ it('Wan 使用原有画面描述和步数字段，切换时清除图生视频草
   try {
     const model = {id:'wan', name:'Wan 2.1', modality:'video' as const, format:'gguf', pipeline:'wan21-t2v'};
     const draft: Draft = {kind:'video', operation:'generate', model_id:null, dataset_id:null,
-      runtime:defaultMediaRuntime('video', false), input:{material_id:'old-image', prompt:'A sailboat'}};
+      runtime:{...defaultMediaRuntime('video', false),device_id:'Vulkan1'}, input:{material_id:'old-image', prompt:'A sailboat'}};
     const props = {draft, models:[model], datasets:[], adapters:[], materials:[], onChange:vi.fn(), onImport:vi.fn()};
     const view = render(<MediaFields {...props} />);
     fireEvent.change(screen.getByLabelText('选择媒体模型'), {target:{value:model.id}});
     const next = props.onChange.mock.lastCall?.[0] as Draft;
-    expect(next.runtime).toMatchObject({device_id:'cpu', steps:1, frames:5, fps:8});
+    expect(next.runtime).toMatchObject({device_id:'Vulkan1', steps:1, frames:5, fps:8});
     expect(next.input.material_id).toBeUndefined();
     view.rerender(<MediaFields {...props} draft={next} />);
     expect((screen.getByLabelText('画面描述') as HTMLTextAreaElement).value).toBe('A sailboat');

@@ -1,4 +1,5 @@
 'use strict';
+const { audioDeviceArgs, trialThreads } = require('./trial-devices.cjs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 
@@ -61,10 +62,9 @@ async function synthesize(exe, invoke, model, text, r, out, signal, event) {
       'kokoro_tts',
       '--model',
       model,
-      '--backend',
-      'cpu',
+      ...audioDeviceArgs(r),
       '--threads',
-      '4',
+      String(trialThreads(r)),
       '--voice-id',
       r.voice,
       '--language',

@@ -34,13 +34,58 @@ test('generative audio accepts text and never inherits Kokoro or WAV-input requi
   assert.equal(music.duration_seconds,2);
   assert.equal(music.speed,undefined);
 });
-test('audio.cpp input models accept project WAV references and require the CPU backend', () => {
+test('audio.cpp input models accept project WAV references and preserve the selected GPU', () => {
   const info = {audioTask:'asr', pipeline:'audiocpp-asr'};
   const draft = {kind:'audio',runtime:{seed:0},input:{prompt:'@素材 material-example\n'}};
   assert.equal(parameters(draft,info).pipeline,'audiocpp-asr');
+  assert.equal(parameters({...draft,runtime:{seed:0,device_id:'Vulkan1'}},info).device_id,'Vulkan1');
   assert.throws(()=>parameters({...draft,input:{prompt:'Hello'}},info),/请选择/);
   assert.throws(()=>parameters({...draft,runtime:{seed:0,device_id:'vulkan:0'}},info),/CPU/);
 });
+test('audio GPU preflight maps the physical adapter to the audio runtime index', async () => {
+  const {audioDeviceIndex, audioDeviceArgs} = require('../../apps/windows-ui/hf/trial-devices.cjs');
+  const probe = async (_exe, _args, {onLine}) => onLine(JSON.stringify({devices:[
+    {backend:'vulkan', name:'Vulkan0', description:'GPU A', index:0},
+    {backend:'vulkan', name:'Vulkan1', description:'GPU B', index:1},
+    {backend:'cuda', name:'CUDA0', description:'GPU B', index:0},
+  ]}));
+  const index = await audioDeviceIndex(probe, 'audio.exe', {id:'Vulkan0', name:'GPU B · Vulkan0'});
+  assert.deepEqual(audioDeviceArgs({device_id:'Vulkan0', audio_device_index:index}), ['--backend','vulkan','--device','1']);
+  const cudaIndex = await audioDeviceIndex(probe, 'audio.exe', {id:'CUDA0', name:'GPU B · CUDA0'});
+  assert.deepEqual(audioDeviceArgs({device_id:'CUDA0', audio_device_index:cudaIndex}), ['--backend','cuda','--device','0']);
+  await assert.rejects(audioDeviceIndex(probe, 'audio.exe', {id:'CUDA1',name:'GPU A · CUDA1'}), /未识别/);
+  await assert.rejects(audioDeviceIndex(probe, 'audio.exe', {id:'Vulkan0',name:'GPU C · Vulkan0'}), /未识别/);
+  assert.throws(() => audioDeviceArgs({device_id:'Vulkan0'}), /重新检查/);
+});
+test('CPU trials resolve the host maximum, retain explicit thread counts and default text KV to FP16', () => {
+  const {logicalProcessors} = require('../../apps/windows-ui/hf/trial-devices.cjs');
+  const {flags} = require('../../apps/windows-ui/hf/llama-service.cjs');
+  const maximum = logicalProcessors();
+  const defaults = parameters(textDraft, {});
+  assert.equal(defaults.cpu_threads, maximum);
+  assert.equal(defaults.kv_precision, 'f16');
+  for (const count of [0, -1, 1.5, maximum + 1])
+    assert.throws(() => parameters({...textDraft, runtime:{...textDraft.runtime, cpu_threads:count}}, {}), /逻辑核心数/);
+  const gpu = parameters({...textDraft, runtime:{...textDraft.runtime, device_id:'Vulkan0', cpu_threads:1}}, {});
+  assert.equal(gpu.cpu_threads, undefined);
+  for (const [kind, info] of [['audio',{audioTask:'tts', audioFamily:'piper_tts'}],
+    ['image',{pipeline:'iris'}], ['video',{pipeline:'wan21-t2v'}]]) {
+    const runtime = {seed:0, steps:1, cfg:1, size:512, cpu_threads:1};
+    assert.equal(parameters({kind, runtime, input:{prompt:'hello'}}, info).cpu_threads, 1);
+  }
+  const args = flags('model.gguf', {}, {...defaults, cpu_threads:1}, {}, 'test');
+  for (const flag of ['--threads','--threads-batch']) assert.equal(args[args.indexOf(flag)+1], '1');
+  for (const flag of ['--cache-type-k','--cache-type-v']) assert.equal(args[args.indexOf(flag)+1], 'f16');
+  assert.ok(!args.includes('--flash-attn'));
+  const speculative = flags('model.gguf', {specType:'draft-simple'},
+    {...defaults, cpu_threads:1, kv_precision:'q8'}, {draft:'draft.gguf'}, 'test');
+  for (const flag of ['--spec-draft-threads','--spec-draft-threads-batch'])
+    assert.equal(speculative[speculative.indexOf(flag)+1], '1');
+  for (const flag of ['--cache-type-k','--cache-type-v','--spec-draft-type-k','--spec-draft-type-v'])
+    assert.equal(speculative[speculative.indexOf(flag)+1], 'q8_0');
+  assert.equal(speculative[speculative.indexOf('--flash-attn')+1], 'on');
+});
+
 test('model-specific settings preserve the requested cache, chunk size and stopping behavior', () => {
   const draft = {
     ...textDraft,
@@ -118,12 +163,14 @@ test(
       return { text: Buffer.concat(parts).toString('utf8'), prefill, finish };
     }
     const long = ' hello'.repeat(600);
-    const small = await run(long, { prefill_step_size: 512, kv_precision: 'q4', max_tokens: 1 });
-    const large = await run(long, { prefill_step_size: 4096, kv_precision: 'f16', max_tokens: 1 });
+    const small = await run(long, { cpu_threads: 1, prefill_step_size: 512, kv_precision: 'q4', max_tokens: 1 });
+    const large = await run(long, { prefill_step_size: 4096, max_tokens: 1 });
     assert.equal(small.prefill.chunks, 2);
     assert.ok(small.prefill.prefill_ms > 0 && small.prefill.prefill_tokens > 0);
     assert.equal(small.finish.decode_ms, undefined); // First token is sampled from prefill logits.
     assert.equal(small.prefill.kv_precision, 'q4');
+    assert.equal(small.prefill.threads, 1);
+    assert.equal(large.prefill.threads, require('../../apps/windows-ui/hf/trial-devices.cjs').logicalProcessors());
     assert.equal(large.prefill.chunks, 1);
     assert.equal(large.prefill.kv_precision, 'f16');
     const prompt = 'Write a creative name for a bookstore. Give a short answer.';

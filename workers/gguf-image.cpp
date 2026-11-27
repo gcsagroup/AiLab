@@ -3,6 +3,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #include <nlohmann/json.hpp>
+#include <algorithm>
 #include <cstring>
 #include <chrono>
 #include <map>
@@ -11,6 +12,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 
 using json = nlohmann::json;
@@ -105,7 +107,8 @@ static void generate(const json& request) {
     const auto backend = h3 ? r.value("diffusion_placement", device) : device;
     check(sd_opt_set_string(context.get(), "backend", backend.c_str()));
     check(sd_opt_set_string(context.get(), "params_backend", "cpu"));
-    check(sd_opt_set_int(context.get(), "n_threads", 6));
+    const int threads = device == "cpu" ? r.value("cpu_threads", static_cast<int>(std::max(1u, std::thread::hardware_concurrency()))) : 6;
+    check(sd_opt_set_int(context.get(), "n_threads", threads));
     if (video && !h3) {
         check(sd_opt_set_string(context.get(), "motion_module_path", "motion.gguf"));
         check(sd_opt_set_bool(context.get(), "diffusion_flash_attn", true));

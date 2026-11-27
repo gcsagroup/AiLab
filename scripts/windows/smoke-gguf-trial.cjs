@@ -1,4 +1,4 @@
-(async function trial(kind, family, stepCount) {
+(async function trial(kind, family, stepCount, deviceId) {
   const wait = async (fn, desc, ms = 120000) => {
     const end = Date.now() + ms;
     while (Date.now() < end) {
@@ -50,8 +50,11 @@
     const title = { text:'模型训练 / 微调', image: '图片训练 / 微调', audio: '音频训练 / 微调', video: '视频训练 / 微调' }[kind];
     (
       await wait(
-        () =>
-          [...document.querySelectorAll('.category-grid button')].find((b) => b.textContent.includes(title)),
+        () => {
+          const category = [...document.querySelectorAll('.category-grid button')].find(b => b.textContent.includes(title));
+          if (!category) document.querySelector('nav[aria-label="主导航"] button')?.click();
+          return category;
+        },
         '选择类别',
       )
     ).click();
@@ -77,6 +80,7 @@
     const kv = [...document.querySelectorAll('label')]
       .find((l) => l.textContent.startsWith('KV 缓存精度'))
       .querySelector('select');
+    if (kv.value !== 'f16') throw Error('新语言试用草稿应默认使用 16 位 KV 缓存。');
     selector(kv, 'q8');
     const preset = [...document.querySelectorAll('label')]
       .find((l) => l.textContent.startsWith('运行预设'))
@@ -112,10 +116,31 @@
     selector(steps, String(stepCount || (kind === 'video' ? 4 : 3)));
     await wait(() => Number(steps.value) === (stepCount || (kind === 'video' ? 4 : 3)), '应用测试步数');
   }
+  if (deviceId) {
+    const picker = await wait(() => [...document.querySelectorAll('.composer label')].find(label =>
+      label.textContent.startsWith('执行设备') && [...(label.querySelector('select')?.options || [])].some(option => option.value === deviceId)
+    )?.querySelector('select'), '可选执行设备 ' + deviceId);
+    selector(picker, deviceId);
+  }
+  let expectedThreads;
+  if (deviceId === 'cpu') {
+    const picker = await wait(() => [...document.querySelectorAll('.composer label')].find(label =>
+      label.textContent.startsWith('CPU 逻辑核心数'))?.querySelector('select:not(:disabled)'), 'CPU 逻辑核心数');
+    expectedThreads = Number(picker.value);
+    if (kind === 'text' && !family) {
+      const maximum = Number(picker.options[picker.options.length - 1].value);
+      if (expectedThreads !== maximum) throw Error('新草稿应默认使用全部逻辑核心。');
+      expectedThreads = Math.min(2, maximum);
+      selector(picker, String(expectedThreads));
+    }
+  }
   (await wait(() => btn('检查配置'), '检查配置')).click();
   await wait(() => document.querySelector('.preflight'), '实际配置');
   const run = await wait(() => btn('开始运行') || document.querySelector('.preflight .error'), '预检结果');
   if (run.tagName !== 'BUTTON') throw Error(run.textContent);
+  const applied = JSON.parse(document.querySelector('.preflight pre').textContent);
+  if (deviceId && applied.device_id !== deviceId) throw Error('预检设备与草稿选择不一致。');
+  if (expectedThreads !== undefined && applied.cpu_threads !== expectedThreads) throw Error('预检线程数与草稿不一致。');
   run.click();
   const saved = await wait(
     () => {
@@ -193,5 +218,5 @@
     row.querySelector('.task-name strong')?.textContent === taskName && row.textContent.includes('查看结果')), '历史运行入口');
   history.click();
   await wait(() => document.querySelector('.result-card .performance-highlights dd')?.textContent === total, '历史运行读回同一总耗时');
-  return { passed: true, kind, display, measured, historyVerified: true };
+  return { passed: true, kind, device: applied.device_name, device_id: applied.device_id, display, measured, historyVerified: true };
 });

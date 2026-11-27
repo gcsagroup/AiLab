@@ -1,6 +1,6 @@
 import React from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { RunResult } from '../../apps/desktop/src/Workbench';
 import type { Attempt } from '../../apps/desktop/src/types';
 
@@ -10,6 +10,26 @@ afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.resto
 // 与公开列表一致：摘要不包含 snapshot、artifacts 或 output_text。
 const summary: Attempt = { id: 'loading-attempt', task_id: 'task-a', project_id: 'project-a', state: 'succeeded', state_version: 4, allowed_actions: [] };
 const response = (body: unknown) => ({ ok: true, json: async () => body }) as Response;
+it('keeps streamed thoughts out of the answer and reopens them from a completed trial record', async () => {
+  vi.useFakeTimers();
+  const snapshot = { kind: 'text', operation: 'generate' };
+  const running: Attempt = { ...summary, snapshot, state: 'running', reasoning_text: '第一步', output_text: '' };
+  let current = running;
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => response(String(url).includes('/events?') ? { items: [] } : current)));
+  const view = render(<RunResult initial={running} onChanged={vi.fn()} />);
+  await act(async () => {});
+  expect(screen.getByRole('button', { name: '正在思考' }).getAttribute('aria-expanded')).toBe('true');
+  current = { ...running, state: 'succeeded', output_text: '最后的回答' };
+  await act(async () => { await vi.advanceTimersByTimeAsync(600); });
+  expect(screen.getByText('最后的回答')).toBeTruthy();
+  expect(screen.getByText('第一步').hidden).toBe(true);
+  view.unmount();
+  render(<RunResult initial={summary} onChanged={vi.fn()} />);
+  await act(async () => {});
+  fireEvent.click(screen.getByRole('button', { name: '查看思考过程' }));
+  expect(screen.getByText('第一步').hidden).toBe(false);
+  expect(screen.getByText('最后的回答')).toBeTruthy();
+});
 function deferred() {
   let resolve!: (value: Response) => void;
   const promise = new Promise<Response>(yes => { resolve = yes; });

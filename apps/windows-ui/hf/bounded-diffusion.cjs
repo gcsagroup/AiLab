@@ -2,6 +2,7 @@
 
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { trialThreads } = require('./trial-devices.cjs');
 const { randomInt } = require('node:crypto');
 
 // These two SDK recipes share a sampling graph. LLaDA additionally loads its
@@ -16,7 +17,7 @@ async function runBoundedImage({ family, components, input, runtime, out, dir, e
     return string(name.split(path.sep).join('/'));
   };
   const llada = family === 'llada_image';
-  const loader = 'family = ' + string(family) + ', backend = "cpu", params_backend = "disk"';
+  const loader = 'family = ' + string(family) + ', backend = ' + string((runtime.device_id || 'cpu').toLowerCase()) + ', params_backend = "disk"';
   const adapter = llada ? ', connectors_path = ' + file('--embeddings-connectors') : '';
   const size = Number(runtime.size);
   const steps = Number(runtime.steps);
@@ -54,7 +55,7 @@ async function runBoundedImage({ family, components, input, runtime, out, dir, e
   const script = path.join(dir, 'sample.dgl');
   await fs.writeFile(script, lines.join('\n'));
   await invoke(engine, ['-M', 'dgl', '--script', path.relative(out, script), '--max-ram', String(limit),
-    '--disable-prefetch', '--run-once', 'on', '-t', '4'], { cwd: out, signal });
+    '--disable-prefetch', '--run-once', 'on', '-t', String(trialThreads(runtime))], { cwd: out, signal });
   return { name: 'image.png', media_type: 'image/png' };
 }
 
@@ -68,7 +69,7 @@ async function runLtxVideo({components,input,runtime,out,dir,engine,invoke,signa
   if (![width,height,frames,fps,steps].every(n=>Number.isSafeInteger(n) && n>0) || !Number.isFinite(cfg))
     throw Error('LTX-2.5 视频采样参数无效。');
   const seed=runtime.seed<0 ? randomInt(0x7fffffff) : runtime.seed;
-  const loader='family = "ltxav", backend = "cpu", params_backend = "disk"';
+  const loader='family = "ltxav", backend = ' + JSON.stringify((runtime.device_id || 'cpu').toLowerCase()) + ', params_backend = "disk"';
   const condition=(name,prompt)=>[
     `  ${name}_text = encode_prompt(text, ${JSON.stringify(prompt)}, width = ${width}, height = ${height})`,
     `  ${name} = predictor(model, ${name}_text, audio_length = audio_dims[1], fps = ${fps})`,
@@ -104,6 +105,6 @@ async function runLtxVideo({components,input,runtime,out,dir,engine,invoke,signa
   const script=path.join(dir,'ltx-video.dgl');
   await fs.writeFile(script,lines.join('\n'));
   await invoke(engine,['-M','dgl','--script',path.relative(out,script),'--max-ram',String(limit),
-    '--disable-prefetch','--run-once','on','-t','4'],{cwd:out,signal});
+    '--disable-prefetch','--run-once','on','-t',String(trialThreads(runtime))],{cwd:out,signal});
 }
 module.exports = { runBoundedImage, runLtxVideo };

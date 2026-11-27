@@ -3,14 +3,22 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const {recipe,keyOf} = require('./generation-packages.cjs');
 
-function audioEngine(executable,spec) {
+const { audioDeviceArgs, gpuBackend, trialThreads } = require('./trial-devices.cjs');
+
+function audioEngine(executable, spec, deviceId = 'cpu') {
+  if (deviceId !== 'cpu') {
+    const directory = spec?.audioVersion === '0.9.6' ? path.join(path.dirname(executable), 'v0.9.6') : path.dirname(executable);
+    return path.join(directory, gpuBackend(deviceId), 'audiocpp_cli.exe');
+  }
   if (['f5','auk'].includes(spec?.audioWorker)) return path.join(path.dirname(executable),'f5','audiocpp_cli.exe');
   return spec?.audioVersion==='0.9.6' ? path.join(path.dirname(executable),'v0.9.6','audiocpp_cli.exe') : executable;
 }
 
-function diffusionEngine(executable,spec) {
+function diffusionEngine(executable, spec, deviceId = 'cpu') {
   const directory=path.dirname(executable);
-  return spec?.diffusionVersion==='0d71f96' ? path.join(directory,'0d71f96','sd-cli.exe') : path.join(directory,'sd-cli.exe');
+  const extended = spec?.diffusionVersion === '0d71f96';
+  const backend = deviceId === 'cpu' ? '' : gpuBackend(deviceId);
+  return path.join(directory, extended ? '0d71f96' : '', extended || backend === 'cuda' ? backend : '', 'sd-cli.exe');
 }
 
 function referenceText(input) {
@@ -74,8 +82,9 @@ async function runPackage({model,extra,material,out,input,r,bins,invoke,linkWeig
       }
       const raw=path.join(relative,'speech.wav');
       const task=material && ['zipvoice','higgs_audio_tts','chatterbox','firered_audio','fireredtts3','mira_tts','zonos2','zonos3','audio8_tts','omnivoice','voxmel_tts','m5_tts'].includes(id) ? 'clon' : spec.task;
-      const backend = 'cpu', mode = 'offline', threads = 4;
-      const args=['--task',task,'--family',id,'--backend',backend,'--mode',mode,'--model',source,'--text',music ? (id==='mulacover' ? lyrics : description) : text,
+      const deviceArgs = audioDeviceArgs(r);
+      const mode = 'offline', threads = trialThreads(r);
+      const args=['--task',task,'--family',id,...deviceArgs,'--mode',mode,'--model',source,'--text',music ? (id==='mulacover' ? lyrics : description) : text,
         '--seed',String(r.seed),'--threads',String(threads),'--out',raw];
       const qwen = id === 'qwen3_tts' ? require('./qwen3-tts.cjs').generationOptions(model, r.max_tokens) : undefined;
       const limit = qwen?.max_tokens ?? r.max_tokens;
@@ -165,10 +174,10 @@ async function runPackage({model,extra,material,out,input,r,bins,invoke,linkWeig
         if (spec.stepOption==='num_steps') args.push('--request-option','num_steps='+r.steps);
         else args.push('--num-inference-steps',String(r.steps));
       }
-      const synthesis = qwen && { ...qwen, task, backend, mode, threads, model_file: model, text, seed: r.seed, language,
+      const synthesis = qwen && { ...qwen, task, backend: deviceArgs[1], mode, threads, model_file: model, text, seed: r.seed, language,
         voice_id: voiceId, instruct: instruction, reference_audio: material, reference_text: material ? transcript : undefined,
         x_vector_only_mode: material ? !transcript : undefined };
-      await invoke(audioEngine(bins.audio,spec),args,{cwd:out,signal,recordConfig: synthesis && {stage:'synthesis', values:synthesis}});
+      await invoke(audioEngine(bins.audio,spec,r.device_id),args,{cwd:out,signal,recordConfig: synthesis && {stage:'synthesis', values:synthesis}});
       const encoding = {speed:r.speed, sample_rate:24000, channels:1, codec:'pcm_s16le'};
       const format=spec.task==='tts'?['-af','atempo='+encoding.speed,'-ar',String(encoding.sample_rate),'-ac',String(encoding.channels)]:[];
       await invoke(bins.ffmpeg,['-v','error','-i',raw,'-map','0:a:0',...format,'-c:a',encoding.codec,'speech.wav'],{
@@ -177,8 +186,8 @@ async function runPackage({model,extra,material,out,input,r,bins,invoke,linkWeig
       return {name:'speech.wav',media_type:'audio/wav'};
     }
     const video=spec.kind==='video';
-    const engine=diffusionEngine(bins.image,spec);
-    const args=['-M',video?'vid_gen':'img_gen','--backend','cpu','--params-backend','cpu','--mmap','-t','4'];
+    const engine=diffusionEngine(bins.image,spec,r.device_id);
+    const args=['-M',video?'vid_gen':'img_gen','--backend',(r.device_id || 'cpu').toLowerCase(),'--params-backend','cpu','--mmap','-t',String(trialThreads(r))];
     if (spec.disablePrefetch) args.push('--disable-prefetch');
     let components=spec.files.map((f,i)=>({flag:f.flag,name:names[i],convertType:f.convertType}));
     if (id==='sefi_image') {
@@ -205,7 +214,7 @@ async function runPackage({model,extra,material,out,input,r,bins,invoke,linkWeig
         if (id==='minit2i' && component.flag==='--diffusion-model') typeRules.push('(^|[.])mask_token$=f32');
         // sd.cpp reads PyTorch's I64 BatchNorm counter as I32. Its integer
         // conversion supports F32, while direct conversion to F16 aborts.
-        await invoke(engine,['-M','convert','--backend','cpu','--params-backend','cpu','-t','4','-m',name,
+        await invoke(engine,['-M','convert','--backend','cpu','--params-backend','cpu','-t',String(trialThreads(r)),'-m',name,
           '--type',component.convertType || 'f16','--tensor-type-rules',typeRules.join(','),'-o',converted],{cwd:out,signal});
         if (!(await fs.stat(path.join(out,converted))).size) throw Error('扩散组件转换失败：'+component.flag);
         name=converted;

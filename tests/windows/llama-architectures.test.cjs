@@ -254,9 +254,11 @@ test('Muse streams only the user recipient, including when markers cross token b
   const {museAnswerStream}=require('../../apps/windows-ui/hf/llama-service.cjs');
   const wire=' to=self<|message|>private<|eom|><|start|>assistant to=user<|message|>Paris<|eot|>';
   for (const chunks of [[wire],[...wire],[' to=se','lf<|message|>private<|eo','m|><|start|>assistant to=user<|message|>Paris<|eot|>']]) {
-    const reader=museAnswerStream();
+    let thought='';
+    const reader=museAnswerStream(chunk=>{thought+=chunk;});
     assert.equal(chunks.map(c=>reader.push(c)).join('')+reader.push('',true),'Paris');
     assert.equal(reader.sawPrivate,true);
+    assert.equal(thought,'private');
   }
   const plain=museAnswerStream();assert.equal(plain.push('  Already parsed.',true),'  Already parsed.');
   const hidden=museAnswerStream();assert.equal(hidden.push(' to=self<|message|>unclosed',true),'');

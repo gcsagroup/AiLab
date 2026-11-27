@@ -82,7 +82,7 @@ export function useWorkRecipeContext(task: Task, draft: Draft) {
     retry: () => setRefresh(value => value + 1), models: values<Model>('models'), adapters: values<Adapter>('adapters'), materials: values<Material>('materials') };
 }
 
-const runtimeLabels: Record<string, string> = { max_tokens: '最大输出 token', temperature: '温度', top_p: 'Top-p', seed: '随机种子', steps: '步数', size: '图片尺寸', cfg: '提示词引导强度', frames: '帧数', fps: '帧率', voice: '音色', speed: '语速', sample_rate: '采样率', precision: '计算精度', kv_precision: 'KV 缓存精度', prefill_step_size: '提示词分块上限', context_limit: '上下文上限', overflow: '超长输入处理', stop: '停止序列', stream: '流式输出', thinking: '思考设置' };
+const runtimeLabels: Record<string, string> = { max_tokens: '最大输出 token', temperature: '温度', top_p: 'Top-p', seed: '随机种子', steps: '步数', size: '图片尺寸', cfg: '提示词引导强度', frames: '帧数', fps: '帧率', voice: '音色', speed: '语速', sample_rate: '采样率', precision: '计算精度', cpu_threads: 'CPU 逻辑核心数', kv_precision: 'KV 缓存精度', prefill_step_size: '提示词分块上限', context_limit: '上下文上限', overflow: '超长输入处理', stop: '停止序列', stream: '流式输出', thinking: '思考设置' };
 
 export function WorkRecipeContext({ state, draft }: { state: ReturnType<typeof useWorkRecipeContext>; draft: Draft }) {
   if (!state.sourceWorkId) return null;

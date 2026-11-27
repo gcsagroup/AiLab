@@ -74,26 +74,32 @@ function capabilities(checks) {
   });
 }
 
+function deviceRank({ id }) {
+  if (id.startsWith('CUDA')) return 0;
+  return id === 'cpu' ? 2 : 1;
+}
+
 async function probeEnvironment(directory, refresh) {
   let devices = [];
   const sdVersion = /stable-diffusion\.cpp version [^\r\n]+/i;
   const audioVersion = /audio\.cpp [^\r\n]+/i;
+  const inventory = deviceInventory(refresh);
   const checks = await Promise.all([
+    ...Object.entries({ text: 'llama.cpp', diffusion: 'stable-diffusion.cpp', audio: 'audio.cpp' }).map(([engine, label]) =>
+      check(engine + 'Cuda', label + ' · CUDA 环境', async () => {
+        const result = (await inventory).cuda.find(probe => probe.engine === engine);
+        if (result.error) throw Error(result.error);
+        const adapters = result.devices.map(row => row.name.trim() + ' · ' + row.id);
+        return { detail: adapters.length ? adapters.join('，') : '执行器已响应，未检测到可用 CUDA 显卡。' };
+      })),
     check('devices', 'GGML 设备枚举', async () => {
-      const result = await deviceInventory(refresh);
-      devices = result.devices;
+      const result = await inventory;
+      devices = [...result.devices].sort((a, b) => deviceRank(a) - deviceRank(b));
       return result.cpuFallback
         ? { status: 'partial', detail: '完整设备枚举失败，CPU 回退检查通过。' }
         : { detail: '执行器返回 ' + devices.length + ' 个可选设备。' };
     }),
     check('server', 'llama.cpp 多模态服务', () => versionCheck(bins.llamaService, /version: [^\r\n]+/i)),
-    check('custom', '扩展语言架构执行器', async () => {
-      let ready = false;
-      await invoke(path.join(path.dirname(bins.text), 'plm-worker.exe'), [], { input: { action: 'devices', cpu_only: true },
-        timeout: 10000, onLine(line) { const e = JSON.parse(line); if (e.type === 'devices') ready = e.items.some(d => d.id === 'cpu'); } });
-      if (!ready) throw Error('设备响应无效');
-      return { detail: '扩展执行器已返回 CPU 设备。' };
-    }),
     check('diffusion', 'AiLab 图像与视频执行器', async () => {
       let ready = false;
       await invoke(bins.image, [], { input: { action: 'probe' }, timeout: 10000,
@@ -117,6 +123,13 @@ async function probeEnvironment(directory, refresh) {
       return { detail: '已将测试音频转为 16 kHz 单声道 PCM。' };
     }),
     check('storage', '模型存储', () => modelStorage(directory)),
+    check('custom', '扩展语言架构执行器', async () => {
+      let ready = false;
+      await invoke(path.join(path.dirname(bins.text), 'plm-worker.exe'), [], { input: { action: 'devices', cpu_only: true },
+        timeout: 10000, onLine(line) { const e = JSON.parse(line); if (e.type === 'devices') ready = e.items.some(d => d.id === 'cpu'); } });
+      if (!ready) throw Error('设备响应无效');
+      return { detail: '扩展执行器已返回 CPU 设备。' };
+    }),
   ]);
   const cpu = os.cpus();
   return { id: randomUUID(), checked_at: new Date().toISOString(), app_version: version,

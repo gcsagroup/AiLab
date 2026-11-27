@@ -47,6 +47,14 @@ test('an existing executable that cannot encode fails video, preserves other res
     bins.ffmpeg = original;
     const fixed = await environment.get(true);
     assert.notEqual(fixed.id, broken.id);
+    const ids = fixed.devices.map(device => device.id);
+    assert.deepEqual(ids, [
+      ...ids.filter(id => id.startsWith('CUDA')),
+      ...ids.filter(id => !id.startsWith('CUDA') && id !== 'cpu'),
+      ...ids.filter(id => id === 'cpu'),
+    ]);
+    assert.deepEqual(fixed.checks.slice(0, 3).map(item => item.id), ['textCuda', 'diffusionCuda', 'audioCuda']);
+    assert.equal(fixed.checks.at(-1).id, 'custom');
     assert.equal(capability(fixed, 'video').status, 'ready');
     assert.equal(fixed.checks.find(item => item.id === 'audioConvert').status, 'ready');
     assert.equal(fixed.checks.find(item => item.id === 'storage').status, 'ready');

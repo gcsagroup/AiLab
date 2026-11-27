@@ -1,4 +1,4 @@
-// One local request per process. AiLab owns input budgeting, prefill scheduling,
+// AiLab owns input budgeting, prefill scheduling,
 // sampling and output termination. libllama builds the architecture-specific ggml graph.
 #if defined(_WIN32) && !defined(_WIN32_WINNT)
 #define _WIN32_WINNT 0x0A00
@@ -89,7 +89,18 @@ static bool flush_visible(std::string &buffer, const std::vector<std::string> &s
 #include "gguf-special.hpp"
 #include "cogvlm-prefill.hpp"
 
-static void run(const json &request) {
+using Model = std::unique_ptr<llama_model,decltype(&llama_model_free)>;
+static llama_context_params context_params(const json &r, unsigned budget, unsigned block, int threads) {
+    auto cp=llama_context_default_params();
+    cp.n_ctx=budget; cp.n_batch=std::min(block,budget); cp.n_ubatch=cp.n_batch;
+    cp.n_threads=cp.n_threads_batch=threads;
+    const std::string precision=r.at("kv_precision");
+    cp.type_k=cp.type_v=precision=="q8" ? GGML_TYPE_Q8_0 : precision=="q4" ? GGML_TYPE_Q4_0 : GGML_TYPE_F16;
+    cp.flash_attn_type=precision=="q4" || precision=="q8" ? LLAMA_FLASH_ATTN_TYPE_ENABLED : LLAMA_FLASH_ATTN_TYPE_AUTO;
+    cp.offload_kqv=cp.op_offload=r.at("device_id")!="cpu";
+    return cp;
+}
+static void run(const json &request, Model &model) {
     const std::string action = request.at("action");
     if (action == "compact-audio" || action == "compact-language") {
         const bool streamed=request.value("stream_payload",false);
@@ -103,7 +114,7 @@ static void run(const json &request) {
     if (action == "prepare-zaya-layout") { prepare_zaya(request.at("model"),request.at("output")); return; }
     if (action == "devices") { emit({{"type","devices"},{"items",inventory()}}); return; }
     const bool check = action == "inspect";
-    if (!check && action != "generate") throw std::runtime_error("Unknown action");
+    if (!check && action != "generate" && action != "preload") throw std::runtime_error("Unknown action");
     const auto &r = request.at("runtime");
     const std::string selected = r.at("device_id");
     ggml_backend_dev_t chosen = nullptr;
@@ -112,6 +123,9 @@ static void run(const json &request) {
         if (device_id(d)==selected) { chosen=d; break; }
     }
     if (!chosen) throw std::runtime_error("Selected device unavailable");
+    const auto logical_processors = std::max(1u, std::thread::hardware_concurrency());
+    const int cpu_threads = selected == "cpu" ? r.value("cpu_threads", static_cast<int>(logical_processors))
+                                               : std::max(1u, std::min(8u, logical_processors / 2));
     auto mp = llama_model_default_params();
     ggml_backend_dev_t devices[] = { selected=="cpu" ? nullptr : chosen, nullptr };
     mp.devices=devices; mp.n_gpu_layers=selected=="cpu" ? 0 : -1;
@@ -133,10 +147,18 @@ static void run(const json &request) {
     const char *paths[]={file.c_str(),ple.c_str()};
     if (!ple.empty()) {mp.load_mode=LLAMA_LOAD_MODE_MMAP; mp.lazy_mode=LLAMA_LAZY_MODE_ON;}
     const auto load_started = Clock::now();
-    std::unique_ptr<llama_model,decltype(&llama_model_free)> model(
-        ple.empty() ? llama_model_load_from_file(file.c_str(),mp) : llama_model_load_from_splits(paths,2,mp),llama_model_free);
+    const bool reused = bool(model);
+    if (!model) model.reset(ple.empty() ? llama_model_load_from_file(file.c_str(),mp) : llama_model_load_from_splits(paths,2,mp));
     if (!model) throw std::runtime_error("GGUF model load failed");
-    if (!check) emit({{"type","timing"},{"model_load_ms",milliseconds(load_started,Clock::now())}});
+    if (action=="preload") {
+        if (selected!="cpu") {
+            auto cp=context_params(r,r.at("context_limit"),r.at("prefill_step_size"),cpu_threads);
+            std::unique_ptr<llama_context,decltype(&llama_free)> probe(llama_init_from_model(model.get(),cp),llama_free);
+            if (!probe) throw std::runtime_error("GPU context allocation failed");
+        }
+        return;
+    }
+    if (!check) emit({{"type","timing"},{"model_load_ms",reused ? 0.0 : milliseconds(load_started,Clock::now())}});
     char architecture[128]{};
     llama_model_meta_val_str(model.get(),"general.architecture",architecture,sizeof(architecture));
     const std::string arch=architecture;
@@ -187,7 +209,7 @@ static void run(const json &request) {
     if (has_media) {
         const auto projection = request.at("projector").get<std::string>();
         auto params = mtmd_context_params_default();
-        params.use_gpu=false; params.warmup=false; params.n_threads=6;
+        params.use_gpu=false; params.warmup=false; params.n_threads=selected == "cpu" ? cpu_threads : 6;
         mm.reset(mtmd_init_from_file(projection.c_str(),model.get(),params));
         if (!mm) throw std::runtime_error("Cannot load the GGUF projector for this model");
         std::ifstream file(std::filesystem::u8path(request.at("media").get<std::string>()),std::ios::binary | std::ios::ate);
@@ -255,21 +277,16 @@ static void run(const json &request) {
     emit({{"type","config"},{"architecture",arch},{"prompt_tokens",input_count},{"device_id",selected},
           {"supports_thinking",switchable},{"context_limit",budget},{"prefill_step_size",block}});
     if (check) return;
-    auto cp=llama_context_default_params();
+    auto cp=context_params(r,budget,block,cpu_threads);
     cogvlm_attention cog;
     if(cog_media) {
         cog.width=llama_model_n_embd(model.get());
         cp.cb_eval=cogvlm_attention::observe;
         cp.cb_eval_user_data=&cog;
     }
-    cp.n_ctx=budget; cp.n_batch=std::min(block,budget); cp.n_ubatch=cp.n_batch;
     if (seq2seq || diffusion || vocoder) cp.n_batch=cp.n_ubatch=budget;
     if (vocoder) {cp.embeddings=true;cp.pooling_type=LLAMA_POOLING_TYPE_NONE;}
-    cp.n_threads=cp.n_threads_batch=std::max(1u,std::min(8u,std::thread::hardware_concurrency()/2));
     const std::string precision=r.at("kv_precision");
-    cp.type_k=cp.type_v=precision=="q8" ? GGML_TYPE_Q8_0 : precision=="q4" ? GGML_TYPE_Q4_0 : GGML_TYPE_F16;
-    cp.flash_attn_type=precision=="q4" || precision=="q8" ? LLAMA_FLASH_ATTN_TYPE_ENABLED : LLAMA_FLASH_ATTN_TYPE_AUTO;
-    cp.offload_kqv=selected!="cpu"; cp.op_offload=selected!="cpu";
     std::unique_ptr<llama_context,decltype(&llama_free)> ctx(llama_init_from_model(model.get(),cp),llama_free);
     if (!ctx) throw std::runtime_error("所选设备或 KV 精度无法建立推理上下文。");
     if (diffusion) {denoise(ctx.get(),vocab,std::move(tokens),r,limit,arch);return;}
@@ -298,7 +315,7 @@ static void run(const json &request) {
         ++chunks;
     }
     llama_synchronize(ctx.get());
-    emit({{"type","prefill"},{"chunks",chunks},{"ubatch",llama_n_ubatch(ctx.get())},{"kv_precision",precision=="auto"?"f16":precision},
+    emit({{"type","prefill"},{"chunks",chunks},{"ubatch",llama_n_ubatch(ctx.get())},{"threads",llama_n_threads(ctx.get())},{"kv_precision",precision=="auto"?"f16":precision},
           {"prefill_ms",milliseconds(prefill_started,Clock::now())},{"prefill_tokens",input_count}});
     auto chain=std::unique_ptr<llama_sampler,decltype(&llama_sampler_free)>(llama_sampler_chain_init(llama_sampler_chain_default_params()),llama_sampler_free);
     const float temperature=r.at("temperature"), top_p=r.at("top_p");
@@ -392,6 +409,22 @@ int main(int argc, char **argv) {
             if (!ggml_backend_load(avx2 ? "./ggml-cpu-haswell.dll" : "./ggml-cpu-x64.dll")) throw std::runtime_error("CPU backend unavailable");
         } else ggml_backend_load_all_from_path(".");
         llama_backend_init();
-        run(request); llama_backend_free(); return 0;
+        {
+            Model model(nullptr,llama_model_free);
+            run(request,model);
+            if (request.value("action",std::string())=="preload") {
+                emit({{"type","ready"}});
+                while (std::getline(std::cin,line)) {
+                    const auto next=json::parse(line);
+                    if ((next.at("action")!="generate" && next.at("action")!="inspect") ||
+                        next.at("model")!=request.at("model") || next.at("runtime").at("device_id")!=request.at("runtime").at("device_id") ||
+                        next.value("ple_table",std::string())!=request.value("ple_table",std::string()))
+                        throw std::runtime_error("Resident model mismatch");
+                    run(next,model);
+                    emit({{"type","request_complete"}});
+                }
+            }
+        }
+        llama_backend_free(); return 0;
     } catch (const std::exception &e) { emit({{"type","error"},{"message",e.what()}}); return 1; }
 }

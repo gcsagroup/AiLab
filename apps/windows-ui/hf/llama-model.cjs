@@ -87,6 +87,8 @@ function llamaModel(arch, meta, tokenizer, hasDecisionHead, rankHead) {
     pipeline,
     decision,
     chat: !!template || legacyQwenChat || legacyCogChat,
+    ...(template.includes('<|im_start|>') && (arch==='qwen35' || (arch==='qwen4exp' && template.includes('<think>')))
+      ? { nativeThinkPrefill: true } : {}),
     ...(legacyCogChat ? {legacyCogChat:true} : {}),
     ...(arch==='minimax-01' && meta['tokenizer.ggml.normalizer.nfc'] ? {normalizeNfc:true} : {}),
     ...(legacyQwenChat ? {legacyQwenChat:true} : {}),

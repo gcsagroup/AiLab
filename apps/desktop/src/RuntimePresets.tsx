@@ -12,8 +12,8 @@ type InferenceRuntime = Runtime;
 export function RuntimePresets({ runtime, disabled, onApply }: { runtime: InferenceRuntime; disabled?: boolean; onApply: (runtime: InferenceRuntime) => void }) {
   const [selected, setSelected] = useState('default'); const [open, setOpen] = useState(false);
   const preset = presets.find(item => item.id === selected)!;
-  const precision = runtime.kv_precision || 'auto'; const block = runtime.prefill_step_size ?? 2048;
-  const afterPrecision = window.ailabHF && preset.id !== 'default' ? precision : preset.kv;
+  const precision = runtime.kv_precision ?? (window.ailabHF ? 'f16' : 'auto'); const block = runtime.prefill_step_size ?? 2048;
+  const afterPrecision = window.ailabHF ? (preset.id === 'default' ? 'f16' : precision) : preset.kv;
   const precisionNames = { q4:'Q4_0', q8:'Q8_0', f16:'FP16', auto:'模型精度' };
   const current = presets.find(item => (window.ailabHF || item.kv === precision) && item.block === block)?.name || '自定义';
   return <div className="form-stack"><label>运行预设<select value={selected} disabled={disabled} onChange={e => setSelected(e.target.value)}>{presets.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><small className="muted">当前配置：{current}。选择后先查看差异，应用只修改草稿。</small><Button data-timing-action="preview_preset" disabled={disabled} onClick={() => setOpen(true)}>预览预设差异</Button>

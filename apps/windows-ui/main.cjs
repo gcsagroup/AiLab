@@ -82,9 +82,10 @@ app.whenReady().then(async () => {
       const assistantSmoke = process.argv.includes('--smoke-ai-assistance');
       const trialKind = process.argv.find(arg=>/^--smoke-gguf-trial=(text|image|video|audio)$/.test(arg))?.split('=')[1];
       const family=process.argv.find(a=>/^--smoke-family=(Qwen3\.5|Gemma 4|MiniMax-H3-Image|MiniMax-H3)$/i.test(a))?.slice('--smoke-family='.length);
+      const deviceId = process.argv.find(arg => /^--smoke-device=(cpu|(?:Vulkan|CUDA)\d+)$/.test(arg))?.split('=')[1];
       const stepCount = Number(process.argv.find(arg => /^--smoke-steps=(?:[1-9]\d?|100)$/.test(arg))?.split('=')[1]) || null;
       const script = fs.readFileSync(join(__dirname, trialKind ? 'smoke-gguf-trial.cjs' : modelSmoke ? 'smoke-model-download.cjs' : assistantSmoke ? 'smoke-ai-assistance.cjs' : 'smoke.cjs'), 'utf8').trim();
-      const result = await window.webContents.executeJavaScript(trialKind ? '(' + script.replace(/;$/, '') + ')(' + JSON.stringify(trialKind) + ','+JSON.stringify(family||null)+','+JSON.stringify(stepCount)+')' : modelSmoke ? script + '(' + process.argv.includes('--smoke-small-gguf') + ')' : script);
+      const result = await window.webContents.executeJavaScript(trialKind ? '(' + script.replace(/;$/, '') + ')(' + JSON.stringify(trialKind) + ','+JSON.stringify(family||null)+','+JSON.stringify(stepCount)+','+JSON.stringify(deviceId || null)+')' : modelSmoke ? script + '(' + process.argv.includes('--smoke-small-gguf') + ')' : script);
       if (trialKind && (result?.passed !== true || result.kind !== trialKind)) throw Error('试用验收未返回该类别的完整结果。');
       fs.writeFileSync(smokePath, JSON.stringify({ ...result, failures }, null, 2));
       app.exit(failures.length ? 1 : 0);

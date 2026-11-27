@@ -49,7 +49,7 @@ export function WindowsEnvironment({ report, busy, error, onRefresh, onClose, ch
       <section className="data-management" aria-label="本机硬件"><h3>本机硬件</h3>
         <dl className="facts">
           <div><dt>系统</dt><dd>{report.system.os} {report.system.arch} · 内核 {report.system.release}</dd></div>
-          <div><dt>处理器</dt><dd>{report.system.cpu} · {report.system.logical_processors} 个逻辑处理器</dd></div>
+          <div><dt>处理器</dt><dd>{report.system.cpu} · {report.system.logical_processors} 个逻辑核心</dd></div>
           <div><dt>系统内存</dt><dd>{gibibytes(report.system.free_ram_bytes)} 可用 / {gibibytes(report.system.ram_bytes)}</dd></div>
           <div><dt>模型目录所在磁盘</dt><dd>{storage?.free_bytes !== undefined ? gibibytes(storage.free_bytes) + ' 可用 · 读写通过' : storage?.detail}</dd></div>
         </dl>

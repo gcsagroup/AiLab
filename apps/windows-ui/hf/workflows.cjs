@@ -81,7 +81,9 @@ class Workflows {
     }
     if (kind === 'video' && /^@素材[ \t]/.test(input.prompt)) throw Error('工作流自动使用上一步的图片，请直接填写视频描述。');
     if (!input.prompt.trim() && info.pipeline !== 'animatediff-sd15') throw Error('请填写' + labels[kind] + '的文字内容。');
-    return { model_id: config.model_id, input, runtime: { ...config.runtime, engine: 'ailab-gguf', device_id: 'cpu' } };
+    const device = config.runtime?.device_id;
+    return { model_id: config.model_id, input, runtime: { ...config.runtime, engine: 'ailab-gguf',
+      device_id: !device || device === 'apple-gpu' ? 'cpu' : device } };
   }
   create(body, key) {
     if (!/^project-[\w-]+$/.test(body.project_id) || body.definition_version !== 'product-story-v1' ||

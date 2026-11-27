@@ -7,13 +7,16 @@ const { bundle, localExtras, materialPrompt, componentPath, audioExtras } = requ
 const generation = require('./generation-packages.cjs');
 const { inputModel, useService, structuredInput } = require('./llama-service.cjs');
 const { metadata } = require('./gguf-metadata.cjs');
-const { devices, parameters, textWorker, render, bins, prepareCompactText } = require('./trial-worker.cjs');
+const { devices, parameters, textWorker, render, bins, invoke, prepareCompactText } = require('./trial-worker.cjs');
 const { atomicJson, contained, verify } = require('./downloads.cjs');
 const { fail } = require('./hub.cjs');
 const { workflowEligible } = require('./workflows.cjs');
+const { audioEngine, diffusionEngine } = require('./generation-runtime.cjs');
+const { audioDeviceIndex, checkDiffusionDevice, deviceExecutable, textExecutable } = require('./trial-devices.cjs');
 const { LocalEnvironment } = require('./environment.cjs');
 const { performance } = require('node:perf_hooks');
 const { waveSeconds } = require('./trial-timing.cjs');
+const { ResidentText } = require('./resident-text.cjs');
 const id = (prefix) => prefix + '-' + randomUUID().replaceAll('-', '');
 const digest = (o) => createHash('sha256').update(JSON.stringify(o)).digest('hex');
 const page = (items) => ({ items, next_cursor: null });
@@ -32,10 +35,25 @@ const boundary = {
   credentials: 'environment_allowlist_not_filesystem_denial',
   custom_code: 'not_supported',
 };
-async function hash(file) {
+async function hash(file, signal) {
   const h = createHash('sha256');
-  for await (const chunk of fs.createReadStream(file)) h.update(chunk);
+  for await (const chunk of fs.createReadStream(file,{signal})) h.update(chunk);
   return h.digest('hex');
+}
+async function weightStamp(ref) {
+  const files=await Promise.all(ref.verificationFiles.map(async file=>{
+    const stat=await fsp.stat(file,{bigint:true});
+    return [file,await fsp.realpath(file),stat.dev,stat.ino,stat.size,stat.mtimeNs,stat.ctimeNs].map(String);
+  }));
+  return digest([ref.model.version_id,ref.model.manifest_digest,files]);
+}
+async function fitsDevice(ref, device, config) {
+  if (device.id==='cpu' || !Number.isFinite(device.free_bytes)) return true;
+  const files=[...new Set([ref.file,...Object.values(ref.extra)])];
+  const sizes=await Promise.all(files.map(async file=>(await fsp.stat(file)).size));
+  const bytesPerElement={q4:18/32,q8:34/32}[config.kv_precision] ?? 2;
+  const kv=(ref.info.kvElementsPerToken || 0)*Math.min(config.context_limit,ref.info.trainedContext || config.context_limit)*bytesPerElement;
+  return sizes.reduce((a,b)=>a+b,0)+kv <= device.free_bytes;
 }
 function localView(row) {
   const kind = row.modality || row.kind;
@@ -87,6 +105,8 @@ class Trials {
     this.queue = [];
     this.queuedSince = new Map();
     this.current = null;
+    this.engineWork = Promise.resolve();
+    this.verifiedWeights=new Map();
     this.closing = false;
     fs.mkdirSync(dir, { recursive: true });
     for (const name of fs
@@ -205,10 +225,11 @@ class Trials {
         ...ref,
         motion:extra.motion,
         model,
-        verify: async () => {
+        verificationFiles:[local.path,...Object.values(extra)],
+        verify: async (signal) => {
           const hashes = {};
-          for (const [role, file] of Object.entries(extra)) hashes[role] = await hash(file);
-          if (manifest(await hash(local.path), hashes) !== local.manifest_digest)
+          for (const [role, file] of Object.entries(extra)) hashes[role] = await hash(file,signal);
+          if (manifest(await hash(local.path,signal), hashes) !== local.manifest_digest)
             throw Error('导入的模型摘要已变化。');
         },
       };
@@ -219,24 +240,26 @@ class Trials {
     if (!job) throw Error('请先将模型登记到当前项目。');
     const { file, extra = {}, info } = this.downloadedWeights(job);
     if (!file) throw Error('请在准备模型时选择一份 GGUF 权重或一组分片。');
+    const dir = path.join(this.downloads.modelDir, job.modelId);
+    const resources = new Set([file,...Object.values(extra)]);
+    const members = job.files.filter(f=>/\.gguf$/i.test(f.path) || resources.has(contained(dir,f.path)));
     return {
       model: this.describe(job),
       file,
       extra,
       motion:extra.motion,
       info,
-      verify: async () => {
+      verificationFiles:[...new Set([...resources,...members.map(f=>contained(dir,f.path))])],
+      verify: async (signal) => {
         for (const [role, member] of Object.entries(extra)) {
-          if (job.derivedComponents?.[role] && (await hash(member)) !== job.derivedComponents[role])
+          if (job.derivedComponents?.[role] && (await hash(member,signal)) !== job.derivedComponents[role])
             throw Error('GGUF 组件摘要已变化。');
         }
-        const dir = path.join(this.downloads.modelDir, job.modelId);
-        const resources = new Set([file, ...Object.values(extra)]);
-        for (const item of job.files.filter(f => /\.gguf$/i.test(f.path) || resources.has(contained(dir, f.path)))) {
+        for (const item of members) {
           const target = contained(dir, item.path);
           if ((await fsp.realpath(target)).toLowerCase() !== target.toLowerCase())
             throw Error('权重路径已变化。');
-          await verify(target, item);
+          await verify(target, item,signal);
         }
       },
     };
@@ -444,7 +467,80 @@ class Trials {
       p.copying = null;
     }
   }
-  async check(task) {
+  exclusive(action) {
+    const result=this.engineWork.then(action);
+    this.engineWork=result.catch(()=>{});
+    return result;
+  }
+  async unload() {
+    const selected=this.selected;
+    this.selected=null;
+    await selected?.host.close();
+  }
+  selectionFor(task) {
+    const s=this.selected;
+    return s && s.task===task.id && s.project===task.project_id && s.model===task.draft.model_id &&
+      s.requested===task.draft.runtime.device_id ? s : null;
+  }
+  async verifyWeights(ref,signal) {
+    const before=await weightStamp(ref);
+    signal?.throwIfAborted();
+    if (this.verifiedWeights.get(ref.model.id)===before) return before;
+    await ref.verify(signal);
+    if (await weightStamp(ref)!==before) throw Error('校验期间模型文件已变化。');
+    if (this.verifiedWeights.size>=128) this.verifiedWeights.delete(this.verifiedWeights.keys().next().value);
+    this.verifiedWeights.set(ref.model.id,before);
+    return before;
+  }
+  selectText(b, release=false) {
+    projectKey(b.project_id);
+    if (!/^task-[\w-]+$/.test(b.task_id) || !/^[\da-f-]{36}$/i.test(b.owner)) throw Error('无效的试用任务。');
+    if (release && this.selectionOwner!==b.owner) return Promise.resolve();
+    this.selectionOwner=release ? null : b.owner;
+    this.selectionRequest=release ? null : b;
+    this.selectionLoad?.abort();
+    const controller=new AbortController(), signal=controller.signal;
+    this.selectionLoad=controller;
+    const pending=this.exclusive(async()=>{
+      signal.throwIfAborted();
+      await this.unload();
+      if (release || this.closing) return;
+      const ref=this.resolve(b.model_id,b.project_id);
+      if (ref.info.kind!=='text') throw Error('请选择语言基座模型。');
+      const before=await this.verifyWeights(ref,signal);
+      const runtime={engine:'ailab-gguf',seed:0,max_tokens:1,temperature:0,top_p:1};
+      for (const field of ['device_id','cpu_threads','context_limit','kv_precision','prefill_step_size'])
+        if (b.runtime?.[field]!==undefined) runtime[field]=b.runtime[field];
+      const requested=runtime.device_id;
+      const task={id:b.task_id,project_id:b.project_id,kind:'text',operation:'generate',draft_revision:0,
+        draft:{kind:'text',operation:'generate',model_id:b.model_id,runtime,input:{prompt:''}}};
+      const host=new ResidentText();
+      const load=async()=>{
+        const config=await this.check(task,true);
+        signal.throwIfAborted();
+        await render({...task.draft,runtime:config},ref.file,undefined,await host.directory(),signal,()=>{},ref.extra,[],host,true);
+        return config;
+      };
+      try {
+        let config;
+        try { config=await load(); }
+        catch(error) {
+          signal.throwIfAborted();
+          if (requested==='cpu' || !/out of (?:device |GPU |video )?memory|ERROR_OUT_OF_DEVICE_MEMORY|cudaMalloc|unable to allocate|failed to allocate|not enough (?:free )?(?:VRAM|memory)/i.test(error.message)) throw error;
+          await host.stop();
+          runtime.device_id='cpu';
+          config=await load();
+        }
+        signal.throwIfAborted();
+        if (await weightStamp(ref)!==before) throw Error('加载期间模型文件已变化。');
+        this.selected={model:b.model_id,project:b.project_id,task:b.task_id,requested,host,stamp:before,config};
+        return {device_id:config.device_id,device_name:config.device_name,fallback:requested!==config.device_id};
+      } catch(error) { await host.close(); throw error; }
+    });
+    this.selectionPending=pending;
+    return pending;
+  }
+  async check(task, loading=false) {
     const key = id('preflight'),
       draft = task.draft,
       blocking = [];
@@ -452,29 +548,35 @@ class Trials {
       ref,
       material;
     try {
+      const intent=this.selectionRequest;
+      if (!loading && intent?.task_id===task.id && intent.project_id===task.project_id &&
+          intent.model_id===draft.model_id && intent.runtime.device_id===draft.runtime.device_id)
+        await this.selectionPending;
       projectKey(task.project_id);
       if (task.operation !== 'generate' || draft.operation !== 'generate' || draft.kind !== task.kind)
         throw Error('此次接入的是四类模型的运行 / 试用。');
       ref = this.resolve(draft.model_id, task.project_id);
       if (ref.info.kind !== task.kind) throw Error('所选 GGUF 架构与当前试用类别不匹配。');
-      effective = parameters(draft, ref.info);
+      effective = parameters(draft, ref.info,loading);
       const hibiki = ref.info.pipeline === 'llama-hibiki';
       const engine = ref.info.pipeline==='llama-vocoder' ? bins.text : (hibiki || ref.info.pipeline==='llama-tts') ? bins.llamaService : bins[task.kind];
-      await fsp.access(engine);
       const input = materialPrompt(draft.input);
       const audioInput = hibiki || ['asr', 'vad'].includes(ref.info.audioTask);
-      if (ref.info.pipeline==='llama-ocr' && !input.reference)
+      if (!loading && ref.info.pipeline==='llama-ocr' && !input.reference)
         throw Error('DeepSeek OCR 需要包含文字的 PNG 图片，请拖入图片或在首行填写 @素材 加素材编号。');
       const upscale = ['esrgan-x4', 'mosr-x4'].includes(ref.info.pipeline);
-      if (upscale || ['iris','anima','wan21-t2v','diffusion-image','diffusion-video'].includes(ref.info.pipeline)) await fsp.access(path.join(path.dirname(bins.image), 'sd-cli.exe'));
+      if (upscale || ['iris','anima','wan21-t2v','diffusion-image','diffusion-video'].includes(ref.info.pipeline)) await fsp.access(diffusionEngine(bins.image, undefined, effective.device_id));
       if (task.kind === 'video' || ref.info.audioTask || hibiki) await fsp.access(bins.ffmpeg);
       const recipe = generation.recipe(ref.info.packageId || ref.info.nativeRecipe,!!ref.info.nativeRecipe);
       if (recipe?.compactAudio && (await fsp.stat(ref.file)).size===recipe.files[0].size) {
         await fsp.access(bins.text);
         effective.audio_weight_conversion='q8_0_to_mixed_q4_k';
       }
-      if (recipe?.kind==='audio') await fsp.access(require('./generation-runtime.cjs').audioEngine(bins.audio,recipe));
-      if (recipe?.diffusionVersion) await fsp.access(require('./generation-runtime.cjs').diffusionEngine(bins.image,recipe));
+      const usesAudioCli = task.kind === 'audio' && !['llama-hibiki','llama-tts','llama-vocoder'].includes(ref.info.pipeline);
+      const audioExe = usesAudioCli && audioEngine(bins.audio, recipe, effective.device_id);
+      const diffusionExe = ['image','video'].includes(task.kind) && diffusionEngine(bins.image, recipe, effective.device_id);
+      if (audioExe) await fsp.access(audioExe);
+      if (diffusionExe) await fsp.access(diffusionExe);
       if (recipe?.imageReference) await fsp.access(bins.ffmpeg);
       const audioRef = recipe?.voiceRef;
       const imageRef = recipe?.imageReference;
@@ -500,20 +602,36 @@ class Trials {
           throw Error('当前模型不支持这种素材。');
         if (task.kind === 'text' && !input.prompt.trim()) throw Error('请在素材引用之后输入问题。');
       }
-      const inventory = await devices();
-      const device = inventory.find((d) => d.id === effective.device_id);
+      const inventory = await devices(effective.device_id !== 'cpu');
+      const selected=loading ? null : this.selectionFor(task);
+      let device = inventory.find((d) => d.id === effective.device_id);
       if (!device) throw Error('所选设备当前不可用。');
+      if (task.kind==='text' && device.id!=='cpu' && (selected ? selected.config.device_id==='cpu' : !await fitsDevice(ref,device,effective))) {
+        effective=parameters({...draft,runtime:{...draft.runtime,device_id:'cpu'}},ref.info,loading);
+        effective.requested_device_id=device.id;
+        device=inventory.find(d=>d.id==='cpu');
+        if (!device) throw Error('显存不足，本机 CPU 推理环境不可用。');
+      }
+      if (!audioExe && !diffusionExe) {
+        if (device.cuda_compute_capability) effective.cuda_compute_capability = device.cuda_compute_capability;
+        await fsp.access(textExecutable(engine, effective));
+      } else if (diffusionExe) await fsp.access(deviceExecutable(engine, effective.device_id));
+      if (device.id !== 'cpu') {
+        if (device.id.startsWith('CUDA') && !audioExe && !diffusionExe && !device.cuda_engines.includes('text'))
+          throw Error('llama.cpp 的 CUDA 环境未识别所选显卡。请刷新环境后重新检查。');
+        if (audioExe) effective.audio_device_index = await audioDeviceIndex(invoke, audioExe, device);
+        if (diffusionExe) await checkDiffusionDevice(invoke, diffusionExe, device);
+      }
       if (ref.info.pipeline?.startsWith('h3-') && device.id !== 'cpu' && device.free_bytes > 0) {
         const freeGiB = device.free_bytes / 1024 ** 3;
         // WDDM's reported budget includes memory the desktop can reclaim during a run.
         // Keep the decoder and the prompt encoder on the CPU on smaller GPUs.
         const lowMemory = freeGiB < 8;
         if (freeGiB < 6) {
-          effective.device_id = 'cpu';
-        } else {
-          effective.vram_budget_gib = Math.max(0.25, Math.floor(freeGiB * (lowMemory ? 0.5 : 0.85) * 100) / 100);
-          if (lowMemory) effective.diffusion_placement = 'diffusion=' + device.id.toLowerCase() + ',te=cpu,vae=cpu';
+          throw Error('MiniMax-H3 的 GPU 配方需要至少 6 GiB 可用显存。请释放显存或选择 CPU 后重新检查。');
         }
+        effective.vram_budget_gib = Math.max(0.25, Math.floor(freeGiB * (lowMemory ? 0.5 : 0.85) * 100) / 100);
+        if (lowMemory) effective.diffusion_placement = 'diffusion=' + device.id.toLowerCase() + ',te=cpu,vae=cpu';
       }
       const mode=inputModel(ref.info,input.prompt);
       delete effective.language_weight_conversion;
@@ -521,7 +639,11 @@ class Trials {
       delete effective.cpu_working_set_mib;
       delete effective.cpu_working_set_floor_mib;
       if (effective.device_id==='cpu' && mode.cpuNoRepack) effective.cpu_no_repack=true;
-      if (task.kind==='text' && effective.device_id==='cpu' && (mode.compactTextBytes || mode.mappedCpuWindowBytes)) {
+      if (selected?.host.process && effective.device_id==='cpu' && !material && selected.config.context_limit===effective.context_limit &&
+          selected.config.kv_precision===effective.kv_precision) {
+        for (const key of ['language_weight_conversion','cpu_no_repack','cpu_working_set_mib','cpu_working_set_floor_mib'])
+          if (selected.config[key]!==undefined) effective[key]=selected.config[key];
+      } else if (task.kind==='text' && effective.device_id==='cpu' && (mode.compactTextBytes || mode.mappedCpuWindowBytes)) {
         const GiB=1024**3;
         const available=require('node:os').freemem();
         const companions=(material && ref.extra.projector ? (await fsp.stat(ref.extra.projector)).size : 0) +
@@ -559,8 +681,10 @@ class Trials {
           }
         }
       }
-      if (useService(mode,ref.extra,material,effective)) {
-        await fsp.access(bins.llamaService);
+      if (loading) {
+        effective.context_limit=Math.min(effective.context_limit,ref.info.trainedContext || effective.context_limit);
+      } else if (useService(mode,ref.extra,material,effective)) {
+        await fsp.access(textExecutable(bins.llamaService, effective));
         const structured=structuredInput(input.prompt,mode.pipeline);
         if (structured?.files?.length) {
           if (!ref.extra?.projector) throw Error('决策素材需要配套投影器。');
@@ -592,13 +716,16 @@ class Trials {
           },
         );
       Object.assign(effective, {
+        inference_engine: audioExe ? 'audio.cpp' : diffusionExe ? 'stable-diffusion.cpp' : 'llama.cpp',
         device_name: inventory.find((d) => d.id === effective.device_id)?.name || effective.device_id,
         model_version_id: ref.model.version_id,
         model_manifest_digest: ref.model.manifest_digest,
       });
     } catch (e) {
+      if (loading) throw e;
       blocking.push({ message: e.message, code: 'GGUF_PREFLIGHT' });
     }
+    if (loading) return effective;
     this.remember(key, {
       task: structuredClone(task),
       fingerprint: digest(task.draft),
@@ -668,7 +795,7 @@ class Trials {
     const a = this.queue.shift(),
       controller = new AbortController();
     this.current = { a, controller };
-    this.current.done = this.execute(a, controller.signal).finally(() => {
+    this.current.done = this.exclusive(()=>this.execute(a, controller.signal)).finally(() => {
       this.current = null;
       this.pump();
     });
@@ -685,13 +812,27 @@ class Trials {
       timing[phase] = end - phaseStarted;
       phaseStarted = end;
     };
+    let restore;
     try {
+      signal.throwIfAborted();
       a.state = 'running';
       a.phase = 'loading';
       a.state_version++;
       this.save(a);
       const ref = this.resolve(a.snapshot.model_id, a.project_id);
-      await ref.verify();
+      if (ref.model.manifest_digest!==a.effective_config.model_manifest_digest || ref.model.version_id!==a.effective_config.model_version_id)
+        throw Error('模型版本已变化，请重新检查配置。');
+      let selected=this.selectionFor({id:a.task_id,project_id:a.project_id,draft:a.snapshot});
+      if (!selected || selected.config.device_id!==a.effective_config.device_id || !selected.host.process) {
+        if (this.selected && this.selectionRequest) restore=this.selectionRequest;
+        await this.unload();
+        selected=null;
+        if (a.snapshot.kind==='text') await this.verifyWeights(ref,signal);
+        else await ref.verify(signal);
+      } else if (await weightStamp(ref)!==selected.stamp) {
+        try { selected.stamp=await this.verifyWeights(ref,signal); }
+        catch(error) { await this.unload(); throw error; }
+      }
       signal.throwIfAborted();
       const dir = path.join(this.dir, a.id);
       await fsp.mkdir(dir, { recursive: true });
@@ -727,6 +868,7 @@ class Trials {
           }
           if (type === 'first_token' && timing.first_token_ms === undefined) timing.first_token_ms = performance.now() - started;
           if (type === 'token') a.output_text += e.text;
+          else if (type === 'reasoning') a.reasoning_text = (a.reasoning_text || '') + e.text;
           else if (type === 'stage' && e.name === 'unet') a.phase = 'generating';
           else if (type === 'step') {
             a.phase = 'generating';
@@ -736,6 +878,7 @@ class Trials {
             Object.assign(a.effective_config, {
               prefill_chunks: e.chunks,
               actual_kv_precision: e.kv_precision,
+              ...(a.effective_config.device_id === 'cpu' && e.threads ? { actual_cpu_threads: e.threads } : {}),
               micro_batch: e.ubatch,
             });
           } else if (type === 'metrics') a.result = e;
@@ -743,6 +886,7 @@ class Trials {
         },
         ref.extra,
         decisionMedia,
+        selected?.host,
       );
       finishPhase();
       phase = 'collect_ms';
@@ -776,6 +920,8 @@ class Trials {
       a.completed_at = now();
       this.event(a, 'terminal', { state: a.state, message: a.error?.message || a.state });
       this.save(a);
+      if (restore && this.selectionRequest===restore && !this.closing)
+        this.selectText(restore).catch(()=>{});
     }
   }
   cancel(a) {
@@ -799,17 +945,20 @@ class Trials {
   }
   async close() {
     this.closing = true;
+    this.selectionLoad?.abort();
     for (const a of [...this.queue]) this.cancel(a);
     if (this.current) {
       this.current.controller.abort();
       await this.current.done;
     }
+    await this.exclusive(()=>this.unload());
   }
   async request({ method, path: route, body: b = {}, task, idempotencyKey }) {
     const url = new URL(route, 'https://local.invalid'),
       s = url.pathname,
       p = url.searchParams.get('project_id');
     const refresh = url.searchParams.get('refresh') === 'true';
+    if (s==='/models/resident' && (method==='POST' || method==='DELETE')) return this.selectText(b,method==='DELETE');
     if (s === '/devices' && method === 'GET') return page(await devices(refresh));
     if (s === '/environment' && method === 'GET') return this.environment.get(refresh);
     if (s === '/capabilities' && method === 'GET') return page((await this.environment.get(refresh)).capabilities);

@@ -9,6 +9,67 @@ const {HubClient} = require('../../apps/windows-ui/hf/hub.cjs');
 const {OfficialModels} = require('../../apps/windows-ui/hf/official.cjs');
 const {Downloads} = require('../../apps/windows-ui/hf/downloads.cjs');
 
+test('Vulkan selects the matching packaged executor and keeps device choices during preflight', () => {
+  const {audioEngine, diffusionEngine} = require('../../apps/windows-ui/hf/generation-runtime.cjs');
+  const {parameters} = require('../../apps/windows-ui/hf/trial-worker.cjs');
+  const exe = path.resolve('audio/audiocpp_cli.exe');
+  assert.equal(audioEngine(exe, packages.m5_tts, 'Vulkan2'), path.resolve('audio/v0.9.6/vulkan/audiocpp_cli.exe'));
+  assert.equal(audioEngine(exe, packages.auk, 'Vulkan2'), path.resolve('audio/vulkan/audiocpp_cli.exe'));
+  assert.equal(diffusionEngine(path.resolve('sd/ailab-image.exe'), {diffusionVersion:'0d71f96'}, 'Vulkan2'),
+    path.resolve('sd/0d71f96/vulkan/sd-cli.exe'));
+  const runtime = {seed:1, steps:1, device_id:'Vulkan2', size:512, cfg:1};
+  const input = {prompt:'A bird'};
+  for (const [kind, pipeline] of [['image','iris'], ['image','anima'], ['video','wan21-t2v']])
+    assert.equal(parameters({kind,input,runtime},{pipeline}).device_id, 'Vulkan2');
+  assert.throws(() => parameters({kind:'audio',input,runtime},
+    {packageId:'f5_tts', pipeline:'audiocpp-tts', audioFamily:'f5_tts', audioTask:'tts'}), /F5-TTS.*CPU/);
+});
+
+test('CUDA trial settings reach each recipe-specific executor and keep the selected adapter index', () => {
+  const {audioEngine, diffusionEngine} = require('../../apps/windows-ui/hf/generation-runtime.cjs');
+  const {deviceExecutable} = require('../../apps/windows-ui/hf/trial-devices.cjs');
+  const {parameters} = require('../../apps/windows-ui/hf/trial-worker.cjs');
+  const {flags} = require('../../apps/windows-ui/hf/llama-service.cjs');
+  const id = 'CUDA2';
+  const audio = path.resolve('audio/audiocpp_cli.exe'), image = path.resolve('sd/ailab-image.exe');
+  assert.equal(audioEngine(audio, packages.m5_tts, id), path.resolve('audio/v0.9.6/cuda/audiocpp_cli.exe'));
+  assert.equal(audioEngine(audio, packages.auk, id), path.resolve('audio/cuda/audiocpp_cli.exe'));
+  assert.equal(diffusionEngine(image, undefined, id), path.resolve('sd/cuda/sd-cli.exe'));
+  assert.equal(diffusionEngine(image, {diffusionVersion:'0d71f96'}, id), path.resolve('sd/0d71f96/cuda/sd-cli.exe'));
+  assert.equal(deviceExecutable(image, id), path.resolve('sd/cuda/ailab-image.exe'));
+  const input = {prompt:'A bird'}, runtime = {seed:1, steps:1, device_id:id, size:512, cfg:1};
+  for (const [kind, pipeline] of [['image','iris'], ['video','wan21-t2v']])
+    assert.equal(parameters({kind,input,runtime},{pipeline}).device_id, id);
+  const args = flags('model.gguf', {}, runtime, {projector:'projection.gguf'}, 'test');
+  assert.equal(args[args.indexOf('--device') + 1], id);
+  assert.equal(args[args.indexOf('--mmproj-device') + 1], id);
+});
+
+test('each CUDA executor resolves NVIDIA libraries only from its own engine environment', () => {
+  const {bins, environment} = require('../../apps/windows-ui/hf/trial-worker.cjs');
+  const root = path.dirname(path.dirname(bins.text));
+  for (const [engine, executable] of [['text','cuda/llama-server.exe'], ['text','native-kernels/cuda/llama-server.exe'], ['diffusion','0d71f96/cuda/sd-cli.exe'],
+    ['audio','cuda/audiocpp_cli.exe'], ['audio','v0.9.6/cuda/audiocpp_cli.exe']]) {
+    const search = environment(path.join(root, engine, executable)).PATH.split(path.delimiter);
+    assert.deepEqual(search, [path.join(root, engine, 'cuda-runtime'), environment().PATH]);
+  }
+  assert.equal(environment(bins.text).PATH, environment().PATH);
+});
+
+test('text CUDA selects precompiled kernels by adapter capability while preserving custom graphs and other devices', () => {
+  const {textExecutable} = require('../../apps/windows-ui/hf/trial-devices.cjs');
+  const gpu = {device_id:'CUDA1', cuda_compute_capability:'7.5'};
+  for (const exe of ['ailab-gguf.exe','llama-server.exe']) {
+    const file = path.resolve('text', exe);
+    assert.equal(textExecutable(file, gpu), path.resolve('text/native-kernels/cuda', exe));
+    assert.equal(textExecutable(file, {...gpu, cuda_compute_capability:'8.9'}), path.resolve('text/cuda', exe));
+    assert.equal(textExecutable(file, {device_id:'CUDA0'}), path.resolve('text/cuda', exe));
+    assert.equal(textExecutable(file, {...gpu, device_id:'Vulkan0'}), file);
+    assert.equal(textExecutable(file, {device_id:'cpu'}), file);
+  }
+  assert.equal(textExecutable(path.resolve('text/plm-worker.exe'), gpu), path.resolve('text/cuda/plm-worker.exe'));
+});
+
 test('CPU trial presets use the native implementation and step control for the selected checkpoint',()=>{
   const {audioEngine,diffusionEngine}=require('../../apps/windows-ui/hf/generation-runtime.cjs');
   const {parameters}=require('../../apps/windows-ui/hf/trial-worker.cjs');

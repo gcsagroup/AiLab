@@ -1,3 +1,4 @@
+import { TrialTextOutput, outputPreviewLimit } from './TrialTextOutput';
 import { InferencePerformance } from './InferencePerformance';
 import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -7,10 +8,11 @@ import { LibraryReadContext } from './LibraryReadContext';
 import { defaultMediaRuntime, mainMedia, MediaFields, MediaPreview } from './Media';
 import { Checkpoints } from './Checkpoints';
 import { AIAssistance } from './AIAssistance';
-import { TrialModelSelect } from './TrialModelSelect';
+import { libraryModelKind, preferredTextGpu } from './types';
 import { WindowsAIAssistance } from './WindowsAIAssistance';
 import { DatasetMarket } from './DatasetMarket';
 import DatasetSplitDialog, { DatasetSplitBinding } from './DatasetSplitDialog';
+import { CpuThreadsField } from './CpuThreadsField';
 import { RuntimePresets } from './RuntimePresets';
 import { GenerationFields, GenerationNumericFields, generationNumericErrors } from './GenerationFields';
 import { TrainingFields, trainingParameterErrors, useTrainingContract } from './TrainingFields';
@@ -25,17 +27,11 @@ export const kindLabels: Record<string, string> = { text: '模型', image: '图�
 const phaseNames: Record<string, string> = { loading: '加载模型', generating: '生成文本', tokenizing: '检查分词', training: '训练模型', quantizing: '量化模型', evaluating: '独立评测', preparing: '准备输入', saving: '保存产物', uploading: '上传输入' };
 export const defaultRuntime = { engine: 'mlx', device_id: 'apple-gpu', max_tokens: 128, temperature: 0, top_p: 1, seed: 0 };
 export const defaultTrainingRuntime: Runtime = { engine: 'mlx', device_id: 'apple-gpu', seed: 0, training_type: 'sft', update_method: 'lora', recipe_id: 'qwen25-assistant-only-v1', steps: 4, learning_rate: 0.0001, max_seq_length: 512, lora_rank: 4, lora_alpha: 8, num_layers: 2, batch_size: 1, gradient_accumulation: 1, optimizer: 'adamw', weight_decay: 0, lora_dropout: 0 };
-const outputPreviewLimit = 65536;
 const leaveWhileBusyMessage = '当前操作尚未完成，请稍后再离开。';
 export function displayOutput(attempt: Attempt | null, events: RunEvent[]): string {
   if (attempt?.snapshot?.operation !== 'generate' || (attempt.snapshot.kind && attempt.snapshot.kind !== 'text')) return '';
-  if (attempt.output_text) return attempt.output_text.slice(0, outputPreviewLimit);
-  let text = '';
-  for (const event of events) {
-    if (event.type === 'token') text += String(event.payload.text || '').slice(0, outputPreviewLimit - text.length);
-    if (text.length >= outputPreviewLimit) break;
-  }
-  return text;
+  if (attempt.output_text) return attempt.output_text;
+  return events.filter(event => event.type === 'token').map(event => event.payload.text || '').join('');
 }
 
 function DataCheck({ report }: { report?: CheckReport }) {
@@ -118,6 +114,11 @@ export function RunResult({ initial, onChanged, onAttemptUpdated, onExport, onRe
     : '远端连接或同步中断，需要核实原执行状态。核实不会重新提交计算。'
     : '本机执行状态待核实，需要确认原进程是否退出。核实不会重新执行任务。';
   const output = displayOutput(attempt, events);
+  const reasoning = attempt.reasoning_text;
+  const config = attempt.effective_config;
+  // Earlier native trials recorded the architecture, before they recorded the template prefix.
+  const prefilled = config?.reasoning_prefilled === true || (config?.type === 'config' && config.thinking !== 'disabled' &&
+    (config.architecture === 'qwen35' || (config.architecture === 'qwen4exp' && output.includes('</think>'))));
   function captureAction() {
     const currentLifetime = lifetime.current; const libraryCurrent = captureLibraryRead();
     const isMounted = () => currentLifetime === lifetime.current;
@@ -168,10 +169,10 @@ export function RunResult({ initial, onChanged, onAttemptUpdated, onExport, onRe
     <div className="result-header"><h3>{!detailsLoaded ? '运行记录' : transferring ? '文件传输记录' : training ? '训练记录与产物' : evaluating ? '评测执行记录' : converting ? quantizing ? '量化记录与产物' : '模型实验记录与产物' : '运行结果'}</h3><Badge tone={attempt.state === 'succeeded' ? 'good' : attempt.state === 'failed' ? 'danger' : ''}>{attempt.recovery_required ? '停止状态待核实' : stateNames[attempt.state] || attempt.state}</Badge></div>
     <InferencePerformance attempt={attempt} engineMetric={events.filter(event => event.type === 'metric').at(-1)?.payload} />
     {lastMetric && <section className="training-metrics" aria-label="训练指标"><dl className="facts"><div><dt>训练步数</dt><dd>{String(lastMetric.step ?? lastMetric.completed_steps)} / {String(lastMetric.total_steps)}</dd></div><div><dt>当前损失</dt><dd>{typeof lastMetric.loss === 'number' ? lastMetric.loss.toFixed(5) : '待上报'}</dd></div></dl><p className="muted">损失仅反映本次训练过程，候选质量需要独立评测。</p></section>}
-    {!detailsLoaded ? <Empty title={error ? '运行记录暂时无法读取' : '正在读取运行记录'}>读取完成后显示本次执行的产物与详情，原运行记录保留。</Empty> : transferring ? <Empty title={attempt.recovery_required ? '传输状态待核实' : active ? '正在验证文件传输' : attempt.state === 'succeeded' ? '文件传输验证完成' : attempt.state === 'cancelled' ? '文件传输已停止' : '文件传输未完成'}>{attempt.state === 'failed' ? failureMessage : '本次仅处理已选文件，原始文件与传输记录保留。'}</Empty> : mediaArtifact ? <MediaPreview key={mediaArtifact.id} artifact={mediaArtifact} autoLoad name="本次生成结果" /> : output ? <div className="model-output" aria-label="模型输出">{output}</div> : training && attempt.state === 'succeeded' ? <Empty title="训练产物已保存">已生成独立 LoRA 适配器，可以保存到模型库进行试用和评测。原始基座文件保留。</Empty> : converting && attempt.state === 'succeeded' ? <Empty title={quantizing ? '量化产物已保存' : '独立模型产物已保存'}>独立模型文件已生成。保存到模型库后可用对应引擎试用，质量尚未通过验收。</Empty> : evaluating && attempt.state === 'succeeded' ? <Empty title="评测执行完成">实际输出与判定已记录，质量结论请查看下方评测报告。</Empty> : <Empty title={attempt.recovery_required ? '原执行状态待核实' : active ? attempt.state === 'paused' ? '训练已暂停' : attempt.state === 'resuming' ? '正在恢复训练状态' : training ? '正在训练模型' : '模型正在处理本次任务' : attempt.state === 'cancelled' ? '本次执行已停止' : mediaGeneration ? '本次没有可显示的媒体结果' : '本次没有文本输出'}>{active ? '记录将随运行持续更新，离开此页不会重复提交任务。' : attempt.state === 'failed' ? failureMessage : '原任务、输入与运行记录已保留。'}</Empty>}
+    {!detailsLoaded ? <Empty title={error ? '运行记录暂时无法读取' : '正在读取运行记录'}>读取完成后显示本次执行的产物与详情，原运行记录保留。</Empty> : transferring ? <Empty title={attempt.recovery_required ? '传输状态待核实' : active ? '正在验证文件传输' : attempt.state === 'succeeded' ? '文件传输验证完成' : attempt.state === 'cancelled' ? '文件传输已停止' : '文件传输未完成'}>{attempt.state === 'failed' ? failureMessage : '本次仅处理已选文件，原始文件与传输记录保留。'}</Empty> : mediaArtifact ? <MediaPreview key={mediaArtifact.id} artifact={mediaArtifact} autoLoad name="本次生成结果" /> : output || reasoning ? <TrialTextOutput key={attempt.id} text={output} reasoning={reasoning} prefilled={prefilled} active={active} /> : training && attempt.state === 'succeeded' ? <Empty title="训练产物已保存">已生成独立 LoRA 适配器，可以保存到模型库进行试用和评测。原始基座文件保留。</Empty> : converting && attempt.state === 'succeeded' ? <Empty title={quantizing ? '量化产物已保存' : '独立模型产物已保存'}>独立模型文件已生成。保存到模型库后可用对应引擎试用，质量尚未通过验收。</Empty> : evaluating && attempt.state === 'succeeded' ? <Empty title="评测执行完成">实际输出与判定已记录，质量结论请查看下方评测报告。</Empty> : <Empty title={attempt.recovery_required ? '原执行状态待核实' : active ? attempt.state === 'paused' ? '训练已暂停' : attempt.state === 'resuming' ? '正在恢复训练状态' : training ? '正在训练模型' : '模型正在处理本次任务' : attempt.state === 'cancelled' ? '本次执行已停止' : mediaGeneration ? '本次没有可显示的媒体结果' : '本次没有文本输出'}>{active ? '记录将随运行持续更新，离开此页不会重复提交任务。' : attempt.state === 'failed' ? failureMessage : '原任务、输入与运行记录已保留。'}</Empty>}
     {converting && typeof attempt.effective_config?.source_weight_bytes === 'number' && typeof attempt.effective_config?.output_weight_bytes === 'number' && <section className="training-metrics"><dl className="facts"><div><dt>原权重体积</dt><dd>{readableSize(attempt.effective_config.source_weight_bytes)}</dd></div><div><dt>{quantizing ? '量化权重体积' : '新权重体积'}</dt><dd>{readableSize(attempt.effective_config.output_weight_bytes)}</dd></div></dl><p className="muted">体积来自实际文件，不代表速度提高或质量通过。</p></section>}
     {(attempt.output_text_truncated || output.length >= outputPreviewLimit) && <p className="muted">正文较长，此处仅展示部分内容，完整文本可保存为作品并导出。</p>}
-    {attempt.state === 'failed' && output && <ErrorNotice message={failureMessage} />}
+    {attempt.state === 'failed' && (output || reasoning) && <ErrorNotice message={failureMessage} />}
     <ErrorNotice message={error} />
     {attempt.connection_state === 'disconnected' && <p className="warning">连接已中断，当前显示最后取得的运行状态。重连核实不会再次提交执行。</p>}{attempt.stop_status === 'unknown' && <p className="warning">停止结果尚未确认，不能据此认为任务已经停止或资源已经释放。</p>}
     {!active && attempt.state !== 'succeeded' && attempt.compute_outcome === 'succeeded' && attempt.collection_state === 'succeeded' && <p className="muted recovery-notice">已有计算产物已补收完成，原中断或取消记录仍保留。</p>}{attempt.recovery_required && <p className="warning recovery-notice">{recoveryMessage}</p>}
@@ -179,7 +180,7 @@ export function RunResult({ initial, onChanged, onAttemptUpdated, onExport, onRe
     {confirmStop && <Dialog title="强制停止本次运行" onClose={() => setConfirmStop(false)}><p>正常停止尚未完成。强制停止可能丢失尚未保存的训练进度，原运行记录会保留。</p><div className="dialog-footer"><Button onClick={() => setConfirmStop(false)}>继续等待</Button><Button busy={busy} onClick={() => control('force-stop')}>确认强制停止</Button></div></Dialog>}
     {!active && Boolean(attempt.artifacts?.length) && <div className="result-actions">{attempt.artifacts?.some(item => ['adapters.safetensors', 'pytorch_lora_weights.safetensors'].includes(item.name || '')) && <Button busy={busy} disabled={adapterSaved} onClick={saveAdapter}>{adapterSaved ? '已保存实验适配器' : '保存训练适配器'}</Button>}{converting && attempt.artifacts?.some(item => item.name === 'conversion.json') && <Button busy={busy} disabled={convertedSaved} onClick={saveConverted}>{convertedSaved ? quantizing ? '已保存实验量化模型' : '已保存实验模型' : quantizing ? '保存实验量化模型' : '保存实验模型'}</Button>}{onExport && <Button onClick={() => onExport({ type: 'report', id: attempt.id, name: '本次执行报告' })}>导出执行报告</Button>}</div>}
     {training && attempt.snapshot?.kind !== 'image' && <Checkpoints attempt={attempt} onRestoreTask={onRestoreTask} />}
-    {detailsLoaded && <details className="run-details"><summary>运行详情与配方</summary><dl className="facts"><div><dt>运行编号</dt><dd>{attempt.id}</dd></div><div><dt>产物文件</dt><dd>{attempt.artifacts?.length || 0}</dd></div></dl><h4>提交配方</h4><pre>{JSON.stringify(attempt.snapshot || {}, null, 2)}</pre>{attempt.effective_config && <><h4>执行器实际配置</h4><pre>{JSON.stringify(attempt.effective_config, null, 2)}</pre></>}<ol className="event-list">{events.filter(event => event.type !== 'token').map(event => <li key={event.sequence}><span>{event.type}</span><span>{String(event.payload.message || event.payload.phase || event.payload.state || '')}</span></li>)}</ol></details>}
+    {detailsLoaded && <details className="run-details"><summary>运行详情与配方</summary><dl className="facts"><div><dt>运行编号</dt><dd>{attempt.id}</dd></div><div><dt>产物文件</dt><dd>{attempt.artifacts?.length || 0}</dd></div></dl><h4>提交配方</h4><pre>{JSON.stringify(attempt.snapshot || {}, null, 2)}</pre>{attempt.effective_config && <><h4>执行器实际配置</h4><pre>{JSON.stringify(attempt.effective_config, null, 2)}</pre></>}<ol className="event-list">{events.filter(event => event.type !== 'token' && event.type !== 'reasoning').map(event => <li key={event.sequence}><span>{event.type}</span><span>{String(event.payload.message || event.payload.phase || event.payload.state || '')}</span></li>)}</ol></details>}
   </section>;
 }
 
@@ -433,21 +434,44 @@ export default function Workbench({ task, models: listedModels, datasets, device
   }
   const remote = Boolean(draft.execution_target_id);
   const train = draft.operation === 'train';
-  const available = models.filter(model => (!model.modality || model.modality === task.kind) && (!window.ailabHF || train || model.execution_available));
+  const windowsTrial = Boolean(window.ailabHF) && !train;
+  const draftModels = windowsTrial ? listedModels : models;
+  const available = draftModels.filter(model => windowsTrial
+    ? libraryModelKind(model) === task.kind && model.execution_available !== false
+    : !model.modality || model.modality === task.kind);
   const runtime: Runtime = { ...(task.kind !== 'text' ? defaultMediaRuntime(task.kind, train) : train ? defaultTrainingRuntime : defaultRuntime), ...draft.runtime };
   const trainingContract = useTrainingContract({ taskId: task.id, projectId: task.project_id, targetId: draft.execution_target_id, engine: runtime.engine, deviceId: runtime.device_id, enabled: task.kind === 'text' && train });
+  const [loadStatus,setLoadStatus]=useState('');
+  const localText=windowsTrial && !remote && task.kind==='text' && !draft.adapter_id && !draft.checkpoint_id;
+  useEffect(()=>{
+    if (!localText || !draft.model_id) { setLoadStatus(''); return; }
+    let live=true;
+    const owner={owner:crypto.randomUUID(),project_id:task.project_id,task_id:task.id};
+    const settings={device_id:runtime.device_id,context_limit:runtime.context_limit,kv_precision:runtime.kv_precision,
+      cpu_threads:runtime.cpu_threads,prefill_step_size:runtime.prefill_step_size};
+    setLoadStatus('正在加载基座模型…');
+    void api<{device_id:string;device_name:string;fallback:boolean}>('POST','/models/resident',{...owner,model_id:draft.model_id,runtime:settings}).then(result=>{
+      if (live) setLoadStatus(result.fallback ? '显存不足，模型已加载到内存，使用 CPU 推理。' :
+        result.device_id==='cpu' ? '基座模型已加载到内存。' : '基座模型已加载到显存 · '+result.device_name);
+    }).catch(e=>{if(live)setLoadStatus('基座模型加载失败：'+errorMessage(e));});
+    return ()=>{live=false;void api('DELETE','/models/resident',owner).catch(()=>{});};
+  },[localText,draft.model_id,task.id,task.project_id,runtime.device_id,runtime.context_limit,runtime.kv_precision,runtime.cpu_threads,runtime.prefill_step_size]);
   const generationBlocked = task.kind === 'text' && !train && Object.keys(generationNumericErrors(runtime, remote)).length > 0;
   const trainingBlocked = task.kind === 'text' && train && (!trainingContract.contract || !trainingContract.isCurrent() || Object.keys(trainingParameterErrors(trainingContract.contract, runtime)).length > 0);
   useEffect(() => {
     if (task.kind === 'text' && train && !trainingContract.contract) { setPreflight(null); submitKey.current = null; }
   }, [task.kind, train, trainingContract.contract]);
   function changeLocation(id: string | null) {
-    const next = { ...runtime }; delete next.kv_precision; delete next.prefill_step_size; delete next.precision;
+    const next = { ...runtime }; delete next.cpu_threads; delete next.kv_precision; delete next.prefill_step_size; delete next.precision;
     next.engine = id ? 'transformers' : window.ailabHF ? 'ailab-gguf' : 'mlx'; next.device_id = id ? 'cuda:0' : window.ailabHF ? 'cpu' : 'apple-gpu'; if (id) next.precision = 'bfloat16';
     change({ ...draft, execution_target_id: id, adapter_id: id ? null : draft.adapter_id, runtime: next });
     if (id && draft.adapter_id) setMarketNotice('NVIDIA 首期使用原权重，已清除本次实验适配器选择；原适配器与历史记录保留。');
   }
-  const updateRuntime = (field: keyof Runtime, value: number | string) => change({ ...draft, runtime: { ...runtime, [field]: value } });
+  function selectBase(model: string | null) {
+    const gpu = localText && model && !draft.model_id && !runtime.device_selected_by_user && runtime.device_id==='cpu' ? preferredTextGpu(devices) : undefined;
+    change({ ...draft, model_id: model, adapter_id: null, ...(gpu ? { runtime: { ...runtime, device_id: gpu.id } } : {}) });
+  }
+  const updateRuntime = (field: keyof Runtime, value: number | string) => change({ ...draft, runtime: { ...runtime, [field]: value, ...(localText && field==='device_id' ? {device_selected_by_user:true} : {}) } });
   const checkedDeviceId = typeof preflight?.effective_config?.device_id === 'string' ? preflight.effective_config.device_id : runtime.device_id;
   const checkedDeviceName = devices.find(device => device.id === checkedDeviceId)?.name || ({ cpu: '本机 CPU', 'apple-gpu': '本机 Apple GPU' } as Record<string, string>)[checkedDeviceId] || checkedDeviceId;
   return <>
@@ -468,13 +492,13 @@ export default function Workbench({ task, models: listedModels, datasets, device
       <div className="section-title"><h2>{train ? '训练配置' : '输入与模型'}</h2><Badge>{kindLabels[task.kind]}</Badge></div>
       <fieldset className="task-fields" disabled={editingDisabled || Boolean(draft.checkpoint_id)}>
       {task.kind === 'text' ? <>
-      {window.ailabHF && !train ? <TrialModelSelect id="base-model" ariaLabel="选择基座模型" models={listedModels} kind="text" value={draft.model_id}
-        onChange={id => change({ ...draft, model_id: id || null, adapter_id: null })} onImport={() => onImport('model')} /> :
-      <div className="field"><div className="label-action"><label htmlFor="base-model">基座模型</label><button tabIndex={0} type="button" onClick={() => onImport('model')}>导入模型</button></div><select id="base-model" aria-label="选择基座模型" value={draft.model_id || ''} onChange={e => change({ ...draft, model_id: e.target.value || null, adapter_id: null })}><option value="">请选择已导入的模型</option>{draft.model_id && !available.some(model => model.id === draft.model_id) && <option value={draft.model_id}>已保存模型 · 尚未读回（{draft.model_id}）</option>}{available.map(model => <option key={model.id} value={model.id}>{model.name}</option>)}</select></div>}
+      <div className="field"><div className="label-action"><label htmlFor="base-model">基座模型</label><button tabIndex={0} type="button" onClick={() => onImport('model')}>导入模型</button></div><select id="base-model" aria-label="选择基座模型" value={draft.model_id || ''} onChange={e => selectBase(e.target.value || null)}><option value="">请选择已导入的模型</option>{draft.model_id && !available.some(model => model.id === draft.model_id) && <option value={draft.model_id} disabled={windowsTrial}>已保存模型 · 尚未读回（{draft.model_id}）</option>}{available.map(model => <option key={model.id} value={model.id}>{model.name}</option>)}</select>{localText && draft.model_id && <small role="status" className="muted">{loadStatus}</small>}</div>
       {currentModel && <small className="muted">{currentModel.format} · 本机文件已登记</small>}{!train && !remote && (Boolean(draft.adapter_id) || adapters.some(item => item.base_model_id === draft.model_id)) && <label>训练适配器<select aria-label="训练适配器" value={draft.adapter_id || ''} onChange={e => change({ ...draft, adapter_id: e.target.value || null })}><option value="">仅使用基座模型</option>{draft.adapter_id && !adapters.some(item => item.id === draft.adapter_id && item.base_model_id === draft.model_id) && <option value={draft.adapter_id}>已保存适配器 · 待核实（{draft.adapter_id}）</option>}{adapters.filter(item => item.base_model_id === draft.model_id).map(item => <option key={item.id} value={item.id}>{item.name} · 实验产物</option>)}</select><small className="warning">实验适配器用于比较训练前后的输出，质量尚未通过验收。</small></label>}
       {train ? <><div className="field"><div className="label-action"><label htmlFor="training-data">训练数据</label><button tabIndex={0} type="button" onClick={() => onImport('dataset')}>导入数据</button></div><select id="training-data" aria-label="选择训练数据" value={draft.dataset_id || ''} onChange={e => change({ ...draft, dataset_id: e.target.value || null })}><option value="">请选择已检查的数据集</option>{currentDataset?.dataset_split_role === 'validation' && <option value={currentDataset.id} disabled>{currentDataset.name} · 验证子集（不可训练）</option>}{datasets.filter(dataset => dataset.schema !== 'image_caption_v1' && dataset.dataset_split_role !== 'validation').map(dataset => <option key={dataset.id} value={dataset.id}>{dataset.name} · {dataset.sample_count || 0} 条{dataset.dataset_split_role === 'train' ? ' · 训练子集' : ''}</option>)}</select></div>{currentDataset && <DatasetSplitBinding dataset={currentDataset} projectId={task.project_id} model={currentModel} maxSeqLength={runtime.max_seq_length ?? 512} onInspect={() => setSplittingDataset(currentDataset)} />}<div className="field"><div className="label-action"><label htmlFor="training-evaluation-plan">训练前冻结评测方案</label>{onCreateEvaluationPlan && <button tabIndex={0} type="button" onClick={onCreateEvaluationPlan}>新建评测方案</button>}</div><select id="training-evaluation-plan" value={draft.evaluation_plan_id || ''} onChange={e => change({ ...draft, evaluation_plan_id: e.target.value || null })}><option value="">暂不绑定 · 仅生成实验产物</option>{evaluationPlans.map(plan => <option key={plan.id} value={plan.id}>{plan.name} · {plan.sample_count} 条</option>)}</select><small className={draft.evaluation_plan_id ? 'muted' : 'warning'}>{draft.evaluation_plan_id ? '提交时固定此评测方案的版本，用于训练后的独立质量验收。' : '未提前绑定评测方案的训练产物可以试用与对照，不能直接登记为已验收候选。'}</small></div><div className="two-fields"><label>训练类型<input value="SFT 监督微调" readOnly /></label><label>更新方式<input value="LoRA" readOnly /></label></div><p className="muted">训练将生成独立适配器，保留原始模型与数据版本。提交前会检查实际监督内容与运行环境。</p></> : <label>输入内容<textarea aria-label="输入内容" onDragOver={e=>{if(currentModel?.supports_media && e.dataTransfer.types.includes("Files"))e.preventDefault();}} onDrop={e=>{if(!currentModel?.supports_media || !e.dataTransfer.files.length)return; e.preventDefault(); if(e.dataTransfer.files.length!==1){setError("每次可拖入一份素材。");return;} void attachMaterial(e.dataTransfer.files[0]);}} rows={7} value={draft.input.prompt} placeholder={currentModel?.pipeline === 'llama-ocr' ? '拖入含文字的 PNG 图片，在素材引用下一行输入“Free OCR.”。' : currentModel?.pipeline === 'llama-rerank' ? '首行输入查询，之后每行输入一份候选文本。' : currentModel?.pipeline === 'llama-decision' ? '输入含 state 和 questions 的 JSON。' : currentModel?.supports_media ? "可拖入一份本机素材并输入问题；也可在首行写 @素材 加项目素材名称或编号。" : "输入你希望模型处理的内容…"} onChange={e => change({ ...draft, input: { ...draft.input, prompt: e.target.value } })} /></label>}
-      <details className="runtime-settings" open><summary><Settings2 size={15} />运行设置</summary><div className="form-stack"><ExecutionLocation projectId={task.project_id} value={draft.execution_target_id} disabled={editingDisabled || Boolean(draft.checkpoint_id)} onChange={changeLocation} />{!train && !remote && <RuntimePresets runtime={runtime} disabled={editingDisabled} onApply={value => change({ ...draft, runtime: value })} />}{remote ? <label>执行设备<input readOnly value="NVIDIA CUDA · BF16" /></label> : <label>执行设备<select value={runtime.device_id} onChange={e => updateRuntime('device_id', e.target.value)}>{!devices.some(device => device.id === runtime.device_id) && (devices.length > 0 || runtime.device_id !== 'apple-gpu') && <option value={runtime.device_id}>已保存设备 · 待检查（{runtime.device_id}）</option>}{devices.length ? devices.map(device => <option key={device.id} value={device.id}>{device.name}</option>) : <option value={window.ailabHF ? 'cpu' : 'apple-gpu'}>{window.ailabHF ? '本机 CPU' : '本机 Apple GPU'}</option>}</select></label>}{train ? <TrainingFields runtime={runtime} state={trainingContract} disabled={editingDisabled || Boolean(draft.checkpoint_id)} acceptedSamples={preflight?.check_report?.accepted_samples} onChange={updateRuntime} /> : <div className="two-fields">{!remote && <><label>KV 缓存精度<select value={runtime.kv_precision || 'auto'} onChange={e => updateRuntime('kv_precision', e.target.value)}><option value="auto">模型精度</option>{window.ailabHF ? <><option value="f16">FP16</option><option value="q8">Q8_0 · 8-bit</option><option value="q4">Q4_0 · 4-bit</option></> : <option value="q4" disabled>4-bit · 质量未通过</option>}</select></label><label>提示词分块上限<select value={runtime.prefill_step_size ?? 2048} onChange={e => updateRuntime('prefill_step_size', Number(e.target.value))}><option value={512}>512 词元</option><option value={2048}>2048 词元</option><option value={4096}>4096 词元</option></select></label></>}<GenerationNumericFields runtime={runtime} remote={remote} onChange={updateRuntime} /></div>}{!train && <GenerationFields key={task.id} supportsThinking={Boolean(window.ailabHF && models.find(m=>m.id===draft.model_id)?.supports_thinking)} runtime={runtime} disabled={editingDisabled} onChange={value => change({ ...draft, runtime: value })} />}{train && <small>仅监督助手回答；超长样本排除，不拼接。检查时会列出有效监督量。</small>}</div></details>
-      </> : <MediaFields deviceFreeBytes={devices.find(d=>d.id===runtime.device_id)?.free_bytes} deviceName={checkedDeviceName} draft={draft} models={window.ailabHF && !train ? listedModels : models} datasets={datasets} adapters={adapters} materials={materials} onChange={change} onImport={onImport} />}
+      <details className="runtime-settings" open><summary><Settings2 size={15} />运行设置</summary><div className="form-stack"><ExecutionLocation projectId={task.project_id} value={draft.execution_target_id} disabled={editingDisabled || Boolean(draft.checkpoint_id)} onChange={changeLocation} />{!train && !remote && <RuntimePresets runtime={runtime} disabled={editingDisabled} onApply={value => change({ ...draft, runtime: value })} />}{remote ? <label>执行设备<input readOnly value="NVIDIA CUDA · BF16" /></label> : <label>执行设备<select value={runtime.device_id} onChange={e => updateRuntime('device_id', e.target.value)}>{!devices.some(device => device.id === runtime.device_id) && (devices.length > 0 || runtime.device_id !== 'apple-gpu') && <option value={runtime.device_id}>已保存设备 · 待检查（{runtime.device_id}）</option>}{devices.length ? devices.map(device => <option key={device.id} value={device.id}>{device.name}</option>) : <option value={window.ailabHF ? 'cpu' : 'apple-gpu'}>{window.ailabHF ? '本机 CPU' : '本机 Apple GPU'}</option>}</select></label>}
+      {windowsTrial && !remote && runtime.device_id === 'cpu' && <CpuThreadsField devices={devices} value={runtime.cpu_threads} onChange={threads => updateRuntime('cpu_threads', threads)} />}
+      {train ? <TrainingFields runtime={runtime} state={trainingContract} disabled={editingDisabled || Boolean(draft.checkpoint_id)} acceptedSamples={preflight?.check_report?.accepted_samples} onChange={updateRuntime} /> : <div className="two-fields">{!remote && <><label>KV 缓存精度<select value={runtime.kv_precision ?? (windowsTrial ? 'f16' : 'auto')} onChange={e => updateRuntime('kv_precision', e.target.value)}><option value="auto">模型精度</option>{window.ailabHF ? <><option value="f16">FP16 · 16 位（默认）</option><option value="q8">Q8_0 · 8-bit</option><option value="q4">Q4_0 · 4-bit</option></> : <option value="q4" disabled>4-bit · 质量未通过</option>}</select></label><label>提示词分块上限<select value={runtime.prefill_step_size ?? 2048} onChange={e => updateRuntime('prefill_step_size', Number(e.target.value))}><option value={512}>512 词元</option><option value={2048}>2048 词元</option><option value={4096}>4096 词元</option></select></label></>}<GenerationNumericFields runtime={runtime} remote={remote} onChange={updateRuntime} /></div>}{!train && <GenerationFields key={task.id} supportsThinking={Boolean(window.ailabHF && models.find(m=>m.id===draft.model_id)?.supports_thinking)} runtime={runtime} disabled={editingDisabled} onChange={value => change({ ...draft, runtime: value })} />}{train && <small>仅监督助手回答；超长样本排除，不拼接。检查时会列出有效监督量。</small>}</div></details>
+      </> : <MediaFields devices={devices} deviceName={checkedDeviceName} draft={draft} models={draftModels} datasets={datasets} adapters={adapters} materials={materials} onChange={change} onImport={onImport} />}
       {train && ['text', 'image'].includes(task.kind) && <Button disabled={editingDisabled || Boolean(draft.checkpoint_id)} onClick={openMarket}>从数据市场选择训练数据</Button>}
       </fieldset>
       {marketNotice && <p className="market-notice" role="status">{marketNotice}</p>}

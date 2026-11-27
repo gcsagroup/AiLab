@@ -9,7 +9,7 @@ const record = (value: unknown): Record<string, unknown> => value && typeof valu
 const display = (value: unknown) => value === undefined ? '未记录' : value === null ? '无' : typeof value === 'object' ? JSON.stringify(value) : String(value);
 const parameterLabels: Record<string, string> = {
   engine: '执行引擎', device_id: '设备', precision: '计算精度', seed: '随机种子', max_tokens: '最大输出 token', temperature: '温度', top_p: 'Top-p',
-  context_limit: '上下文上限', prompt_tokens: '输入 token', kv_precision: 'KV 缓存精度', prefill_step_size: '预填充分块', overflow: '溢出处理',
+  context_limit: '上下文上限', prompt_tokens: '输入 token', cpu_threads: 'CPU 逻辑核心数', kv_precision: 'KV 缓存精度', prefill_step_size: '预填充分块', overflow: '溢出处理',
   stop: '停止词', stream: '流式输出', thinking: '思考模式', size: '图片边长', cfg: '提示词引导强度', steps: '生成步数',
   frames: '视频帧数', fps: '每秒帧数', voice: '音色', speed: '语速', sample_rate: '采样率',
 };

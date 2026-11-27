@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tarfile
+import tempfile
 from urllib.request import urlopen, Request
 import zipfile
 import zlib
@@ -22,12 +23,20 @@ SD = "https://github.com/leejet/stable-diffusion.cpp/releases/download/master-11
 AUDIO = "https://github.com/0xShug0/audio.cpp/releases/download/v0.9.5/audio-v0.9.5-bin-windows-x64-cpu-portable.zip"
 AUDIO_096 = "https://github.com/0xShug0/audio.cpp/releases/download/v0.9.6/audio-v0.9.6-bin-windows-x64-cpu-portable.zip"
 SD_CONTROL = "https://github.com/leejet/stable-diffusion.cpp/releases/download/master-1117-0d71f96/sd-master-0d71f96-bin-win-cpu-x64.zip"
+AUDIO_VULKAN = AUDIO.replace("-cpu-portable", "-vulkan-portable")
+AUDIO_096_VULKAN = AUDIO_096.replace("-cpu-portable", "-vulkan-portable")
+SD_CONTROL_VULKAN = SD_CONTROL.replace("-cpu-x64", "-vulkan-x64")
 SOURCE = "https://codeload.github.com/ggml-org/llama.cpp/tar.gz/refs/tags/b11669"
+
+
+def file_sha256(path):
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
 def fetch(url, name, checksum):
     dest = CACHE / name
-    if not dest.exists() or hashlib.sha256(dest.read_bytes()).hexdigest() != checksum:
+    if not dest.exists() or file_sha256(dest) != checksum:
         temp = dest.with_suffix(".partial")
         with (
             urlopen(
@@ -36,7 +45,7 @@ def fetch(url, name, checksum):
             temp.open("wb") as out,
         ):
             shutil.copyfileobj(resp, out)
-        if hashlib.sha256(temp.read_bytes()).hexdigest() != checksum:
+        if file_sha256(temp) != checksum:
             raise RuntimeError("Checksum mismatch: " + name)
         os.replace(temp, dest)
     return dest
@@ -108,6 +117,112 @@ def prepare_recipe_runtime(url, digest, folder, executable):
                 continue
             with bundle.open(member) as src, (target / name).open("wb") as dst:
                 shutil.copyfileobj(src, dst)
+
+
+def build_text_worker(sdk, runtime):
+    # Only the AiLab host adapter is built here. CUDA kernels come from the distribution.
+    sdk = sdk.relative_to(ROOT).as_posix()
+    runtime = runtime.relative_to(ROOT).as_posix()
+    cmd = [
+        "x86_64-w64-mingw32-g++", "-std=c++17", "-O2", "-static", "-s",
+        f"-I{sdk}/include", f"-I{sdk}/tools/mtmd", f"-I{sdk}/ggml/include",
+        "-I.artifacts/ggml-sdk/llama.cpp-b12648/vendor", "workers/gguf-trial.cpp",
+        *[f"{runtime}/{dll}.dll" for dll in ("mtmd", "llama", "ggml", "ggml-base")],
+        "-o", f"{runtime}/ailab-gguf.exe",
+    ]
+    subprocess.run(["wsl.exe", "-d", "Ubuntu-24.04", "--", *cmd] if os.name == "nt" else cmd,
+                   cwd=ROOT, check=True)
+
+
+def install_runtime_file(src, target):
+    with tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as temp:
+        partial = Path(temp.name)
+    try:
+        with partial.open("wb") as dst:
+            shutil.copyfileobj(src, dst)
+        os.replace(partial, target)
+    finally:
+        partial.unlink(missing_ok=True)
+
+def extract_cuda(url, digest, folder, include):
+    archive = fetch(url, url.rsplit("/", 1)[1], digest)
+    target = DEST / folder
+    target.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(archive) as bundle:
+        for member in bundle.infolist():
+            name = Path(member.filename)
+            if name.parent == Path(".") and not member.is_dir() and include(name):
+                with bundle.open(member) as src:
+                    install_runtime_file(src, target / name)
+
+def text_cuda_file(name):
+    return name.name.startswith(("LICENSE", "ggml-cpu-")) or name.name in {
+        "ggml.dll", "ggml-base.dll", "ggml-cuda.dll", "llama.dll", "mtmd.dll", "libomp.dll",
+        "llama-server.exe", "llama-server-impl.dll", "llama-common.dll"}
+
+def prepare_native_text():
+    tag = "b12649-mix-c7059d6"
+    base = f"https://github.com/unslothai/llama.cpp/releases/download/{tag}/"
+    folder = "text/native-kernels/cuda"
+    extract_cuda(base + f"app-{tag}-windows-x64-cuda12-older.zip",
+            "1bde79ab7182c27f9f7976847011ce7ef7dc9f0ea4ddede7c0ddf5360b070b7e", folder,
+            lambda name: text_cuda_file(name) or name.name in {"BUILD_INFO.txt", "THIRD_PARTY_LICENSES.txt", "UNSLOTH_PREBUILT_INFO.json"})
+    archive = f"llama.cpp-source-commit-189f431bf58f433d376d718c7788b1bf4467fa72.tar.gz"
+    source = fetch(base + archive, archive, "26ff4fc470df2aa935a8e66b0584c0d32a843c0f6f6fad6860bc9cc6ca9ca857")
+    prefix = f"llama.cpp-{tag}/"
+    with tarfile.open(source) as tar:
+        for member in tar:
+            name = member.name.removeprefix(prefix)
+            if member.isfile() and member.name.startswith(prefix) and (
+                name == "LICENSE" or (name.endswith(".h") and name.startswith(("include/", "ggml/include/", "tools/mtmd/")))
+            ):
+                tar.extract(member, CACHE, filter="data")
+    sdk = CACHE / prefix
+    shutil.copy2(sdk / "LICENSE", DEST / folder / "LICENSE.llama.cpp.txt")
+    build_text_worker(sdk, DEST / folder)
+
+
+def prepare_cuda(kind):
+    # Each engine uses its own upstream CUDA redistribution and GGML plugin.
+    # Versioned recipes share only their engine's compatible NVIDIA libraries.
+    def worker(source, folder):
+        file = DEST / source
+        with file.open("rb") as src:
+            install_runtime_file(src, DEST / folder / file.name)
+
+    def runtime_files(name):
+        return name.suffix in (".dll", ".txt") or name.name.startswith("LICENSE")
+
+    if kind in (None, "text"):
+        cudart = LLAMA.rsplit("/", 1)[0] + "/cudart-llama-bin-win-cuda-12.4-x64.zip"
+        extract_cuda(cudart, "8c79a9b226de4b3cacfd1f83d24f962d0773be79f1e7b75c6af4ded7e32ae1d6",
+                "text/cuda-runtime", runtime_files)
+        extract_cuda(LLAMA.replace("vulkan", "cuda-12.4"), "26b82a04c99449d19641e3db392ef2c5a2977ad087bb64c8d74e538b490b9649",
+                "text/cuda", text_cuda_file)
+        prepare_native_text()
+        for name in ("ailab-gguf.exe", "plm-worker.exe"):
+            worker("text/" + name, "text/cuda")
+    if kind in (None, "diffusion"):
+        cudart = SD.rsplit("/", 1)[0] + "/cudart-sd-bin-win-cu12-x64.zip"
+        extract_cuda(cudart, "fe20366827d357c00797eebb58244dddab7fd9a348d70090c3871004c320f38d",
+                "diffusion/cuda-runtime", runtime_files)
+        for url, digest, folder in [
+            (SD.replace("vulkan", "cuda12"), "b087219145a382cc1b1e826318289e1f672b9bb6965977734ef0deb85fe2d03a", "diffusion/cuda"),
+            (SD_CONTROL.replace("-cpu-", "-cuda12-"), "b2db431b50e5c5b87c25b6b52006627eae866193634112f68c57daf7c1c8cb0d", "diffusion/0d71f96/cuda"),
+        ]:
+            extract_cuda(url, digest, folder, lambda name: runtime_files(name) or name.name == "sd-cli.exe")
+        worker("diffusion/ailab-image.exe", "diffusion/cuda")
+    if kind in (None, "audio"):
+        cudart = AUDIO_096.replace("-bin-windows-x64-cpu-portable", "-cudart-windows-x64-cuda12.4")
+        extract_cuda(cudart, "283fbf6927021b8e73cd22e6c3c300c2d12adb66361bc1d392401e1ca2759297",
+                "audio/cuda-runtime", runtime_files)
+        for url, digest, folder in [
+            (AUDIO, "81f38a0a62935bdf4b2605541a21d50223b2e12b661887031705dd8a369f844b", "audio/cuda"),
+            (AUDIO_096, "ff7783e29b02e9006fa4304b9cdeffa030cd5a184998090f769f0a1d221b2698", "audio/v0.9.6/cuda"),
+        ]:
+            extract_cuda(url.replace("cpu-portable", "cuda12.4"), digest, folder,
+                    lambda name: runtime_files(name) or name.name == "audiocpp_cli.exe")
+            worker("audio/soxr.dll", folder)
 
 
 def prepare_phonemizer():
@@ -182,9 +297,15 @@ def main():
             )
         )
     if args.only in (None, "audio"):
+        prepare_recipe_runtime(AUDIO_VULKAN, "6c304c9a1e0cfc18b2d3b208b03d40365fec71d094ee4da4f695b2d9e7de29e8",
+                               "audio/vulkan", "audiocpp_cli.exe")
+        prepare_recipe_runtime(AUDIO_096_VULKAN, "8cfbd5a3a3c655dbb752972e548424d761cbd598ad7ea0903b77dbba0f202c3e",
+                               "audio/v0.9.6/vulkan", "audiocpp_cli.exe")
         prepare_recipe_runtime(AUDIO_096, "5d2e7fe24dbec0f8267db00ab2c6ccdd24799d916cb7beef3168eb66a53a4077",
                                "audio/v0.9.6", "audiocpp_cli.exe")
     if args.only in (None, "diffusion"):
+        prepare_recipe_runtime(SD_CONTROL_VULKAN, "0c11ec33b9c1a636f9f72e2bc537384b6c88cf88cd72c97d53f3d834980f27e8",
+                               "diffusion/0d71f96/vulkan", "sd-cli.exe")
         prepare_recipe_runtime(SD_CONTROL, "ba3e524523297902c9db1ec0e43e0bcbaf4067b4e053bd899b30c138ff1edda2",
                                "diffusion/0d71f96", "sd-cli.exe")
         for url, name, digest in [
@@ -220,7 +341,10 @@ def main():
             command = ["python3", "scripts/windows/" + script]
             subprocess.run(["wsl.exe", "-d", "Ubuntu-24.04", "--", *command] if os.name == "nt" else command,
                            cwd=ROOT, check=True)
+        for directory in (DEST / "audio/vulkan", DEST / "audio/v0.9.6/vulkan"):
+            shutil.copy2(DEST / "audio/soxr.dll", directory / "soxr.dll")
     if args.only == "audio":
+        prepare_cuda("audio")
         return
     if args.only in (None, "diffusion"):
         prepare_image_sdk()
@@ -263,33 +387,13 @@ def main():
             check=True,
         )
     if args.only == "diffusion":
+        prepare_cuda("diffusion")
         return
-    cmd = [
-        "x86_64-w64-mingw32-g++",
-        "-std=c++17",
-        "-O2",
-        "-static",
-        "-s",
-        "-I.artifacts/ggml-sdk/llama.cpp-b12648/include",
-        "-I.artifacts/ggml-sdk/llama.cpp-b12648/tools/mtmd",
-        "-I.artifacts/ggml-sdk/llama.cpp-b12648/ggml/include",
-        "-I.artifacts/ggml-sdk/llama.cpp-b12648/vendor",
-        "workers/gguf-trial.cpp",
-        "apps/windows-ui/runtime/text/mtmd.dll",
-        "apps/windows-ui/runtime/text/llama.dll",
-        "apps/windows-ui/runtime/text/ggml.dll",
-        "apps/windows-ui/runtime/text/ggml-base.dll",
-        "-o",
-        "apps/windows-ui/runtime/text/ailab-gguf.exe",
-    ]
-    subprocess.run(
-        ["wsl.exe", "-d", "Ubuntu-24.04", "--", *cmd] if os.name == "nt" else cmd,
-        cwd=ROOT,
-        check=True,
-    )
+    build_text_worker(CACHE / "llama.cpp-b12648", DEST / "text")
     build_plm = ["python3", "scripts/windows/build-plm.py"]
     subprocess.run(["wsl.exe", "-d", "Ubuntu-24.04", "--", *build_plm] if os.name == "nt" else build_plm,
                    cwd=ROOT, check=True)
+    prepare_cuda(args.only)
 
 
 def prepare_text_sdk():
