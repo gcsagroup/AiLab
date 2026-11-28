@@ -11,7 +11,7 @@ const { audioEngine, diffusionEngine } = require('./generation-runtime.cjs');
 const { synthesize } = require('./kokoro.cjs');
 const { StringDecoder } = require('node:string_decoder');
 const { createInterface } = require('node:readline');
-const root = process.env.AILAB_RUNTIME_DIR || path.resolve(__dirname, '../runtime');
+const { root, workerEnvironment, engineTempDirectory } = require('./engine-environment.cjs');
 const customGraphs = new Set(['llama-plm', 'llama-step35-full', 'llama-qwen4exp-ple']);
 const bins = {
   text: path.join(root, 'text', 'ailab-gguf.exe'),
@@ -34,30 +34,7 @@ function driverFile() {
   return cachedDriver;
 }
 function environment(exe) {
-  const env = {};
-  for (const k of [
-    'SystemRoot',
-    'WINDIR',
-    'TEMP',
-    'TMP',
-    'LOCALAPPDATA',
-    'USERPROFILE',
-    'ProgramData',
-    'SystemDrive',
-  ])
-    if (process.env[k]) env[k] = process.env[k];
-  env.PATH = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32');
-  if (exe && path.basename(path.dirname(exe)) === 'cuda') {
-    const engine = path.relative(root, exe).split(path.sep)[0];
-    if (!['text', 'diffusion', 'audio'].includes(engine)) throw Error('无法识别 CUDA 推理环境。');
-    env.PATH = path.join(root, engine, 'cuda-runtime') + path.delimiter + env.PATH;
-    // The driver compiles kernels on first use. Keep its writable cache outside the portable package.
-    if (env.LOCALAPPDATA) {
-      const cache = path.join(env.LOCALAPPDATA, 'GCSA-AiLab-UI-Preview', 'cuda-cache', engine);
-      try { fs.mkdirSync(cache, { recursive: true }); env.CUDA_CACHE_PATH = cache; }
-      catch { /* Inference can also run without a writable driver cache. */ }
-    }
-  }
+  const env = workerEnvironment(exe);
   // On hybrid Windows laptops an obsolete second ICD can hang enumeration. Use
   // the active NVIDIA ICD when present, otherwise let the Vulkan loader probe.
   const driver = driverFile();
@@ -128,7 +105,7 @@ async function textWorker(input, signal, event = () => {}, resident) {
     }
     input={...input,model:resident.gptj};
   } else if (['inspect','generate'].includes(input.action) && input.runtime?.pipeline === 'llama-gptj') {
-    const dir=await fsp.mkdtemp(path.join(require('node:os').tmpdir(),'ailab-gptj-'));
+    const dir=await fsp.mkdtemp(path.join(engineTempDirectory('text'),'ailab-gptj-'));
     try {
       const inspect=input.action==='inspect';
       const space=await fsp.statfs(dir);

@@ -8,7 +8,7 @@ const { audioEngine, diffusionEngine } = require('./generation-runtime.cjs');
 const { version } = require('../package.json');
 
 function failureDetail(error) {
-  if (error.code === 'ENOENT') return '未找到运行库。请在本页选择对应组件并点击“下载并配置”。';
+  if (error.code === 'ENOENT') return '未找到运行库。在工作台选择对应的试用任务后会自动准备。';
   if (['EPERM', 'EACCES', 'EROFS'].includes(error.code)) return '访问被拒绝，请检查目录权限或安全软件记录。';
   if (error.code === 'ENOSPC') return '磁盘空间不足。';
   if (error.message?.includes('响应超时')) return '执行器响应超时，请检查设备驱动后重新检测。';
@@ -84,9 +84,19 @@ async function probeEnvironment(directory, refresh) {
   const sdVersion = /stable-diffusion\.cpp version [^\r\n]+/i;
   const audioVersion = /audio\.cpp [^\r\n]+/i;
   const inventory = deviceInventory(refresh);
+  const cudaExecutables = {
+    text: path.join(path.dirname(bins.text), 'cuda', 'ailab-gguf.exe'),
+    diffusion: diffusionEngine(bins.image, undefined, 'CUDA0'),
+    audio: audioEngine(bins.audio, undefined, 'CUDA0'),
+  };
   const checks = await Promise.all([
     ...Object.entries({ text: 'llama.cpp', diffusion: 'stable-diffusion.cpp', audio: 'audio.cpp' }).map(([engine, label]) =>
       check(engine + 'Cuda', label + ' · CUDA 环境', async () => {
+        try { await fs.access(cudaExecutables[engine]); }
+        catch (error) {
+          if (error.code === 'ENOENT') return { status: 'optional', detail: '尚未配置此引擎的 CUDA 加速。需要使用 NVIDIA CUDA 时，可在对应试用任务旁准备加速库。' };
+          throw error;
+        }
         const result = (await inventory).cuda.find(probe => probe.engine === engine);
         if (result.error) throw Error(result.error);
         const adapters = result.devices.map(row => row.name.trim() + ' · ' + row.id);

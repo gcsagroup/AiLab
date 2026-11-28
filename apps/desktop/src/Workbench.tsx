@@ -20,6 +20,7 @@ import type { EvaluationPlan } from './Evaluation';
 import type { ExportObject } from './ExportDialog';
 import { ExecutionLocation, UploadSummary } from './ExecutionLocation';
 import { useWorkRecipeContext, WorkRecipeContext } from './WorkRecipeContext';
+import { TaskRuntimeNotice, taskLibraries, type TaskRuntime } from './WindowsTaskRuntime';
 import type { Adapter, Attempt, CheckReport, Dataset, Device, Draft, Kind, Material, Model, Preflight, RunEvent, Runtime, Task } from './types';
 import { activeStates, Badge, Button, Dialog, Empty, ErrorNotice, readableSize, stateNames } from './ui';
 
@@ -184,7 +185,7 @@ export function RunResult({ initial, onChanged, onAttemptUpdated, onExport, onRe
   </section>;
 }
 
-export default function Workbench({ task, models: listedModels, datasets, devices, materials: listedMaterials = [], adapters: listedAdapters = [], evaluationPlans = [], aiPanelTarget, onCreateEvaluationPlan, onExport, onRestoreTask, onBack, registerLeave, onTaskChanged, onDraftChanged, onImport, onUpdated }: { task: Task; models: Model[]; datasets: Dataset[]; devices: Device[]; materials?: Material[]; adapters?: Adapter[]; evaluationPlans?: EvaluationPlan[]; aiPanelTarget?: HTMLElement | null; onCreateEvaluationPlan?: () => void; onRestoreTask?: (task: Task) => void; onExport?: (object: ExportObject) => void; onBack: () => void; registerLeave: (handler: (() => Promise<boolean>) | null) => void; onTaskChanged: (task: Task) => void; onDraftChanged?: (draft: Draft) => void; onImport: (kind: ImportKind) => void; onUpdated: () => void }) {
+export default function Workbench({ task, taskRuntime, models: listedModels, datasets, devices, materials: listedMaterials = [], adapters: listedAdapters = [], evaluationPlans = [], aiPanelTarget, onCreateEvaluationPlan, onExport, onRestoreTask, onBack, registerLeave, onTaskChanged, onDraftChanged, onImport, onUpdated }: { task: Task; taskRuntime?: TaskRuntime; models: Model[]; datasets: Dataset[]; devices: Device[]; materials?: Material[]; adapters?: Adapter[]; evaluationPlans?: EvaluationPlan[]; aiPanelTarget?: HTMLElement | null; onCreateEvaluationPlan?: () => void; onRestoreTask?: (task: Task) => void; onExport?: (object: ExportObject) => void; onBack: () => void; registerLeave: (handler: (() => Promise<boolean>) | null) => void; onTaskChanged: (task: Task) => void; onDraftChanged?: (draft: Draft) => void; onImport: (kind: ImportKind) => void; onUpdated: () => void }) {
   const captureLibraryRead = useContext(LibraryReadContext);
   const [draft, setDraft] = useState<Draft>(task.draft);
   const recipeContext = useWorkRecipeContext(task, draft);
@@ -316,6 +317,11 @@ export default function Workbench({ task, models: listedModels, datasets, device
   }
   function change(next: Draft) {
     if (configurationReadonly()) return;
+    if (taskRuntime && window.ailabHF?.runtime && next.operation === 'generate' && !next.execution_target_id &&
+      (next.model_id !== draft.model_id || next.runtime.device_id !== draft.runtime.device_id || draft.execution_target_id)) {
+      const group = taskLibraries(next.kind, models.find(item => item.id === next.model_id)?.pipeline);
+      void taskRuntime.prepare(next.runtime.device_id?.startsWith('CUDA') ? group.cuda : group.standard);
+    }
     setMarketNotice(''); localChanged.current = true; latestDraft.current = next; editVersion.current += 1;
     setDraft(next); setDirty(true); setPreflight(null); submitKey.current = null;
     clearTimeout(autosaveTimer.current);
@@ -485,6 +491,7 @@ export default function Workbench({ task, models: listedModels, datasets, device
     }} />, aiPanelTarget)}
     <div className="breadcrumb"><button tabIndex={0} onClick={() => void back()}><ArrowLeft size={15} />工作台</button><ChevronRight size={14} /><span>{kindLabels[task.kind]}{train ? '训练 / 微调' : '运行 / 试用'}</span></div>
     <div className="page-heading"><div><h1>{task.name}</h1><p>选择模型、准备输入，检查配置后开始本次{train ? '训练' : '运行'}。</p>{saving && !busy && <small role="status">正在自动保存草稿…</small>}</div><Button busy={busy} disabled={!dirty || runningReadonly} onClick={saveOnly}><Save size={15} />{dirty ? '保存草稿' : '草稿已保存'}</Button></div>
+    {taskRuntime && windowsTrial && !remote && <TaskRuntimeNotice runtime={taskRuntime} kind={draft.kind} pipeline={currentModel?.pipeline} />}
     <WorkRecipeContext state={recipeContext} draft={draft} />
     {runningReadonly && <div className="warning" role="status"><p>{latestAttempt?.recovery_required ? '当前执行的停止状态待核实，配置暂时只读。请先核实原执行。' : latestAttempt?.state === 'paused' ? '当前训练已暂停，配置保持只读。可以继续训练或停止。' : '当前任务正在执行，配置只读。执行结束后可继续修改。'}</p><Button disabled={showingLatest} onClick={() => setAttempt(latestAttempt)}>查看当前执行</Button></div>}
     <div className="workbench-layout"><section ref={composer} className={`composer${marketNotice ? ' market-selection-applied' : ''}`} aria-label="任务配置">

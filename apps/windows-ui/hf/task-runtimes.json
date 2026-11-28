@@ -1,0 +1,7 @@
+{
+  "text": { "standard": "base", "cuda": "text-cuda" },
+  "image": { "standard": "image-video", "cuda": "image-video-cuda" },
+  "video": { "standard": "image-video", "cuda": "image-video-cuda" },
+  "audio": { "standard": "audio", "cuda": "audio-cuda" },
+  "languageAudioPipelines": ["llama-hibiki", "llama-tts", "llama-vocoder"]
+}

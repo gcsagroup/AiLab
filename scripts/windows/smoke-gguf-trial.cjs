@@ -47,7 +47,7 @@
     ).click();
     (await wait(() => btn('用此模型开始试用'), '原试用按钮')).click();
   } else {
-    const title = { text:'模型训练 / 微调', image: '图片训练 / 微调', audio: '音频训练 / 微调', video: '视频训练 / 微调' }[kind];
+    const title = { text:'语言模型', image: '图片生成', audio: '音频试用', video: '视频生成' }[kind];
     (
       await wait(
         () => {

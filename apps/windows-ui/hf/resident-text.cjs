@@ -3,7 +3,7 @@ const { spawn } = require('node:child_process');
 const { createInterface } = require('node:readline');
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const os = require('node:os');
+const { engineTempDirectory } = require('./engine-environment.cjs');
 
 // A workbench selection owns one process. The trial queue serializes its users.
 class ResidentText {
@@ -38,7 +38,7 @@ class ResidentText {
     }
   }
   async directory() {
-    return this.dir ??= await fs.mkdtemp(path.join(os.tmpdir(),'ailab-text-model-'));
+    return this.dir ??= await fs.mkdtemp(path.join(engineTempDirectory('text'),'ailab-text-model-'));
   }
   async close() {
     await this.stop();

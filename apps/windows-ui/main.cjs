@@ -7,7 +7,6 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'ailab', privileges: { standard:
 const smokePath = process.argv.find(arg => arg.startsWith('--smoke-result='))?.slice('--smoke-result='.length);
 // Preview data is separate from any existing full AiLab installation.
 app.setPath('userData', smokePath ? join(dirname(smokePath), 'smoke-profile') : join(app.getPath('appData'), 'GCSA-AiLab-UI-Preview'));
-process.env.AILAB_RUNTIME_DIR = join(app.getPath('userData'), 'runtime');
 app.setAppUserModelId('org.gcsa.ailab.ui-preview');
 let window;
 let models;
@@ -19,6 +18,10 @@ app.on('second-instance', () => {
 });
 const failures = [];
 app.whenReady().then(async () => {
+  const { runtimeDirectory } = require('./hf/runtime-directory.cjs');
+  const directory = await runtimeDirectory(app.getPath('userData'), join(__dirname, 'runtime'), process.env.AILAB_RUNTIME_DIR);
+  // The workers resolve their paths at module load. Probing, installation and inference share this root.
+  process.env.AILAB_RUNTIME_DIR = directory.root;
   const { OfficialModels } = require('./hf/official.cjs');
   const { RuntimeInstaller } = require('./hf/runtime-installer.cjs');
   runtimeInstaller = new RuntimeInstaller(process.env.AILAB_RUNTIME_DIR);
@@ -29,11 +32,19 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('ailab:runtime', async (event, action, component) => {
     if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== 'ailab://ui/') throw new Error('无效的运行库请求。');
-    if (action === 'status') return runtimeInstaller.status();
-    if (action === 'cancel') { runtimeInstaller.cancel(); return runtimeInstaller.status(); }
-    if (action !== 'start') throw new Error('未知的运行库操作。');
-    runtimeInstaller.start(component);
-    return runtimeInstaller.status();
+    switch (action) {
+      case 'status': break;
+      case 'cancel': if (runtimeInstaller.state.id === component) runtimeInstaller.cancel(); break;
+      case 'prepare': await runtimeInstaller.ensure(component); break;
+      case 'choose-directory': {
+        const result = await dialog.showOpenDialog(window, { title: '选择已有的 AiLab 程序或运行库目录', properties: ['openDirectory'] });
+        if (!result.canceled) await directory.select(result.filePaths[0]);
+        break;
+      }
+      case 'reset-directory': await directory.select(null); break;
+      default: throw new Error('未知的运行库操作。');
+    }
+    return { ...await runtimeInstaller.status(), ...directory.info() };
   });
   ipcMain.handle('ailab:official-models', async (event, action, request) => {
     if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== 'ailab://ui/' || action !== 'workbench') throw new Error('无效的工作台请求。');

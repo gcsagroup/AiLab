@@ -45,15 +45,40 @@ test('CUDA trial settings reach each recipe-specific executor and keep the selec
   assert.equal(args[args.indexOf('--mmproj-device') + 1], id);
 });
 
-test('each CUDA executor resolves NVIDIA libraries only from its own engine environment', () => {
+test('CPU, Vulkan and CUDA workers use the matching runtime and private writable directories', async t => {
   const {bins, environment} = require('../../apps/windows-ui/hf/trial-worker.cjs');
+  const {ResidentText} = require('../../apps/windows-ui/hf/resident-text.cjs');
+  const local = await fs.mkdtemp(path.join(os.tmpdir(), 'ailab-worker-env-'));
+  t.after(() => fs.rm(local, {recursive:true,force:true}));
+  const previousLocal = process.env.LOCALAPPDATA;
+  process.env.LOCALAPPDATA = local;
+  t.after(() => {
+    if (previousLocal === undefined) delete process.env.LOCALAPPDATA;
+    else process.env.LOCALAPPDATA = previousLocal;
+  });
   const root = path.dirname(path.dirname(bins.text));
-  for (const [engine, executable] of [['text','cuda/llama-server.exe'], ['text','native-kernels/cuda/llama-server.exe'], ['diffusion','0d71f96/cuda/sd-cli.exe'],
-    ['audio','cuda/audiocpp_cli.exe'], ['audio','v0.9.6/cuda/audiocpp_cli.exe']]) {
-    const search = environment(path.join(root, engine, executable)).PATH.split(path.delimiter);
-    assert.deepEqual(search, [path.join(root, engine, 'cuda-runtime'), environment().PATH]);
+  for (const [engine, executable] of [['text','ailab-gguf.exe'], ['text','cuda/llama-server.exe'], ['text','native-kernels/cuda/llama-server.exe'],
+    ['diffusion','ailab-image.exe'], ['diffusion','0d71f96/vulkan/sd-cli.exe'], ['diffusion','0d71f96/cuda/sd-cli.exe'],
+    ['audio','f5/audiocpp_cli.exe'], ['audio','v0.9.6/vulkan/audiocpp_cli.exe'], ['audio','cuda/audiocpp_cli.exe'], ['audio','v0.9.6/cuda/audiocpp_cli.exe']]) {
+    const exe = path.join(root, engine, executable), env = environment(exe);
+    const cuda = path.basename(path.dirname(exe)) === 'cuda';
+    const home = path.join(local, 'GCSA-AiLab-UI-Preview', 'engines', engine);
+    assert.deepEqual(env.PATH.split(path.delimiter), [path.dirname(exe), ...(cuda ? [path.join(root,engine,'cuda-runtime')] : []), environment().PATH]);
+    assert.equal(env.TEMP, path.join(home, 'temp'));
+    assert.equal(env.TMP, env.TEMP);
+    assert.equal(env.LOCALAPPDATA, path.join(home, 'local'));
+    assert.equal(env.APPDATA, path.join(home, 'roaming'));
+    assert.equal(env.XDG_CACHE_HOME, path.join(home, 'cache'));
+    assert.equal(env.CUDA_CACHE_PATH, cuda ? path.join(local, 'GCSA-AiLab-UI-Preview', 'cuda-cache', engine) : undefined);
+    assert.equal(env.LLAMA_CACHE, engine === 'text' ? env.XDG_CACHE_HOME : undefined);
+    await fs.access(env.TEMP);
   }
-  assert.equal(environment(bins.text).PATH, environment().PATH);
+  const host = new ResidentText();
+  try { assert.equal(path.dirname(await host.directory()), environment(bins.text).TEMP); }
+  finally { await host.close(); }
+  const tool = environment(bins.ffmpeg);
+  assert.equal(tool.PATH, environment().PATH);
+  assert.notEqual(tool.TEMP, environment(bins.image).TEMP);
 });
 
 test('text CUDA selects precompiled kernels by adapter capability while preserving custom graphs and other devices', () => {

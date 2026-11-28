@@ -14,6 +14,7 @@ const { workflowEligible } = require('./workflows.cjs');
 const { audioEngine, diffusionEngine } = require('./generation-runtime.cjs');
 const { audioDeviceIndex, checkDiffusionDevice, deviceExecutable, textExecutable } = require('./trial-devices.cjs');
 const { LocalEnvironment } = require('./environment.cjs');
+const taskRuntimes = require('./task-runtimes.json');
 const { performance } = require('node:perf_hooks');
 const { waveSeconds } = require('./trial-timing.cjs');
 const { ResidentText } = require('./resident-text.cjs');
@@ -562,10 +563,8 @@ class Trials {
       const hibiki = ref.info.pipeline === 'llama-hibiki';
       const engine = ref.info.pipeline==='llama-vocoder' ? bins.text : (hibiki || ref.info.pipeline==='llama-tts') ? bins.llamaService : bins[task.kind];
       if (this.ensureRuntime) {
-        const textEngine = engine === bins.text || engine === bins.llamaService;
-        const group = textEngine ? 'text' : task.kind === 'audio' ? 'audio' : 'image-video';
-        const component = effective.device_id?.startsWith('CUDA') ? group + '-cuda' : textEngine ? 'base' : group;
-        await this.ensureRuntime(component);
+        const group = taskRuntimes[taskRuntimes.languageAudioPipelines.includes(ref.info.pipeline) ? 'text' : task.kind];
+        await this.ensureRuntime(effective.device_id?.startsWith('CUDA') ? group.cuda : group.standard);
       }
       const input = materialPrompt(draft.input);
       const audioInput = hibiki || ['asr', 'vad'].includes(ref.info.audioTask);
@@ -579,7 +578,7 @@ class Trials {
         await fsp.access(bins.text);
         effective.audio_weight_conversion='q8_0_to_mixed_q4_k';
       }
-      const usesAudioCli = task.kind === 'audio' && !['llama-hibiki','llama-tts','llama-vocoder'].includes(ref.info.pipeline);
+      const usesAudioCli = task.kind === 'audio' && !taskRuntimes.languageAudioPipelines.includes(ref.info.pipeline);
       const audioExe = usesAudioCli && audioEngine(bins.audio, recipe, effective.device_id);
       const diffusionExe = ['image','video'].includes(task.kind) && diffusionEngine(bins.image, recipe, effective.device_id);
       if (audioExe) await fsp.access(audioExe);

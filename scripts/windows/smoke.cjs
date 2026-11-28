@@ -14,7 +14,7 @@
   await waitFor(() => document.querySelector('main .category-grid, main .workbench-layout'), 'Saved project finishes loading', 45000);
   const nav = [...document.querySelectorAll('nav[aria-label="主导航"] button')];
   nav[0].click();
-  await waitFor(() => text().includes('模型训练 / 微调'), 'Home renders');
+  await waitFor(() => text().includes('语言模型'), 'Home renders');
   button('新建工作流').click();
   await waitFor(() => document.querySelector('dialog[open] .workflow-setup-step:nth-of-type(2) textarea'), 'Video prompt in workflow dialog');
   const videoPrompt = document.querySelector('dialog[open] .workflow-setup-step:nth-of-type(2) textarea');
@@ -27,6 +27,11 @@
   button('2 · 检查本机环境').click();
   const reportTime = () => document.querySelector('dialog[open] time')?.dateTime;
   await waitFor(() => reportTime() && !button('刷新环境')?.disabled, 'Home check reads a native environment report', 45000);
+  await waitFor(() => document.querySelectorAll('table.runtime-guide tbody tr').length === 3 &&
+    ['基础运行库','图片与视频运行库','音频运行库','语言 CUDA 加速','图片视频 CUDA 加速','音频 CUDA 加速']
+      .every(label => [...document.querySelectorAll('table.runtime-guide td strong')].some(el => el.textContent === label)) &&
+    document.querySelector('.runtime-directory code')?.textContent && button('选择本机已有运行库') && !button('下载并配置'),
+    'Task guide shows all six runtime choices and the active runtime directory');
   const checked = reportTime();
   button('刷新环境').click();
   await waitFor(() => reportTime() && reportTime() !== checked && !button('刷新环境').disabled, 'Refresh completes a new hardware and runtime probe', 45000);
@@ -48,12 +53,12 @@
   await waitFor(() => document.querySelector('dialog[open]') && text().includes('可用任务组合'), 'Environment dialog renders');
   document.querySelector('dialog button[aria-label="关闭对话框"]').click();
   await waitFor(() => !document.querySelector('dialog[open]'), 'Environment dialog closes');
-  nav[0].click(); await waitFor(() => text().includes('模型训练 / 微调'), 'Home returns');
+  nav[0].click(); await waitFor(() => text().includes('语言模型'), 'Home returns');
   for (const [category, modelLabel] of [['模型', '基座模型'], ['图片', '图片基座模型'], ['视频', '视频模型'], ['音频', '配音模型']]) {
-    const categoryButton = [...document.querySelectorAll('.category')].find(item => item.querySelector('strong')?.textContent === category + '训练 / 微调');
+    const categoryButton = [...document.querySelectorAll('.category')].find(item => item.querySelector('strong')?.textContent === ({模型:'语言模型', 图片:'图片生成', 视频:'视频生成', 音频:'音频试用'})[category]);
     categoryButton.click();
     await waitFor(() => categoryButton.getAttribute('aria-pressed') === 'true', category + '分类已选中');
-    button('运行 / 试用').click();
+    await waitFor(() => document.querySelector('[aria-label="试用运行库"] strong')?.textContent === ({模型:'基础运行库',图片:'图片与视频运行库',视频:'图片与视频运行库',音频:'音频运行库'})[category], category + '点击类别后显示对应的运行库');
     await waitFor(() => {
       const steps = [...document.querySelectorAll('.module-start .steps span')].map(item => item.textContent);
       const create = button('新建试用');
